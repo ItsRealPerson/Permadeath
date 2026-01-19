@@ -22,7 +22,7 @@ public class PermadeathAPI {
         if (provider == null) {
             return false;
         }
-        return provider.optifineItemsEnabled();
+        return provider.isOptifineEnabled();
     }
 
     public static void setProvider(PermadeathAPIProvider newProvider) {

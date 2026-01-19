@@ -27,7 +27,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitScheduler;
 import tech.sebazcrc.permadeath.Main;
-import tech.sebazcrc.permadeath.util.PermadeathAPI;
+import tech.sebazcrc.permadeath.api.PermadeathAPI;
 import tech.sebazcrc.permadeath.util.Utils;
 import tech.sebazcrc.permadeath.util.item.InfernalNetherite;
 import tech.sebazcrc.permadeath.util.item.NetheriteArmor;
@@ -545,6 +545,20 @@ public class PlayerListener implements Listener {
 
         if (!PermadeathAPI.optifineItemsEnabled())
             player.setResourcePack(Utils.RESOURCE_PACK_LINK);
+
+        // GIVE ACCESSORY MENU ITEM
+        ItemStack menu = PermadeathItems.createAccessoryTrigger();
+        
+        // Remove existing menu items to prevent duplicates
+        for (int i = 0; i < player.getInventory().getSize(); i++) {
+            ItemStack item = player.getInventory().getItem(i);
+            if (item != null && item.getType() == menu.getType() && item.hasItemMeta() && item.getItemMeta().getDisplayName().contains("Menú de Accesorios")) {
+                player.getInventory().setItem(i, null);
+            }
+        }
+        
+        // Force set in slot 8
+        player.getInventory().setItem(8, menu);
 
         if (Main.instance.getBeginningManager() != null && Main.instance.getBeginningManager().getBeginningWorld() != null) {
             if (Main.instance.getBeginningManager().isClosed() && e.getPlayer().getWorld().getName().equalsIgnoreCase(Main.instance.getBeginningManager().getBeginningWorld().getName())) {

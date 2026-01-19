@@ -79,7 +79,20 @@
     </repositories>
 
     <dependencies>
+        <dependency>
+            <groupId>tech.sebazcrc.permadeath</groupId>
+            <artifactId>api</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>tech.sebazcrc.permadeath</groupId>
+            <artifactId>v1_21_R3</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
         <!-- Dependencias Externas -->
+
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>

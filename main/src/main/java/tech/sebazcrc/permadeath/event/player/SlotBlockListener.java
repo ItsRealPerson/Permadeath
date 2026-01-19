@@ -19,6 +19,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import tech.sebazcrc.permadeath.Main;
 import tech.sebazcrc.permadeath.util.TextUtils;
+import tech.sebazcrc.permadeath.util.item.PermadeathItems;
 import java.util.Random;
 
 public class SlotBlockListener implements Listener {
@@ -36,23 +37,36 @@ public class SlotBlockListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onClickVoid(InventoryClickEvent e) {
-        if (e.isCancelled()) return;
-        if (e.getCurrentItem() != null) {
-            if (e.getCurrentItem().getType() == Material.STRUCTURE_VOID) {
+        if (e.getClickedInventory() == null) return;
+        if (!(e.getWhoClicked() instanceof Player p)) return;
+        
+        // Debug
+        // System.out.println("Click en slot: " + e.getSlot() + " Tipo Inv: " + e.getClickedInventory().getType());
+        
+        ItemStack current = e.getCurrentItem();
+        ItemStack cursor = e.getCursor();
+        
+        // Check if slot itself is locked
+        if (e.getClickedInventory().getType() == InventoryType.PLAYER) {
+            boolean locked = PermadeathItems.isSlotLocked(p, e.getSlot());
+            // System.out.println("¿Slot " + e.getSlot() + " bloqueado?: " + locked);
+            
+            if (locked) {
                 e.setCancelled(true);
-                if (e.getClick() == ClickType.NUMBER_KEY) {
-                    e.getInventory().remove(Material.STRUCTURE_VOID);
-                }
+                e.setResult(org.bukkit.event.Event.Result.DENY);
+                p.updateInventory();
+                return;
             }
         }
-
-
-        if (e.getCursor() != null) {
-            if (e.getCursor().getType() == Material.STRUCTURE_VOID) {
-                e.setCancelled(true);
-            }
+        
+        // Fallback: Check if interacting with a lock item anywhere
+        if (PermadeathItems.isLockItem(current) || PermadeathItems.isLockItem(cursor)) {
+            e.setCancelled(true);
+            e.setResult(org.bukkit.event.Event.Result.DENY);
+            p.updateInventory();
+            return;
         }
     }
 

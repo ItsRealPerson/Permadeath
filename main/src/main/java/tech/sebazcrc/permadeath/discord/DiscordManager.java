@@ -31,8 +31,11 @@ public class DiscordManager {
     @Getter
     private final FileConfiguration configuration;
 
-    @Getter
     private JDA bot;
+
+    public JDA getBot() {
+        return bot;
+    }
 
     public DiscordManager() {
         this.instance = Main.getInstance();

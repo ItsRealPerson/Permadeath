@@ -23,7 +23,8 @@ import java.util.List;
 import java.util.UUID;
 
 public class PermadeathItems{
-    private static final int[] beginningRelicLockedSlots = {40, 34, 33, 32, 30, 29, 28, 27, 26, 25, 24, 23, 21, 20, 19, 18, 17, 16, 15, 14, 12, 11, 10, 9, 8, 7};
+    public static final int[] beginningRelicLockedSlots = {40, 34, 33, 32, 30, 29, 28, 27, 26, 25, 24, 23, 21, 20, 19, 18, 17, 16, 15, 14, 12, 11, 10, 9, 8, 7};
+    public static final int[] endRelicLockedSlots = {40, 13, 22, 31, 4};
 
     public static ItemStack crearReliquia() {
 
@@ -168,34 +169,11 @@ public class PermadeathItems{
         if (PermadeathAPI.getDay() < 40) return;
         if (p.getGameMode() == GameMode.SPECTATOR || p.isDead() || !p.isOnline()) return;
 
-        boolean hasEndRelic = false;
-        boolean hasBeginningRelic = false;
+        boolean hasEndRelic = hasEndRelic(p);
+        boolean hasBeginningRelic = hasBeginningRelic(p);
 
-        int[] endRelicLockedSlots;
-        if (PermadeathAPI.getDay() < 60) {
-            endRelicLockedSlots = new int[]{40, 13, 22, 31, 4};
-        } else {
-            endRelicLockedSlots = new int[]{13, 22, 31, 4};
-        }
-
-        List<ItemStack> allItems = new ArrayList<>(Arrays.asList(p.getInventory().getContents()));
-        ItemStack[] accessories = AccessoryInventory.load(p);
-        if (accessories != null) allItems.addAll(Arrays.asList(accessories));
-
-        for (ItemStack contents : allItems) {
-            if (!hasBeginningRelic && isBeginningRelic(contents)) {
-                hasBeginningRelic = true;
-                hasEndRelic = true;
-            } else if (!hasEndRelic && isEndRelic(contents)) {
-                hasEndRelic = true;
-            }
-        }
-
-        int slot;
         if (PermadeathAPI.getDay() >= 40) {
-            for (int i = 0; i < endRelicLockedSlots.length; i++) {
-                slot = endRelicLockedSlots[i];
-                if (slot == 8) continue; // EXENTO: SLOT DEL MENU
+            for (int slot : endRelicLockedSlots) {
                 if (hasEndRelic) {
                     unlockSlot(p, slot);
                 } else {
@@ -205,9 +183,7 @@ public class PermadeathItems{
         }
 
         if (PermadeathAPI.getDay() >= 60) {
-            for (int i = 0; i < beginningRelicLockedSlots.length; i++) {
-                slot = beginningRelicLockedSlots[i];
-                if (slot == 8) continue; // EXENTO: SLOT DEL MENU
+            for (int slot : beginningRelicLockedSlots) {
                 if (hasBeginningRelic) {
                     unlockSlot(p, slot);
                 } else {
@@ -215,29 +191,87 @@ public class PermadeathItems{
                 }
             }
         }
+        
+        // Final cleanup
+        for (int i = 0; i < p.getInventory().getSize(); i++) {
+            if (isSlotLocked(p, i)) continue; // Don't clean locked slots here
+            
+            ItemStack item = p.getInventory().getItem(i);
+            if (item != null && isLockItem(item)) {
+                p.getInventory().setItem(i, null);
+            }
+        }
+    }
+
+    public static boolean isSlotLocked(Player p, int slot) {
+        if (PermadeathAPI.getDay() < 40) return false;
+
+        boolean locked = false;
+        
+        // Check End Relic slots
+        for (int s : endRelicLockedSlots) {
+            if (s == slot) {
+                if (!hasEndRelic(p)) return true;
+            }
+        }
+        
+        if (PermadeathAPI.getDay() >= 60) {
+            for (int s : beginningRelicLockedSlots) {
+                if (s == slot) {
+                    if (!hasBeginningRelic(p)) return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    public static boolean hasEndRelic(Player p) {
+        List<ItemStack> allItems = new ArrayList<>(Arrays.asList(p.getInventory().getContents()));
+        ItemStack[] accessories = AccessoryInventory.load(p);
+        if (accessories != null) allItems.addAll(Arrays.asList(accessories));
+
+        for (ItemStack contents : allItems) {
+            if (isEndRelic(contents) || isBeginningRelic(contents)) return true;
+        }
+        return false;
+    }
+
+    public static boolean hasBeginningRelic(Player p) {
+        List<ItemStack> allItems = new ArrayList<>(Arrays.asList(p.getInventory().getContents()));
+        ItemStack[] accessories = AccessoryInventory.load(p);
+        if (accessories != null) allItems.addAll(Arrays.asList(accessories));
+
+        for (ItemStack contents : allItems) {
+            if (isBeginningRelic(contents)) return true;
+        }
+        return false;
+    }
+
+    public static boolean isLockItem(ItemStack item) {
+        if (item == null || item.getType() != Material.STRUCTURE_VOID) return false;
+        return item.hasItemMeta() && item.getItemMeta().hasCustomModelData() && item.getItemMeta().getCustomModelData() == 666;
     }
 
     private static void lockSlot(Player p, int slot) {
         ItemStack item = p.getInventory().getItem(slot);
+        ItemStack lockItem = new ItemBuilder(Material.STRUCTURE_VOID)
+                .setDisplayName(TextUtils.format("&c&lSLOT BLOQUEADO"))
+                .setLore(Arrays.asList(TextUtils.format("&7Necesitas una reliquia"), TextUtils.format("&7para usar este espacio.")))
+                .setCustomModelData(666)
+                .build();
 
         if (item != null) {
-
-            if (item.getType() != Material.AIR && item.getType() != Material.STRUCTURE_VOID) {
-                p.getWorld().dropItem(p.getLocation(), item.clone());
-            }
-
-            item.setType(Material.STRUCTURE_VOID);
-            item.setAmount(1);
-        } else {
-            p.getInventory().setItem(slot, new ItemStack(Material.STRUCTURE_VOID));
+            if (isLockItem(item)) return;
+            p.getWorld().dropItem(p.getLocation(), item.clone());
         }
+        p.getInventory().setItem(slot, lockItem);
     }
 
     private static void unlockSlot(Player p, int slot) {
         ItemStack item = p.getInventory().getItem(slot);
-
-        if (item != null && item.getType() == Material.STRUCTURE_VOID) {
-            p.getInventory().clear(slot);
+        if (isLockItem(item)) {
+            p.getInventory().setItem(slot, null);
         }
     }
 

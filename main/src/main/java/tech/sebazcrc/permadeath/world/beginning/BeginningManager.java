@@ -35,6 +35,10 @@ public class BeginningManager implements Listener {
     @Getter
     private boolean closed = false;
 
+    public boolean isClosed() {
+        return closed;
+    }
+
     public BeginningManager(Main main) {
         this.main = main;
         this.beginningWorld = null;

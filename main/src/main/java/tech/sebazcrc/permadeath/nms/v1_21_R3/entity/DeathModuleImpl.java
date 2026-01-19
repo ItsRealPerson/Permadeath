@@ -8,7 +8,7 @@ import org.bukkit.entity.*;
 import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
-import tech.sebazcrc.permadeath.util.interfaces.DeathModule;
+import tech.sebazcrc.permadeath.api.interfaces.DeathModule;
 
 public class DeathModuleImpl implements DeathModule {
     @Override

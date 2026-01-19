@@ -9,6 +9,8 @@
     <version>1.3</version>
     <packaging>pom</packaging>
     <modules>
+        <module>api</module>
+        <module>v1_21_R3</module>
         <module>main</module>
     </modules>
 

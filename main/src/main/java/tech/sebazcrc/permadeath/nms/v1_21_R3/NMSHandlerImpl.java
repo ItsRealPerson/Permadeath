@@ -11,7 +11,7 @@ import org.bukkit.plugin.Plugin;
 import tech.sebazcrc.permadeath.nms.v1_21_R3.entity.*;
 import tech.sebazcrc.permadeath.nms.v1_21_R3.entity.minions.*;
 import tech.sebazcrc.permadeath.nms.v1_21_R3.entity.boss.*;
-import tech.sebazcrc.permadeath.util.interfaces.NMSHandler;
+import tech.sebazcrc.permadeath.api.interfaces.NMSHandler;
 
 public class NMSHandlerImpl implements NMSHandler {
 

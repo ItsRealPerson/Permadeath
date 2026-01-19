@@ -1,7 +1,5 @@
 package tech.sebazcrc.permadeath;
 
-import lombok.Getter;
-import lombok.Setter;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.apache.logging.log4j.LogManager;
@@ -19,41 +17,41 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import tech.sebazcrc.permadeath.data.Messages;
-import tech.sebazcrc.permadeath.util.*;
-import tech.sebazcrc.permadeath.util.events.LifeOrbEvent;
-import tech.sebazcrc.permadeath.util.events.ShellEvent;
-import tech.sebazcrc.permadeath.util.item.NetheriteArmor;
-import tech.sebazcrc.permadeath.util.item.PermadeathItems;
-import tech.sebazcrc.permadeath.util.lib.FileAPI;
-import tech.sebazcrc.permadeath.util.lib.UpdateChecker;
-import tech.sebazcrc.permadeath.data.BeginningDataManager;
-import tech.sebazcrc.permadeath.data.DateManager;
-import tech.sebazcrc.permadeath.data.EndDataManager;
-import tech.sebazcrc.permadeath.data.PlayerDataManager;
-import tech.sebazcrc.permadeath.util.log.Log4JFilter;
-import tech.sebazcrc.permadeath.util.log.PDCLog;
-import tech.sebazcrc.permadeath.util.item.RecipeManager;
+import tech.sebazcrc.permadeath.api.interfaces.InfernalNetheriteBlock;
+import tech.sebazcrc.permadeath.api.interfaces.NMSAccessor;
+import tech.sebazcrc.permadeath.api.interfaces.NMSHandler;
+import tech.sebazcrc.permadeath.data.*;
 import tech.sebazcrc.permadeath.discord.DiscordPortal;
 import tech.sebazcrc.permadeath.end.EndManager;
+import tech.sebazcrc.permadeath.event.HostileEntityListener;
 import tech.sebazcrc.permadeath.event.block.BlockListener;
 import tech.sebazcrc.permadeath.event.entity.EntityEvents;
-import tech.sebazcrc.permadeath.util.mob.CustomSkeletons;
 import tech.sebazcrc.permadeath.event.entity.SpawnListener;
 import tech.sebazcrc.permadeath.event.entity.TotemListener;
-import tech.sebazcrc.permadeath.event.HostileEntityListener;
 import tech.sebazcrc.permadeath.event.paper.PaperListeners;
 import tech.sebazcrc.permadeath.event.player.AnvilListener;
 import tech.sebazcrc.permadeath.event.player.PlayerListener;
 import tech.sebazcrc.permadeath.event.player.SlotBlockListener;
 import tech.sebazcrc.permadeath.event.raid.RaidEvents;
 import tech.sebazcrc.permadeath.event.world.WorldEvents;
-import tech.sebazcrc.permadeath.util.interfaces.InfernalNetheriteBlock;
-import tech.sebazcrc.permadeath.util.interfaces.NMSAccessor;
-import tech.sebazcrc.permadeath.util.interfaces.NMSHandler;
 import tech.sebazcrc.permadeath.task.EndTask;
-import tech.sebazcrc.permadeath.world.beginning.BeginningManager;
+import tech.sebazcrc.permadeath.util.*;
+import tech.sebazcrc.permadeath.util.events.LifeOrbEvent;
+import tech.sebazcrc.permadeath.util.events.ShellEvent;
+import tech.sebazcrc.permadeath.util.item.NetheriteArmor;
+import tech.sebazcrc.permadeath.util.item.PermadeathItems;
+import tech.sebazcrc.permadeath.util.item.RecipeManager;
+import tech.sebazcrc.permadeath.util.lib.FileAPI;
+import tech.sebazcrc.permadeath.util.lib.UpdateChecker;
+import tech.sebazcrc.permadeath.util.log.Log4JFilter;
+import tech.sebazcrc.permadeath.util.log.PDCLog;
+import tech.sebazcrc.permadeath.util.mob.CustomSkeletons;
+import tech.sebazcrc.permadeath.api.PermadeathAPI;
+import tech.sebazcrc.permadeath.api.PermadeathAPIProvider;
 import tech.sebazcrc.permadeath.world.abyss.AbyssManager;
+import tech.sebazcrc.permadeath.world.beginning.BeginningManager;
+
+import tech.sebazcrc.permadeath.util.inventory.AccessoryListener;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -62,7 +60,7 @@ import java.util.logging.Filter;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public final class Main extends JavaPlugin implements Listener {
+public final class Main extends JavaPlugin implements Listener, PermadeathAPIProvider {
 
     private static final int CURRENT_CONFIG_VERSION = 3;
     public static boolean DEBUG = false;
@@ -100,10 +98,29 @@ public final class Main extends JavaPlugin implements Listener {
         return instance.getConfig().getBoolean("Toggles.OptifineItems");
     }
 
+    // Interface implementation
+    @Override
+    public boolean isOptifineEnabled() {
+        return Main.optifineItemsEnabled();
+    }
+
+    @Override
+    public String getPrefix() {
+        return prefix;
+    }
+
+    @Override
+    public long getDay() {
+        return DateManager.getInstance().getDay();
+    }
+
     @Override
     public void onEnable() {
         instance = this;
         runningFolia = isRunningFolia();
+        
+        // Registrar proveedor de API
+        PermadeathAPI.setProvider(this);
 
         this.saveDefaultConfig();
         setupConsoleFilter();
@@ -164,7 +181,6 @@ public final class Main extends JavaPlugin implements Listener {
     public InfernalNetheriteBlock getNetheriteBlock() { return NMS.getNetheriteBlock(); }
     public EndTask getTask() { return task; }
     public void setTask(EndTask task) { this.task = task; }
-    public int getDay() { return (int) DateManager.getInstance().getDay(); }
     public int getPlayTime() { return playTime; }
     public void setPlayTime(int playTime) { this.playTime = playTime; }
     public ArrayList<Player> getDoneEffectPlayers() { return doneEffectPlayers; }
@@ -216,15 +232,26 @@ public final class Main extends JavaPlugin implements Listener {
                 DateManager.getInstance().tick();
                 registerListeners();
                 tickEvents();
-                tickPlayers();
+                if (!runningFolia) {
+                    tickPlayers();
+                }
                 tickWorlds();
             }
         };
 
         if (runningFolia) {
-            Bukkit.getGlobalRegionScheduler().runAtFixedRate(this, t -> task.run(), 1, 30L);
+            Bukkit.getGlobalRegionScheduler().runAtFixedRate(this, t -> task.run(), 1, 20L);
+            // En Folia, usamos el GlobalRegionScheduler para revisar jugadores nuevos periódicamente
+            Bukkit.getGlobalRegionScheduler().runAtFixedRate(this, t -> {
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (p.getPersistentDataContainer().has(new NamespacedKey(this, "ticking"), PersistentDataType.BYTE)) continue;
+                    
+                    p.getScheduler().runAtFixedRate(this, taskPlayer -> tickPlayer(p), null, 1, 20L);
+                    p.getPersistentDataContainer().set(new NamespacedKey(this, "ticking"), PersistentDataType.BYTE, (byte) 1);
+                }
+            }, 20L, 100L);
         } else {
-            Bukkit.getScheduler().runTaskTimer(this, task, 0, 30L);
+            Bukkit.getScheduler().runTaskTimer(this, task, 0, 20L);
         }
     }
 
@@ -255,11 +282,15 @@ public final class Main extends JavaPlugin implements Listener {
     }
 
     private void tickPlayers() {
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            tickPlayer(p);
+        }
+    }
 
-        if (Bukkit.getOnlinePlayers().size() < 1) return;
+    private void tickPlayer(Player player) {
+        if (!player.isOnline()) return;
 
         long segundosbrutos = world != null ? world.getWeatherDuration() / 20 : 0;
-
         long hours = segundosbrutos % 86400 / 3600;
         long minutes = (segundosbrutos % 3600) / 60;
         long seconds = segundosbrutos % 60;
@@ -267,180 +298,134 @@ public final class Main extends JavaPlugin implements Listener {
 
         final String time = String.format((days >= 1 ? String.format("%02d día(s) ", days) : "") + "%02d:%02d:%02d", hours, minutes, seconds);
 
-        for (Player player : Bukkit.getOnlinePlayers()) {
+        if (this.shulkerEvent != null && this.shulkerEvent.isRunning()) {
+            if (!this.shulkerEvent.getBossBar().getPlayers().contains(player)) {
+                this.shulkerEvent.getBossBar().addPlayer(player);
+            }
+        }
 
-            World w = player.getWorld();
+        if (this.orbEvent != null && this.orbEvent.isRunning()) {
+            if (!this.orbEvent.getBossBar().getPlayers().contains(player)) {
+                this.orbEvent.getBossBar().addPlayer(player);
+            }
+        }
 
-            if (this.shulkerEvent != null && this.shulkerEvent.isRunning()) {
-                if (!this.shulkerEvent.getBossBar().getPlayers().contains(player)) {
-                    this.shulkerEvent.getBossBar().addPlayer(player);
+        NetheriteArmor.setupHealth(player);
+        // Debug log for slotBlock
+        // if (DEBUG) Bukkit.getLogger().info("Executing slotBlock for " + player.getName());
+        PermadeathItems.slotBlock(player);
+        player.updateInventory();
+
+        if (SPEED_RUN_MODE) {
+            String actionBar = "";
+            if (world != null && world.hasStorm()) {
+                actionBar = getMessages().getMessageByPlayer("Server-Messages.ActionBarMessage", player.getName()).replace("%tiempo%", time) + " - ";
+            }
+            actionBar = actionBar + ChatColor.GRAY + "Tiempo total: " + TextUtils.formatInterval(playTime);
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(actionBar));
+        } else {
+            if (world != null && world.hasStorm()) {
+                String msg = getMessages().getMessageByPlayer("Server-Messages.ActionBarMessage", player.getName()).replace("%tiempo%", time);
+                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(msg));
+            }
+        }
+
+        if (player.getWorld().getEnvironment() == World.Environment.THE_END && getDay() >= 30) {
+            if (player.getLocation().getBlock().getRelative(BlockFace.DOWN).getType() == Material.BEDROCK) {
+                player.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 10 * 20, 9));
+            }
+            if (player.getWorld().getName().equalsIgnoreCase("pdc_the_beginning")) {
+                if (player.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
+                    player.removePotionEffect(PotionEffectType.INVISIBILITY);
                 }
             }
+        }
 
-            if (this.orbEvent != null && this.orbEvent.isRunning()) {
-                if (!this.orbEvent.getBossBar().getPlayers().contains(player)) {
-                    this.orbEvent.getBossBar().addPlayer(player);
-                }
-            }
+        if (getDay() >= 40) {
+            if (player.getWorld().hasStorm() && player.getGameMode() != GameMode.SPECTATOR) {
+                Location block = player.getWorld().getHighestBlockAt(player.getLocation()).getLocation();
+                int highestY = block.getBlockY();
 
-            NetheriteArmor.setupHealth(player);
-            PermadeathItems.slotBlock(player);
-
-            if (SPEED_RUN_MODE) {
-                String actionBar = "";
-
-                if (world != null && world.hasStorm()) {
-                    actionBar = getMessages().getMessageByPlayer("Server-Messages.ActionBarMessage", player.getName()).replace("%tiempo%", time) + " - ";
-                }
-                actionBar = actionBar + ChatColor.GRAY + "Tiempo total: " + TextUtils.formatInterval(playTime);
-                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(actionBar));
-
-            } else {
-                if (world != null && world.hasStorm()) {
-                    String msg = getMessages().getMessageByPlayer("Server-Messages.ActionBarMessage", player.getName()).replace("%tiempo%", time);
-                    player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(msg));
-                }
-            }
-
-            if (player.getWorld().getEnvironment() == World.Environment.THE_END && getDay() >= 30) {
-                if (player.getLocation().getBlock().getRelative(BlockFace.DOWN).getType() == Material.BEDROCK) {
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 10 * 20, 9));
-                }
-                if (player.getWorld().getName().equalsIgnoreCase("pdc_the_beginning")) {
-                    if (player.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
-                        player.removePotionEffect(PotionEffectType.INVISIBILITY);
+                if (highestY < player.getLocation().getY()) {
+                    int probability = random.nextInt(10000) + 1;
+                    int blind = (getDay() < 50 ? 1 : 300);
+                    if (probability <= blind) {
+                        player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 20 * 60, 0));
+                    }
+                    if (getDay() >= 50) {
+                        if (probability == 301) {
+                            int duration = random.nextInt(17) + 3;
+                            player.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, duration * 20, 0));
+                        }
                     }
                 }
             }
+        }
 
-            if (getDay() >= 40) {
+        if (getDay() >= 50) {
+            if (player.hasPotionEffect(PotionEffectType.MINING_FATIGUE)) {
+                PotionEffect e = player.getPotionEffect(PotionEffectType.MINING_FATIGUE);
+                if (e.getDuration() >= 4 * 60 * 20 && !getDoneEffectPlayers().contains(player)) {
+                    int min = 10 * 60;
+                    player.removePotionEffect(PotionEffectType.MINING_FATIGUE);
+                    player.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, min * 20, 2));
+                    getDoneEffectPlayers().add(player);
+                }
+                if (e.getDuration() == 4 * 60 * 20 - 1 && getDoneEffectPlayers().contains(player)) {
+                    getDoneEffectPlayers().remove(player);
+                }
+            }
 
-                if (player.getWorld().hasStorm() && player.getGameMode() != GameMode.SPECTATOR) {
-                    Location block = player.getWorld().getHighestBlockAt(player.getLocation().clone()).getLocation();
-                    int highestY = block.getBlockY();
+            if (player.getWorld().getEnvironment() == World.Environment.NETHER && getDay() < 60) {
+                int randomVal = this.random.nextInt(4500) + 1;
+                if (randomVal <= 10 && player.getWorld().getLivingEntities().size() < 110) {
+                    Location ploc = player.getLocation().clone();
+                    ArrayList<Location> spawns = new ArrayList<>();
+                    spawns.add(ploc.clone().add(10, 25, -5));
+                    spawns.add(ploc.clone().add(5, 25, 5));
+                    spawns.add(ploc.clone().add(-5, 25, 5));
 
-                    if (highestY < player.getLocation().getY()) {
-
-                        int probability = random.nextInt(10000) + 1;
-
-                        int blind = (getDay() < 50 ? 1 : 300);
-                        if (probability <= blind) {
-                            player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 20 * 60, 0));
-                        }
-                        if (getDay() >= 50) {
-                            if (probability == 301) {
-                                int duration = random.nextInt(17);
-                                duration = duration + 3;
-                                player.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, duration * 20, 0));
+                    for (Location l : spawns) {
+                        if (player.getWorld().getBlockAt(l).getType() == Material.AIR && player.getWorld().getBlockAt(l.clone().add(0, 1, 0)).getType() == Material.AIR) {
+                            int randomEntities = this.random.nextInt(3) + 1;
+                            for (int i = 0; i < randomEntities; i++) {
+                                getNmsHandler().spawnNMSEntity("PigZombie", EntityType.valueOf(VersionManager.isRunningPostNetherUpdate() ? "ZOMBIFIED_PIGLIN" : "PIG_ZOMBIE"), l, CreatureSpawnEvent.SpawnReason.CUSTOM);
                             }
                         }
                     }
                 }
             }
+        }
 
-            if (getDay() >= 50) {
-
-                if (getBeData() != null && getBeginningManager() != null) {
-
-                    BeginningDataManager data = getBeData();
-                    World beginningWorld = getBeginningManager().getBeginningWorld();
-
-                    if (!data.killedED()) {
-                        Chunk c = beginningWorld.getBlockAt(0, 100, 0).getChunk();
-                        for (int X = 0; X < 16; X++)
-                            for (int y = beginningWorld.getMaxHeight() - 1; y > 0; y--)
-                                for (int Z = 0; Z < 16; Z++) {
-                                    Block b = c.getBlock(X, y, Z);
-                                    if (b.getType() == Material.END_GATEWAY || b.getType() == Material.BEDROCK) {
-                                        b.setType(Material.AIR);
-                                    }
-                                }
-                        if (beginningWorld.getEntitiesByClass(EnderDragon.class).size() >= 1) {
-                            for (EnderDragon d : beginningWorld.getEntitiesByClass(EnderDragon.class)) {
-                                d.remove();
-                            }
-                            data.setKilledED();
-                        }
-                    }
-                }
-
-                if (player.hasPotionEffect(PotionEffectType.MINING_FATIGUE)) {
-                    PotionEffect e = player.getPotionEffect(PotionEffectType.MINING_FATIGUE);
-                    if (e.getDuration() >= 4 * 60 * 20 && !getDoneEffectPlayers().contains(player)) {
-                        int min = 10 * 60;
-                        player.removePotionEffect(PotionEffectType.MINING_FATIGUE);
-                        player.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, min * 20, 2));
-                        getDoneEffectPlayers().add(player);
-                    }
-
-                    if (e.getDuration() == 4 * 60 * 20 - 1 && getDoneEffectPlayers().contains(player)) {
-                        getDoneEffectPlayers().remove(player);
-                    }
-                }
-
-                if (player.getWorld().getEnvironment() == World.Environment.NETHER && getDay() < 60) {
-
-                    int randomVal = this.random.nextInt(4500) + 1;
-
-                    if (randomVal <= 10 && player.getWorld().getLivingEntities().size() < 110) {
-
-                        Location ploc = player.getLocation().clone();
-
-                        ArrayList<Location> spawns = new ArrayList<>();
-                        spawns.add(ploc.clone().add(10, 25, -5));
-                        spawns.add(ploc.clone().add(5, 25, 5));
-                        spawns.add(ploc.clone().add(-5, 25, 5));
-
-                        for (Location l : spawns) {
-                            if (w.getBlockAt(l).getType() == Material.AIR && w.getBlockAt(l.clone().add(0, 1, 0)).getType() == Material.AIR) {
-                                int randomEntities = this.random.nextInt(3) + 1;
-                                for (int i = 0; i < randomEntities; i++) {
-                                    getNmsHandler().spawnNMSEntity("PigZombie", EntityType.valueOf(VersionManager.isRunningPostNetherUpdate() ? "ZOMBIFIED_PIGLIN" : "PIG_ZOMBIE"), l, CreatureSpawnEvent.SpawnReason.CUSTOM);
-                                }
-                            }
-                        }
-                    }
-                }
+        if (getDay() >= 60) {
+            if (player.getLocation().getBlock().getRelative(BlockFace.DOWN).getType() == Material.SOUL_SAND) {
+                player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 30 * 20, 2));
             }
+            Integer timeForWither = player.getPersistentDataContainer().get(new NamespacedKey(this, "wither"), PersistentDataType.INTEGER);
+            if (timeForWither == null) timeForWither = 0;
+            
+            if (timeForWither % (60 * 60) == 0 && player.getGameMode() == GameMode.SURVIVAL) {
+                timeForWither = 0;
+                Wither wither = player.getWorld().spawn(player.getLocation().clone().add(0, 5, 0), Wither.class);
+                try {
+                    Object nmsw = wither.getClass().getDeclaredMethod("getHandle").invoke(wither);
+                    nmsw.getClass().getDeclaredMethod("r", int.class).invoke(nmsw, 100);
+                } catch (Exception ignored) {}
+            }
+            player.getPersistentDataContainer().set(new NamespacedKey(this, "wither"), PersistentDataType.INTEGER, ++timeForWither);
 
-            if (getDay() >= 60) {
-                if (player.getLocation().getBlock().getRelative(BlockFace.DOWN).getType() == Material.SOUL_SAND) {
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 30 * 20, 2));
-                }
-                Integer timeForWither = player.getPersistentDataContainer().get(new NamespacedKey(this, "wither"), PersistentDataType.INTEGER);
-                if (timeForWither == null) {
-                    timeForWither = 0;
-                }
-                if (timeForWither % (60 * 60) == 0 && player.getGameMode() == GameMode.SURVIVAL) {
-                    timeForWither = 0;
-                    Wither wither = player.getWorld().spawn(player.getLocation().clone().add(0, 5, 0), Wither.class);
-                    try {
-                        Object nmsw = wither.getClass().getDeclaredMethod("getHandle").invoke(wither);
-                        nmsw.getClass().getDeclaredMethod("r", int.class).invoke(nmsw, 100);
-                    } catch (Exception x) {
-                    }
-                }
-                player.getPersistentDataContainer().set(new NamespacedKey(this, "wither"), PersistentDataType.INTEGER, ++timeForWither);
+            if (getConfig().getBoolean("Toggles.Mike-Creeper-Spawn")) {
+                Location l = player.getLocation().clone();
+                if (random.nextInt(30) == 0 && player.getNearbyEntities(30, 30, 30).stream().filter(e -> e instanceof Creeper).count() < 10) {
+                    int pX = (random.nextBoolean() ? -1 : 1) * (random.nextInt(15)) + 15;
+                    int pZ = (random.nextBoolean() ? -1 : 1) * (random.nextInt(15)) + 15;
+                    int y = (int) l.getY();
 
-                if (getConfig().getBoolean("Toggles.Mike-Creeper-Spawn")) {
+                    Block block = l.getWorld().getBlockAt(l.getBlockX() + pX, y, l.getBlockZ() + pZ);
+                    Block up = block.getRelative(BlockFace.UP);
 
-                    Location l = player.getLocation().clone();
-
-                    if (random.nextInt(30) == 0 && player.getNearbyEntities(30, 30, 30)
-                            .stream()
-                            .filter(entity -> entity instanceof Creeper)
-                            .map(Creeper.class::cast)
-                            .collect(Collectors.toList()).size() < 10) {
-                        int pX = (random.nextBoolean() ? -1 : 1) * (random.nextInt(15)) + 15;
-                        int pZ = (random.nextBoolean() ? -1 : 1) * (random.nextInt(15)) + 15;
-                        int y = (int) l.getY();
-
-                        Block block = l.getWorld().getBlockAt(l.getBlockX() + pX, y, l.getBlockZ() + pZ);
-                        Block up = block.getRelative(BlockFace.UP);
-
-                        if (block.getType() != Material.AIR && up.getType() == Material.AIR) {
-                            getFactory().spawnEnderQuantumCreeper(up.getLocation(), null);
-                        }
+                    if (block.getType() != Material.AIR && up.getType() == Material.AIR) {
+                        getFactory().spawnEnderQuantumCreeper(up.getLocation(), null);
                     }
                 }
             }
@@ -809,6 +794,7 @@ public final class Main extends JavaPlugin implements Listener {
 
         this.spawnListener = new SpawnListener(this);
         getServer().getPluginManager().registerEvents(spawnListener, instance);
+        getServer().getPluginManager().registerEvents(new AccessoryListener(), instance);
         getServer().getPluginManager().registerEvents(new CustomSkeletons(instance), instance);
         getServer().getPluginManager().registerEvents(new PlayerListener(), instance);
         getServer().getPluginManager().registerEvents(new BlockListener(), instance);
