@@ -32,42 +32,74 @@ public class AbyssManager implements Listener {
 
     public void loadWorld() {
         this.abyssWorld = Bukkit.getWorld(WORLD_NAME);
-        if (this.abyssWorld == null && Main.isRunningFolia()) {
-            Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[Permadeath] Folia requiere que '" + WORLD_NAME + "' esté en bukkit.yml para cargar.");
+        
+        if (this.abyssWorld == null) {
+            // Intento de carga dinámica para Paper/Spigot
+            if (!Main.isRunningFolia()) {
+                Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[Permadeath] Intentando generar dimensión " + WORLD_NAME + "...");
+                WorldCreator wc = new WorldCreator(WORLD_NAME);
+                wc.environment(World.Environment.THE_END); // Cielo oscuro
+                wc.generator(new tech.sebazcrc.permadeath.world.abyss.generator.DeepDarkAbyssGenerator());
+                this.abyssWorld = Bukkit.createWorld(wc);
+            }
+            
+            if (this.abyssWorld == null) {
+                Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[Permadeath] La dimensión '" + WORLD_NAME + "' no está cargada.");
+                if (Main.isRunningFolia()) {
+                    Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[Permadeath] En Folia, asegúrate de añadirla a bukkit.yml.");
+                }
+            }
         }
     }
 
     public void teleportToAbyss(Player player) {
-        if (abyssWorld == null) abyssWorld = Bukkit.getWorld(WORLD_NAME);
+        if (abyssWorld == null) loadWorld(); // Intentar cargar si es null
 
         if (abyssWorld != null) {
             Location spawn = abyssWorld.getSpawnLocation();
-            if (spawn.getY() <= 0) spawn.setY(abyssWorld.getHighestBlockYAt(spawn) + 1);
+            // Ajuste de altura seguro
+            int highestY = abyssWorld.getHighestBlockYAt(spawn.getBlockX(), spawn.getBlockZ());
+            if (highestY > -60) spawn.setY(highestY + 1);
+            else spawn.setY(0);
             
-            player.teleportAsync(spawn).thenAccept(success -> {
-                if (success) {
-                    player.sendMessage(ChatColor.DARK_GRAY + "Has descendido al Abismo Profundo...");
-                    player.playSound(player.getLocation(), Sound.BLOCK_SCULK_SHRIEKER_SHRIEK, 1.0f, 0.5f);
-                }
-            });
+            if (Main.isRunningFolia()) {
+                player.teleportAsync(spawn).thenAccept(success -> {
+                    if (success) playAbyssSound(player);
+                });
+            } else {
+                player.teleport(spawn);
+                playAbyssSound(player);
+            }
         } else {
-            player.sendMessage(ChatColor.RED + "El Abismo no está disponible actualmente en este software de servidor (Folia).");
+            player.sendMessage(ChatColor.RED + "Error: La dimensión del Abismo no se ha podido cargar.");
         }
+    }
+
+    private void playAbyssSound(Player player) {
+        player.sendMessage(ChatColor.DARK_GRAY + "Has descendido al Abismo Profundo...");
+        player.playSound(player.getLocation(), Sound.BLOCK_SCULK_SHRIEKER_SHRIEK, 1.0f, 0.5f);
     }
 
     public World getAbyssWorld() { return abyssWorld; }
 
     public void onAbyssSpawn(org.bukkit.event.entity.CreatureSpawnEvent event) {
         if (abyssWorld == null || !event.getLocation().getWorld().equals(abyssWorld)) return;
-        if (event.getSpawnReason() == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM) return;
-
-        Location loc = event.getLocation();
-        java.util.Random random = new java.util.Random();
-        if (random.nextInt(100) < 40) {
+        
+        // Bloquear todos los spawns naturales que no sean nuestros custom
+        if (event.getSpawnReason() != org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM) {
             event.setCancelled(true);
-            String[] deepDarkMobs = {"PaleParagon", "ArcaneEvoker", "SilentSeeker", "SculkParasite", "EchoArcher", "HollowGuard"};
-            String selected = deepDarkMobs[random.nextInt(deepDarkMobs.length)];
-            plugin.getNmsHandler().spawnNMSCustomEntity(selected, null, loc, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM);
+            
+            // Reemplazar aleatoriamente algunos spawns naturales con nuestros mobs
+            // Reducimos la probabilidad para no saturar, ya que cancelamos todo lo demás
+            Location loc = event.getLocation();
+            java.util.Random random = new java.util.Random();
+            
+            if (random.nextInt(100) < 15) { // 15% de probabilidad de reemplazo
+                String[] deepDarkMobs = {"SilentSeeker", "SculkParasite", "EchoArcher", "HollowGuard"};
+                String selected = deepDarkMobs[random.nextInt(deepDarkMobs.length)];
+                plugin.getNmsHandler().spawnNMSCustomEntity(selected, null, loc, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM);
+            }
+            return;
         }
     }
 }

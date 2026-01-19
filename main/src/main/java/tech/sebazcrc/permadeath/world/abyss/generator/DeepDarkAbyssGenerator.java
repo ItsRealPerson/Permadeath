@@ -13,7 +13,7 @@ public class DeepDarkAbyssGenerator extends ChunkGenerator {
     @Override
     public void generateNoise(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) {
         SimplexOctaveGenerator generator = new SimplexOctaveGenerator(worldInfo.getSeed(), 8);
-        generator.setScale(0.015D);
+        generator.setScale(0.02D); // Escala ajustada para cuevas menos anchas
 
         int minHeight = worldInfo.getMinHeight();
         int maxHeight = worldInfo.getMaxHeight();
@@ -24,12 +24,30 @@ public class DeepDarkAbyssGenerator extends ChunkGenerator {
                 int realZ = (chunkZ << 4) + z;
 
                 chunkData.setBlock(x, minHeight, z, Material.BEDROCK);
-                chunkData.setBlock(x, maxHeight - 1, z, Material.BEDROCK);
+                
+                // Techo de 10 capas de Bedrock (119 a 128)
+                for (int ty = 119; ty <= 128; ty++) {
+                    chunkData.setBlock(x, ty, z, Material.BEDROCK);
+                }
 
-                for (int y = minHeight + 1; y < maxHeight - 1; y++) {
-                    double noise = generator.noise(realX, y, realZ, 0.5D, 0.5D, true);
-                    if (noise > 0.15D) {
+                for (int y = minHeight + 1; y < 119; y++) {
+                    // Capa solida de Deepslate (-63 a -20)
+                    if (y >= -63 && y <= -20) {
                         chunkData.setBlock(x, y, z, Material.DEEPSLATE);
+                        continue; 
+                    }
+
+                    // Generación de cuevas conectadas (Túneles/Spaghetti)
+                    if (y > -20) {
+                        double noise = generator.noise(realX, y, realZ, 0.5D, 0.5D, true);
+                        
+                        // Usamos valor absoluto para crear "túneles" donde el ruido se acerca a 0.
+                        // Si Math.abs(noise) es bajo (ej < 0.15), es aire (cueva).
+                        // Si es alto, es roca. Esto garantiza conectividad.
+                        if (Math.abs(noise) >= 0.12D) { 
+                            chunkData.setBlock(x, y, z, Material.DEEPSLATE);
+                        }
+                        // Si es < 0.12, dejamos Aire (cueva túnel)
                     }
                 }
             }
@@ -46,17 +64,24 @@ public class DeepDarkAbyssGenerator extends ChunkGenerator {
                 int realX = (chunkX << 4) + x;
                 int realZ = (chunkZ << 4) + z;
 
-                for (int y = worldInfo.getMinHeight() + 1; y < worldInfo.getMaxHeight() - 1; y++) {
+                // Rango extendido hasta 128 (límite del techo)
+                for (int y = worldInfo.getMinHeight() + 1; y < 128; y++) {
                     Material current = chunkData.getType(x, y, z);
+                    
                     if (current == Material.DEEPSLATE) {
                         if (isExposed(chunkData, x, y, z)) {
                             double noise = sculkNoise.noise(realX, y, realZ, 0.5D, 0.5D, true);
-                            if (noise > 0.4D) {
+                            // Más Sculk: umbral reducido de 0.4 a -0.2
+                            if (noise > -0.2D) {
                                 chunkData.setBlock(x, y, z, Material.SCULK);
-                                if (random.nextInt(100) < 2) {
+                                
+                                // Decoración
+                                if (random.nextInt(100) < 5) { // 5% Catalizadores
                                     chunkData.setBlock(x, y + 1, z, Material.SCULK_CATALYST);
-                                } else if (random.nextInt(100) < 1) {
+                                } else if (random.nextInt(200) < 1) { // Reducido a 0.5% (1 en 200)
                                     chunkData.setBlock(x, y + 1, z, Material.SCULK_SHRIEKER);
+                                } else if (random.nextInt(100) < 10) {
+                                    chunkData.setBlock(x, y + 1, z, Material.SCULK_SENSOR);
                                 }
                             }
                         }

@@ -372,6 +372,14 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
             }
         }
 
+        // Efecto Darkness aleatorio en el Abismo
+        if (player.getWorld().getName().equalsIgnoreCase("pdc_the_abyss")) {
+            if (random.nextInt(100) < 5) { // 5% de probabilidad por segundo
+                int duration = 100 + random.nextInt(100); // 5 a 10 segundos
+                player.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, duration, 0));
+            }
+        }
+
         if (getDay() >= 40) {
             if (player.getWorld().hasStorm() && player.getGameMode() != GameMode.SPECTATOR) {
                 Location block = player.getWorld().getHighestBlockAt(player.getLocation()).getLocation();
