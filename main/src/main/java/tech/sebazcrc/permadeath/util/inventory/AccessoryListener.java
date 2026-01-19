@@ -19,8 +19,7 @@ public class AccessoryListener implements Listener {
     public void onInteract(PlayerInteractEvent e) {
         if (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
             ItemStack item = e.getItem();
-            if (item != null && item.getType() == Material.NETHER_STAR && item.hasItemMeta() && 
-                item.getItemMeta().getDisplayName().contains("Menú de Accesorios")) {
+            if (isAccessoryMenu(item)) {
                 AccessoryInventory.open(e.getPlayer());
                 e.setCancelled(true);
             }
@@ -30,8 +29,7 @@ public class AccessoryListener implements Listener {
     @EventHandler
     public void onDrop(PlayerDropItemEvent e) {
         ItemStack item = e.getItemDrop().getItemStack();
-        if (item.getType() == Material.NETHER_STAR && item.hasItemMeta() && 
-            item.getItemMeta().getDisplayName().contains("Menú de Accesorios")) {
+        if (isAccessoryMenu(item)) {
             e.setCancelled(true);
         }
     }
@@ -41,8 +39,7 @@ public class AccessoryListener implements Listener {
         ItemStack itemInClick = e.getCurrentItem();
         
         // Bloquear movimiento del item de menú
-        if (itemInClick != null && itemInClick.getType() == Material.NETHER_STAR && itemInClick.hasItemMeta() && 
-            itemInClick.getItemMeta().getDisplayName().contains("Menú de Accesorios")) {
+        if (isAccessoryMenu(itemInClick)) {
             e.setCancelled(true);
             return;
         }
@@ -101,7 +98,7 @@ public class AccessoryListener implements Listener {
                 ItemStack itemToPlace = null;
                 if (e.getClick().isShiftClick()) {
                     if (accessoryIndex <= 2) {
-                        restorePlaceholder(e.getInventory(), slot, accessoryIndex);
+                        restorePlaceholder((Player) e.getWhoClicked(), e.getInventory(), slot, accessoryIndex);
                     }
                 } else {
                     itemToPlace = e.getCursor();
@@ -109,7 +106,7 @@ public class AccessoryListener implements Listener {
                     // Si está sacando un item
                     if ((itemToPlace == null || itemToPlace.getType() == Material.AIR) && (itemInClick != null && itemInClick.getType() != Material.AIR)) {
                         if (accessoryIndex <= 2) {
-                            restorePlaceholder(e.getInventory(), slot, accessoryIndex);
+                            restorePlaceholder((Player) e.getWhoClicked(), e.getInventory(), slot, accessoryIndex);
                         }
                     }
                 }
@@ -174,15 +171,21 @@ public class AccessoryListener implements Listener {
         }
     }
 
-    private void restorePlaceholder(org.bukkit.inventory.Inventory inv, int slot, int index) {
-        org.bukkit.Bukkit.getScheduler().runTask(tech.sebazcrc.permadeath.Main.getInstance(), () -> {
+    private void restorePlaceholder(org.bukkit.entity.Player player, org.bukkit.inventory.Inventory inv, int slot, int index) {
+        Runnable task = () -> {
             Material mat = Material.BROWN_STAINED_GLASS_PANE;
             String name = "&6Slot de Orbe de Vida";
             if (index == 1) { mat = Material.BLUE_STAINED_GLASS_PANE; name = "&bSlot de Medalla de Agua"; }
             else if (index == 2) { mat = Material.LIGHT_BLUE_STAINED_GLASS_PANE; name = "&3Slot de Reliquia"; }
             
             inv.setItem(slot, new tech.sebazcrc.permadeath.util.lib.ItemBuilder(mat).setDisplayName(TextUtils.format(name)).build());
-        });
+        };
+
+        if (tech.sebazcrc.permadeath.Main.isRunningFolia()) {
+            player.getScheduler().run(tech.sebazcrc.permadeath.Main.getInstance(), t -> task.run(), null);
+        } else {
+            org.bukkit.Bukkit.getScheduler().runTask(tech.sebazcrc.permadeath.Main.getInstance(), task);
+        }
     }
 
     @EventHandler
@@ -190,6 +193,12 @@ public class AccessoryListener implements Listener {
         if (e.getView().getTitle().equals(TextUtils.format("&8Inventario de Accesorios"))) {
             AccessoryInventory.save((Player) e.getPlayer(), e.getInventory());
         }
+    }
+
+    private boolean isAccessoryMenu(ItemStack item) {
+        if (item == null || item.getType() != Material.NETHER_STAR) return false;
+        if (!item.hasItemMeta() || !item.getItemMeta().hasDisplayName()) return false;
+        return item.getItemMeta().getDisplayName().contains("Menú de Accesorios");
     }
 }
 

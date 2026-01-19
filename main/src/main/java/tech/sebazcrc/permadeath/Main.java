@@ -13,6 +13,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.*;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
@@ -231,25 +232,55 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
                 }
                 DateManager.getInstance().tick();
                 registerListeners();
+
+                if (Bukkit.getOnlinePlayers().size() >= 1 && SPEED_RUN_MODE) {
+                    playTime++;
+
+                    if (playTime % (3600) == 0) {
+                        Bukkit.broadcastMessage(prefix + TextUtils.format("&cFelicitaciones, han avanzado a la hora número: " + getDay()));
+                        for (Player player : Bukkit.getOnlinePlayers()) {
+                            player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 100.0F, 100.0F);
+                        }
+                    }
+                }
+
                 tickEvents();
                 if (!runningFolia) {
                     tickPlayers();
                 }
                 tickWorlds();
+
+                // Chequeo constante del evento de Orbe (como en master)
+                if (getDay() >= 60 && !getConfig().getBoolean("DontTouch.Event.LifeOrbEnded") && !getOrbEvent().isRunning()) {
+                    if (SPEED_RUN_MODE) orbEvent.setTimeLeft(60 * 8);
+                    orbEvent.setRunning(true);
+                    Bukkit.getOnlinePlayers().forEach(orbEvent::addPlayer);
+                }
             }
         };
 
         if (runningFolia) {
             Bukkit.getGlobalRegionScheduler().runAtFixedRate(this, t -> task.run(), 1, 20L);
-            // En Folia, usamos el GlobalRegionScheduler para revisar jugadores nuevos periódicamente
+            
+            // Tarea periódica para asegurar que todos los jugadores tengan su scheduler de tick activo
             Bukkit.getGlobalRegionScheduler().runAtFixedRate(this, t -> {
                 for (Player p : Bukkit.getOnlinePlayers()) {
-                    if (p.getPersistentDataContainer().has(new NamespacedKey(this, "ticking"), PersistentDataType.BYTE)) continue;
+                    // Usamos una metadata TEMPORAL (en memoria) para saber si ya le asignamos la tarea
+                    if (p.hasMetadata("pdc_ticking")) continue;
                     
-                    p.getScheduler().runAtFixedRate(this, taskPlayer -> tickPlayer(p), null, 1, 20L);
-                    p.getPersistentDataContainer().set(new NamespacedKey(this, "ticking"), PersistentDataType.BYTE, (byte) 1);
+                    // Programar la tarea en el scheduler de la entidad (hilo correcto para inventario)
+                    p.getScheduler().runAtFixedRate(this, taskPlayer -> {
+                        if (!p.isOnline()) {
+                            taskPlayer.cancel(); // Cancelar si se desconecta
+                            return;
+                        }
+                        // if (DEBUG) Bukkit.getLogger().info("[Folia] Ticking player: " + p.getName());
+                        tickPlayer(p);
+                    }, null, 1, 20L);
+                    
+                    p.setMetadata("pdc_ticking", new FixedMetadataValue(this, true));
                 }
-            }, 20L, 100L);
+            }, 20L, 40L); // Revisar cada 2 segundos
         } else {
             Bukkit.getScheduler().runTaskTimer(this, task, 0, 20L);
         }

@@ -114,11 +114,14 @@ public class DateManager {
     }
 
     public long getDay() {
+        long d;
         if (Main.SPEED_RUN_MODE) {
-            return instance.getPlayTime() / 3600;
+            d = instance.getPlayTime() / 3600;
         } else {
-            return startDate.until(currentDate, ChronoUnit.DAYS);
+            d = startDate.until(currentDate, ChronoUnit.DAYS);
         }
+        // if (Main.DEBUG) Bukkit.getLogger().info("Current Day: " + d);
+        return d;
     }
 
     public void setNewDate(String value) {

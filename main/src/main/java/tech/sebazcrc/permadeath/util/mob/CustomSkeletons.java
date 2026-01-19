@@ -29,12 +29,10 @@ public class CustomSkeletons implements Listener {
 
         if (plugin.getDay() >= 60 && s.getPersistentDataContainer().has(new NamespacedKey(plugin, "demon_skeleton"), PersistentDataType.BYTE)) {
 
-            if (e.getEntity() != null) {
-
+            if (e.getHitEntity() != null) {
                 Entity h = e.getHitEntity();
                 h.getWorld().createExplosion(h.getLocation(), 3f, true, true, s);
             } else if (e.getHitBlock() != null) {
-
                 e.getEntity().getWorld().createExplosion(e.getHitBlock().getLocation(), 3f, true, true, s);
             }
         }

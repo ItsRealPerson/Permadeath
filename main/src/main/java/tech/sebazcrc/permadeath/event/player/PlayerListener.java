@@ -1071,6 +1071,20 @@ public class PlayerListener implements Listener {
         }
     }
 
+    @EventHandler
+    public void onPlayerRespawn(PlayerRespawnEvent e) {
+        Player p = e.getPlayer();
+        
+        // Restore Accessory Menu
+        ItemStack menu = PermadeathItems.createAccessoryTrigger();
+        if (!p.getInventory().contains(menu)) {
+            p.getInventory().setItem(8, menu);
+        }
+        
+        // Update slots immediately
+        runTaskLaterEntity(p, () -> PermadeathItems.slotBlock(p), 5L);
+    }
+
     public ItemStack[] clearMatrix() {
 
         return new ItemStack[]{
