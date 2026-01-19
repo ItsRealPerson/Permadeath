@@ -687,8 +687,8 @@ public class PlayerListener implements Listener {
                     if (e.getItem().getItemMeta().getDisplayName().equalsIgnoreCase(TextUtils.format("&6Super Golden Apple +"))) {
                         Player p = e.getPlayer();
                         int fmin = 60 * 5;
-                        if (!p.hasPotionEffect(PotionEffectType.HEALTH_BOOST)) {
-                            p.addPotionEffect(new PotionEffect(PotionEffectType.HEALTH_BOOST, 20 * fmin, 0));
+                        if (!p.hasPotionEffect(PotionEffectType.INSTANT_HEALTHTH_BOOST)) {
+                            p.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_HEALTHTH_BOOST, 20 * fmin, 0));
                         }
 
                     } else if (e.getItem().getItemMeta().getDisplayName().equalsIgnoreCase(TextUtils.format("&6Hyper Golden Apple +"))) {
@@ -719,8 +719,8 @@ public class PlayerListener implements Listener {
                     } else if (e.getItem().getItemMeta().getDisplayName().equalsIgnoreCase(TextUtils.format("&6Super Golden Apple +"))) {
                         Player p = e.getPlayer();
                         int fmin = 60 * 5;
-                        if (!p.hasPotionEffect(PotionEffectType.HEALTH_BOOST)) {
-                            p.addPotionEffect(new PotionEffect(PotionEffectType.HEALTH_BOOST, 20 * fmin, 0));
+                        if (!p.hasPotionEffect(PotionEffectType.INSTANT_HEALTHTH_BOOST)) {
+                            p.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_HEALTHTH_BOOST, 20 * fmin, 0));
                         }
                     }
                 }
@@ -1296,6 +1296,7 @@ public class PlayerListener implements Listener {
         }
     }
 }
+
 
 
 

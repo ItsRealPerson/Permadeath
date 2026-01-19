@@ -79,3 +79,4 @@ public class DeepDarkAbyssGenerator extends ChunkGenerator {
     @Override
     public boolean shouldGenerateCaves() { return true; }
 }
+

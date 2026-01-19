@@ -277,7 +277,7 @@ public class PDCCommand implements CommandExecutor {
             Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&d&l" + target.getName() + " ha recibido la bendición!"));
         } else if (args[1].equalsIgnoreCase("maldicion")) {
             target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 20 * 60 * 60 * 12, 0));
-            target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20 * 60 * 60 * 12, 0));
+            target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESSNESS, 20 * 60 * 60 * 12, 0));
             Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&d&l" + target.getName() + " ha recibido la maldición!"));
         }
     }
@@ -356,6 +356,7 @@ public class PDCCommand implements CommandExecutor {
         }
     }
 }
+
 
 
 

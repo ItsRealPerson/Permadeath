@@ -1,0 +1,153 @@
+[11:01:58] [ServerMain/INFO]: [bootstrap] Running Java 21 (OpenJDK 64-Bit Server VM 21.0.3+9-LTS; Amazon.com Inc. Corretto-21.0.3.9.1) on Windows 11 10.0 (amd64)
+[11:01:58] [ServerMain/INFO]: [bootstrap] Loading Folia 1.21.8-6-ver/1.21.8@612d9bd (2025-09-30T14:11:15Z) for Minecraft 1.21.8
+[11:02:00] [ServerMain/INFO]: [PluginInitializerManager] Initializing plugins...
+[11:02:00] [ServerMain/INFO]: [PluginInitializerManager] Initialized 2 plugins
+[11:02:00] [ServerMain/INFO]: [PluginInitializerManager] Bukkit plugins (2):
+ - Permadeath (1.3), WorldEdit (7.3.19-SNAPSHOT+33dc398-Folia)
+[11:02:06] [ServerMain/INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
+[11:02:09] [ServerMain/INFO]: Loaded 1407 recipes
+[11:02:09] [ServerMain/INFO]: Loaded 1520 advancements
+[11:02:09] [ServerMain/INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Initialising converters for DataConverter...
+[11:02:09] [ServerMain/INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Finished initialising converters for DataConverter in 384,4ms
+[11:02:09] [Server thread/INFO]: Starting minecraft server version 1.21.8
+[11:02:09] [Server thread/INFO]: Loading properties
+[11:02:09] [Server thread/INFO]: This server is running Folia version 1.21.8-6-ver/1.21.8@612d9bd (2025-09-30T14:11:15Z) (Implementing API version 1.21.8-R0.1-SNAPSHOT)
+[11:02:09] [Server thread/INFO]: [spark] This server bundles the spark profiler. For more information please visit https://docs.papermc.io/paper/profiling
+[11:02:09] [Server thread/INFO]: Server Ping Player Sample Count: 12
+[11:02:09] [Server thread/INFO]: Using 4 threads for Netty based IO
+[11:02:10] [Server thread/INFO]: [MoonriseCommon] Paper is using 3 worker threads, 1 I/O threads
+[11:02:10] [Server thread/INFO]: [ChunkTaskScheduler] Chunk system is using population gen parallelism: true
+[11:02:10] [Server thread/INFO]: [io.papermc.paper.threadedregions.TickRegions] Regionised ticking is enabled with 1 tick threads
+[11:02:10] [Server thread/INFO]: Default game type: SURVIVAL
+[11:02:10] [Server thread/INFO]: Generating keypair
+[11:02:10] [Server thread/INFO]: Starting Minecraft server on *:25565
+[11:02:11] [Server thread/INFO]: Using default channel type
+[11:02:11] [Server thread/INFO]: Paper: Using Java compression from Velocity.
+[11:02:11] [Server thread/INFO]: Paper: Using Java cipher from Velocity.
+[11:02:11] [Server thread/INFO]: [WorldEdit] Loading server plugin WorldEdit v7.3.19-SNAPSHOT+33dc398-Folia
+[11:02:12] [Server thread/INFO]: Got request to register class com.sk89q.worldedit.bukkit.BukkitServerInterface with WorldEdit [com.sk89q.worldedit.extension.platform.PlatformManager@159ff578]
+[11:02:12] [Server thread/INFO]: [Permadeath] Loading server plugin Permadeath v1.3
+[11:02:12] [Server thread/INFO]: [Permadeath] Intentando cargar NMSHandler: tech.sebazcrc.permadeath.nms.v1_21_R3.NMSHandlerImpl
+[11:02:12] [Server thread/INFO]: [Permadeath] NMSHandler cargado exitosamente.
+[11:02:12] [Server thread/INFO]: Server permissions file permissions.yml is empty, ignoring it
+[11:02:12] [Server thread/INFO]: [WorldEdit] Enabling WorldEdit v7.3.19-SNAPSHOT+33dc398-Folia
+[11:02:12] [Server thread/INFO]: Registering commands with com.sk89q.worldedit.bukkit.BukkitServerInterface
+[11:02:12] [Server thread/INFO]: WEPIF: Using the Bukkit Permissions API.
+[11:02:13] [Server thread/WARN]: This version of WorldEdit has not been tested with the current Minecraft version.
+While it may work, there might be unexpected issues.
+It is recommended to use a version of WorldEdit that supports your Minecraft version.
+For more information, see https://worldedit.enginehub.org/en/latest/faq/#bukkit-adapters
+
+[11:02:13] [Server thread/INFO]: Using com.sk89q.worldedit.bukkit.adapter.impl.v1_21_6.PaperweightAdapter as the Bukkit adapter
+[11:02:15] [Server thread/INFO]: [Permadeath] Enabling Permadeath v1.3
+[11:02:15] [Server thread/INFO]: [Permadeath] Servidor Folia confirmado. Usando schedulers regionales.
+[11:02:15] [Server thread/WARN]: **** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!
+[11:02:15] [Server thread/WARN]: The server will make no attempt to authenticate usernames. Beware.
+[11:02:15] [Server thread/WARN]: While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.
+[11:02:15] [Server thread/WARN]: To change this, set "online-mode" to "true" in the server.properties file.
+[11:02:15] [Server thread/INFO]: Preparing level "world"
+[11:02:16] [Server thread/INFO]: Preparing start region for dimension minecraft:overworld
+[11:02:16] [Server thread/INFO]: Time elapsed: 5 ms
+[11:02:16] [Server thread/INFO]: Preparing start region for dimension minecraft:the_nether
+[11:02:16] [Server thread/INFO]: Time elapsed: 0 ms
+[11:02:16] [Server thread/INFO]: Preparing start region for dimension minecraft:the_end
+[11:02:16] [Server thread/INFO]: Time elapsed: 0 ms
+[11:02:16] [Server thread/INFO]: [spark] The spark plugin has been preferred but was not loaded. The bundled spark profiler will enabled instead.
+[11:02:16] [Server thread/INFO]: [spark] The spark profiler will not be enabled because it is currently disabled in the configuration.
+[11:02:16] [Server thread/INFO]: Done preparing level "world" (1.048s)
+[11:02:16] [Server thread/INFO]: Done (19.170s)! For help, type "help"
+[11:02:16] [Thread-7/INFO]: [Permadeath] Iniciando carga asíncrona de pdc_the_abyss
+[11:02:17] [Region Scheduler Thread #0/INFO]: Initialising world 'world' before it can be ticked...
+[11:02:17] [Region Scheduler Thread #0/INFO]: Initialised world 'world'
+[11:02:18] [Region Scheduler Thread #0/INFO]: Initialising world 'world_nether' before it can be ticked...
+[11:02:18] [Region Scheduler Thread #0/INFO]: Initialised world 'world_nether'
+[11:02:18] [Region Scheduler Thread #0/INFO]: Initialising world 'world_the_end' before it can be ticked...
+[11:02:18] [Region Scheduler Thread #0/INFO]: Initialised world 'world_the_end'
+[11:02:18] [Region Scheduler Thread #0/INFO]: Permadeath ➤ No se ha encontrado una librería JDA, deberás instalar una en caso de querer utilizar un bot de Discord.
+[11:02:18] [Region Scheduler Thread #0/INFO]: Descarga aquí: https://www.spigotmc.org/resources/permadeath-%E2%98%A0%EF%B8%8F.112343/
+[11:02:18] [Region Scheduler Thread #0/INFO]: Si no puedes descargarlo allí, únete a este Discord y te daremos acceso al enlace: https://discord.gg/8evPbuxPke
+[11:02:18] [Region Scheduler Thread #0/INFO]: ------------------------------------------
+[11:02:18] [Region Scheduler Thread #0/INFO]:              PERMADEATH
+[11:02:18] [Region Scheduler Thread #0/INFO]:      - Versión: 1.3
+[11:02:18] [Region Scheduler Thread #0/INFO]:      - Versión del Servidor: v1.21
+[11:02:18] [Region Scheduler Thread #0/INFO]: ------------------------------------------
+[11:02:18] [Region Scheduler Thread #0/INFO]:  >> INFORME DE ESTADO
+[11:02:18] [Region Scheduler Thread #0/INFO]: > Estado de mundos: Overworld: world End: world_the_end
+[11:02:18] [Region Scheduler Thread #0/INFO]:     > End: world_the_end
+[11:02:18] [Region Scheduler Thread #0/INFO]:     > Overworld: world
+[11:02:18] [Region Scheduler Thread #0/INFO]: > Estado de Compatibilidad: Compatible
+[11:02:18] [Region Scheduler Thread #0/INFO]: > Software: Folia (Experimental Support)
+[11:02:18] [Region Scheduler Thread #0/INFO]: > Cambios:
+[11:02:18] [Region Scheduler Thread #0/INFO]: >   Días disponibles: 1-60
+[11:02:18] [Folia Async Scheduler Thread #0/INFO]: Permadeath ➤ Versión del plugin: Versión más reciente instalada.
+[11:02:21] [Thread-6/INFO]: [Permadeath] Iniciando carga asíncrona de pdc_the_abyss
+[11:02:23] [User Authenticator #0/INFO]: UUID of player ItsRealPerson is ca49ac02-900a-37b2-a889-016832a3d920
+[11:02:23] [Region Scheduler Thread #0/INFO]: ItsRealPerson se ha unido al servidor.
+[11:02:23] [Region Scheduler Thread #0/INFO]: ItsRealPerson[/127.0.0.1:55792] logged in with entity id 127 at ([world]-47.5, 79.40760114593647, 70.5)
+[11:02:35] [Region Scheduler Thread #0/INFO]: ItsRealPerson issued server command: /pdc abyss force
+[11:02:35] [Thread-9/INFO]: [Permadeath] Iniciando carga asíncrona de pdc_the_abyss
+[11:02:57] [Region Scheduler Thread #0/INFO]: Stopping the server
+[11:02:57] [Region shutdown thread/INFO]: [RegionShutdownThread] Awaiting scheduler termination for 60s...
+[11:02:57] [Region shutdown thread/INFO]: [RegionShutdownThread] Scheduler halted
+[11:02:57] [Region shutdown thread/INFO]: Stopping server
+[11:02:57] [Region shutdown thread/INFO]: [Permadeath] Disabling Permadeath v1.3
+[11:02:57] [Region shutdown thread/INFO]: ------------------------------------------
+[11:02:57] [Region shutdown thread/INFO]:              PERMADEATH
+[11:02:57] [Region shutdown thread/INFO]:      - Desactivando el Plugin.
+[11:02:57] [Region shutdown thread/INFO]: ------------------------------------------
+[11:02:57] [Region shutdown thread/INFO]: [WorldEdit] Disabling WorldEdit v7.3.19-SNAPSHOT+33dc398-Folia
+[11:02:57] [Region shutdown thread/INFO]: Unregistering com.sk89q.worldedit.bukkit.BukkitServerInterface from WorldEdit
+[11:02:57] [Region shutdown thread/INFO]: [RegionShutdownThread] Halting chunk systems...
+[11:02:57] [Region shutdown thread/INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'world'
+[11:02:57] [Region shutdown thread/INFO]: [ChunkHolderManager] Halted chunk system for world 'world'
+[11:02:57] [Region shutdown thread/INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'world_nether'
+[11:02:57] [Region shutdown thread/INFO]: [ChunkHolderManager] Halted chunk system for world 'world_nether'
+[11:02:57] [Region shutdown thread/INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'world_the_end'
+[11:02:57] [Region shutdown thread/INFO]: [ChunkHolderManager] Halted chunk system for world 'world_the_end'
+[11:02:57] [Region shutdown thread/INFO]: [RegionShutdownThread] Halted chunk systems
+[11:02:57] [Region shutdown thread/INFO]: [RegionShutdownThread] Finishing pending teleports...
+[11:02:57] [Region shutdown thread/INFO]: [RegionShutdownThread] Finished pending teleports
+[11:02:57] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving all worlds
+[11:02:57] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving world data for world 'world'
+[11:02:57] [Region shutdown thread/INFO]: [RegionShutdownThread] Closing player inventories...
+[11:02:57] [Region shutdown thread/INFO]: [RegionShutdownThread] Closed player inventories
+[11:02:57] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving chunks...
+[11:02:57] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving chunks around region around chunk [-3, 4] in world 'world'
+[11:02:58] [Region shutdown thread/INFO]: [ChunkHolderManager] Saved 626 block chunks, 625 entity chunks, 0 poi chunks in world 'world' in 0,72s
+[11:02:58] [Region shutdown thread/INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'world'
+[11:02:58] [Region shutdown thread/INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'world'
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved chunks
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving level data...
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved level data
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved world data for world 'world'
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving world data for world 'world_nether'
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Closing player inventories...
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Closed player inventories
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving chunks...
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving chunks around region around chunk [0, 0] in world 'world_nether'
+[11:02:58] [Region shutdown thread/INFO]: [ChunkHolderManager] Saved 49 block chunks, 49 entity chunks, 0 poi chunks in world 'world_nether' in 0,04s
+[11:02:58] [Region shutdown thread/INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'world_nether'
+[11:02:58] [Region shutdown thread/INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'world_nether'
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved chunks
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving level data...
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved level data
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved world data for world 'world_nether'
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving world data for world 'world_the_end'
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Closing player inventories...
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Closed player inventories
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving chunks...
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving chunks around region around chunk [0, 0] in world 'world_the_end'
+[11:02:58] [Region shutdown thread/INFO]: [ChunkHolderManager] Saved 49 block chunks, 49 entity chunks, 0 poi chunks in world 'world_the_end' in 0,03s
+[11:02:58] [Region shutdown thread/INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'world_the_end'
+[11:02:58] [Region shutdown thread/INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'world_the_end'
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved chunks
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving level data...
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved level data
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved world data for world 'world_the_end'
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved all worlds
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving all player data...
+[11:02:58] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved all player data
+[11:02:58] [Region shutdown thread/INFO]: Waiting for all RegionFile I/O tasks to complete...
+[11:02:58] [Region shutdown thread/INFO]: All RegionFile I/O tasks to complete
+[11:02:58] [Region shutdown thread/INFO]: [MoonriseCommon] Awaiting termination of worker pool for up to 60s...
+[11:02:58] [Region shutdown thread/INFO]: [MoonriseCommon] Awaiting termination of I/O pool for up to 60s...
