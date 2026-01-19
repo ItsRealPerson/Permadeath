@@ -16,7 +16,7 @@ import org.bukkit.craftbukkit.v1_20_R1.entity.CraftPlayer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import tech.sebazcrc.permadeath.util.interfaces.NMSAccessor;
+import tech.sebazcrc.permadeath.api.interfaces.NMSAccessor;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -134,3 +134,4 @@ public class NMSAccessorImpl implements NMSAccessor {
         targets.removeAllGoals((goal) -> true);
     }
 }
+

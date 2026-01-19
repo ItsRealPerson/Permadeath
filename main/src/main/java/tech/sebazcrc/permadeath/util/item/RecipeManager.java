@@ -9,9 +9,12 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.RecipeChoice;
+import org.bukkit.inventory.SmithingTransformRecipe;
 import tech.sebazcrc.permadeath.Main;
 import tech.sebazcrc.permadeath.util.item.InfernalNetherite;
 import tech.sebazcrc.permadeath.util.item.PermadeathItems;
+import tech.sebazcrc.permadeath.util.item.NetheriteArmor;
 import tech.sebazcrc.permadeath.util.lib.ItemBuilder;
 import tech.sebazcrc.permadeath.util.TextUtils;
 
@@ -30,9 +33,46 @@ public class RecipeManager {
             registerSuperGAP();
             registerShulkerUnCraft();
             registerEndRel();
+            registerSmithingArmor();
         } catch (IllegalStateException ex) {
             // Ignorar, la receta fue registrada antes probablemente
         }
+    }
+
+    private void registerSmithingArmor() {
+        registerAncestralFragment();
+        // Recetas para las 4 piezas
+        registerSingleSmithing("helmet", Material.NETHERITE_HELMET, NetheriteArmor.craftNetheriteHelmet());
+        registerSingleSmithing("chestplate", Material.NETHERITE_CHESTPLATE, NetheriteArmor.craftNetheriteChest());
+        registerSingleSmithing("leggings", Material.NETHERITE_LEGGINGS, NetheriteArmor.craftNetheriteLegs());
+        registerSingleSmithing("boots", Material.NETHERITE_BOOTS, NetheriteArmor.craftNetheriteBoots());
+    }
+
+    private void registerAncestralFragment() {
+        ItemStack s = NetheriteArmor.craftAncestralFragment();
+        NamespacedKey key = new NamespacedKey(instance, "ancestral_fragment");
+        ShapedRecipe recipe = new ShapedRecipe(key, s);
+        recipe.shape("DDD", "DND", "DDD");
+        recipe.setIngredient('D', Material.DIAMOND_BLOCK);
+        recipe.setIngredient('N', Material.NETHERITE_INGOT);
+        Bukkit.addRecipe(recipe);
+    }
+
+    private void registerSingleSmithing(String type, Material baseMat, ItemStack result) {
+        NamespacedKey key = new NamespacedKey(instance, "netherite_" + type + "_smithing");
+        
+        ItemStack template = NetheriteArmor.craftTemplate(type);
+        ItemStack addition = NetheriteArmor.craftAncestralFragment();
+
+        SmithingTransformRecipe recipe = new SmithingTransformRecipe(
+                key,
+                result,
+                new RecipeChoice.ExactChoice(template),
+                new RecipeChoice.MaterialChoice(baseMat),
+                new RecipeChoice.ExactChoice(addition)
+        );
+
+        Bukkit.addRecipe(recipe);
     }
 
     public void registerD50Recipes() {
@@ -153,7 +193,7 @@ public class RecipeManager {
 
     private void registerHyperGAP() {
 
-        ItemStack s = new ItemBuilder(Material.GOLDEN_APPLE, 1).setDisplayName(TextUtils.format("&6Hyper Golden Apple +")).addEnchant(Enchantment.ARROW_INFINITE, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS).build();
+        ItemStack s = new ItemBuilder(Material.GOLDEN_APPLE, 1).setDisplayName(TextUtils.format("&6Hyper Golden Apple +")).addEnchant(Enchantment.INFINITY, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS).build();
         String id = "hyper_golden_apple";
         NamespacedKey key = new NamespacedKey(instance, id);
         ShapedRecipe recipe = new ShapedRecipe(key, s);
@@ -169,7 +209,7 @@ public class RecipeManager {
 
     private void registerSuperGAP() {
 
-        ItemStack s = new ItemBuilder(Material.GOLDEN_APPLE, 1).setDisplayName(TextUtils.format("&6Super Golden Apple +")).addEnchant(Enchantment.ARROW_INFINITE, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS).build();
+        ItemStack s = new ItemBuilder(Material.GOLDEN_APPLE, 1).setDisplayName(TextUtils.format("&6Super Golden Apple +")).addEnchant(Enchantment.INFINITY, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS).build();
 
         NamespacedKey key = new NamespacedKey(instance, "super_golden_apple");
         ShapedRecipe recipe = new ShapedRecipe(key, s);
@@ -198,3 +238,11 @@ public class RecipeManager {
         instance.getServer().addRecipe(recipe);
     }
 }
+
+
+
+
+
+
+
+

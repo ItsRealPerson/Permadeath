@@ -10,7 +10,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.List;
 import java.util.Map;
 
-public class ItemBuilder {
+public class ItemBuilder{
     protected ItemStack is;
 
     protected ItemMeta im;
@@ -104,3 +104,11 @@ public class ItemBuilder {
         return this.is;
     }
 }
+
+
+
+
+
+
+
+

@@ -18,7 +18,7 @@ public class UpdateChecker {
     }
 
     public void getVersion(final Consumer<String> consumer) {
-        Bukkit.getScheduler().runTaskAsynchronously(this.plugin, () -> {
+        Runnable checkTask = () -> {
             try (InputStream inputStream = new URL("https://api.spigotmc.org/legacy/update.php?resource=" + Utils.RESOURCE_ID).openStream(); Scanner scanner = new Scanner(inputStream)) {
                 if (scanner.hasNext()) {
                     consumer.accept(scanner.next());
@@ -26,6 +26,19 @@ public class UpdateChecker {
             } catch (IOException exception) {
                 this.hasInternetConnection = false;
             }
-        });
+        };
+
+        if (tech.sebazcrc.permadeath.Main.isRunningFolia()) {
+            Bukkit.getAsyncScheduler().runNow(this.plugin, t -> checkTask.run());
+        } else {
+            Bukkit.getScheduler().runTaskAsynchronously(this.plugin, checkTask);
+        }
     }
 }
+
+
+
+
+
+
+

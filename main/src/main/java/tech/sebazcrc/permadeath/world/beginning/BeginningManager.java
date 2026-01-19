@@ -40,9 +40,22 @@ public class BeginningManager implements Listener {
         this.beginningWorld = null;
         this.data = main.getBeData();
 
+        main.getServer().getPluginManager().registerEvents(this, main);
+        
+        // Intentar carga inmediata
         if (main.getDay() >= 40) {
+            Bukkit.getConsoleSender().sendMessage(ChatColor.AQUA + "[Permadeath] Día >= 40 detectado. Iniciando carga de 'pdc_the_beginning'...");
             generateWorld();
-            main.getServer().getPluginManager().registerEvents(this, main);
+        } else {
+            Bukkit.getConsoleSender().sendMessage(ChatColor.GRAY + "[Permadeath] 'pdc_the_beginning' no se cargará (Día actual: " + main.getDay() + ", Requerido: 40)");
+        }
+    }
+
+    @EventHandler
+    public void onServerLoad(org.bukkit.event.server.ServerLoadEvent e) {
+        if (main.getDay() >= 40 && this.beginningWorld == null) {
+            Bukkit.getConsoleSender().sendMessage(ChatColor.AQUA + "[Permadeath] ServerLoadEvent detectado. Reintentando carga de 'pdc_the_beginning'...");
+            generateWorld();
         }
     }
 
@@ -51,20 +64,53 @@ public class BeginningManager implements Listener {
     }
 
     private void generateWorld() {
-
-        if (Bukkit.getWorld("pdc_the_beginning") == null) {
-            WorldCreator creator = new WorldCreator("pdc_the_beginning");
-            creator.environment(World.Environment.THE_END);
-            creator.generator(new BeginningGenerator());
-            creator.generateStructures(false);
-            this.beginningWorld = creator.createWorld();
-            if (main.getConfig().getBoolean("Toggles.Doble-Mob-Cap")) {
-                beginningWorld.setMonsterSpawnLimit(140);
-            }
-            beginningWorld.setGameRule(GameRule.MOB_GRIEFING, false);
-        } else {
+        if (this.beginningWorld != null) return;
+        
+        if (Bukkit.getWorld("pdc_the_beginning") != null) {
             this.beginningWorld = Bukkit.getWorld("pdc_the_beginning");
+            if (Main.isRunningFolia()) Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] 'pdc_the_beginning' vinculado con éxito.");
+            setupWorldDefaults();
+            return;
         }
+
+        if (Main.isRunningFolia()) {
+            Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[Permadeath] 'pdc_the_beginning' no está cargado. Intentando carga dinámica...");
+            
+            try {
+                WorldCreator creator = new WorldCreator("pdc_the_beginning");
+                creator.environment(World.Environment.THE_END);
+                creator.generator(new BeginningGenerator());
+                creator.generateStructures(false);
+                
+                this.beginningWorld = Bukkit.createWorld(creator);
+                if (this.beginningWorld != null) {
+                    Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] 'pdc_the_beginning' cargado dinámicamente.");
+                    setupWorldDefaults();
+                }
+            } catch (Throwable t) {
+                Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[Permadeath] Error de Folia: " + t.getMessage());
+                
+                // Si falla y no está en bukkit.yml, preparamos para el siguiente reinicio
+                main.setupFoliaWorldConfig(null);
+                Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[Permadeath] Si el error persiste, REINICIA el servidor.");
+            }
+            return;
+        }
+
+        WorldCreator creator = new WorldCreator("pdc_the_beginning");
+        creator.environment(World.Environment.THE_END);
+        creator.generator(new BeginningGenerator());
+        creator.generateStructures(false);
+        this.beginningWorld = creator.createWorld();
+        setupWorldDefaults();
+    }
+
+    private void setupWorldDefaults() {
+        if (beginningWorld == null) return;
+        if (main.getConfig().getBoolean("Toggles.Doble-Mob-Cap")) {
+            beginningWorld.setMonsterSpawnLimit(140);
+        }
+        beginningWorld.setGameRule(GameRule.MOB_GRIEFING, false);
     }
 
     public void closeBeginning() {
@@ -79,7 +125,7 @@ public class BeginningManager implements Listener {
 
     @EventHandler
     public void onPlayerPortal(PlayerPortalEvent e) {
-        if (main.isRunningPaperSpigot()) {
+        if (main.isRunningPaperSpigot() || beginningWorld == null) {
             return;
         }
         Player p = e.getPlayer();
@@ -110,7 +156,7 @@ public class BeginningManager implements Listener {
 
         Player p = e.getPlayer();
 
-        if (e.getCause() != PlayerTeleportEvent.TeleportCause.END_GATEWAY) return;
+        if (e.getCause() != PlayerTeleportEvent.TeleportCause.END_GATEWAY || beginningWorld == null) return;
 
         if (isClosed()) {
             e.setCancelled(true);
@@ -120,7 +166,7 @@ public class BeginningManager implements Listener {
         if (main.getDay() < 50) {
             if (e.getPlayer().getWorld().getName().equalsIgnoreCase(main.world.getName()) || e.getPlayer().getWorld().getName().equalsIgnoreCase(beginningWorld.getName())) {
                 e.getPlayer().setNoDamageTicks(e.getPlayer().getMaximumNoDamageTicks());
-                e.getPlayer().damage(e.getPlayer().getHealth() + 1.0D, null);
+                e.getPlayer().damage(e.getPlayer().getHealth() + 1.0D);
                 e.getPlayer().setNoDamageTicks(0);
                 Bukkit.broadcastMessage(TextUtils.format("&c&lEl jugador &4&l" + e.getPlayer().getName() + " &c&lentró a TheBeginning antes de tiempo."));
             }
@@ -133,11 +179,8 @@ public class BeginningManager implements Listener {
             e.getPlayer().teleport(beginningWorld.getSpawnLocation());
             e.setCancelled(true);
 
-            Bukkit.getScheduler().runTaskLater(main, new Runnable() {
-                @Override
-                public void run() {
-                    e.getPlayer().teleport(beginningWorld.getSpawnLocation());
-                }
+            runTaskLaterEntity(p, () -> {
+                e.getPlayer().teleport(beginningWorld.getSpawnLocation());
             }, 20L);
         }
 
@@ -160,6 +203,7 @@ public class BeginningManager implements Listener {
 
     @EventHandler
     public void onBreak(BlockBreakEvent e) {
+        if (beginningWorld == null) return;
         Player p = e.getPlayer();
         if (p.getWorld().getName().equalsIgnoreCase(beginningWorld.getName())) {
             if (e.getBlock().getState() instanceof Chest) {
@@ -176,6 +220,7 @@ public class BeginningManager implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
+        if (beginningWorld == null) return;
         Player p = e.getPlayer();
         if (e.getClickedBlock() != null && p.getWorld().getName().equalsIgnoreCase(beginningWorld.getName())) {
             if (e.getAction() == Action.LEFT_CLICK_BLOCK || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
@@ -208,7 +253,7 @@ public class BeginningManager implements Listener {
 
     @EventHandler
     public void onCreatePortal(PortalCreateEvent e) {
-        if (e.getWorld().getName().equalsIgnoreCase(beginningWorld.getName())) {
+        if (beginningWorld != null && e.getWorld().getName().equalsIgnoreCase(beginningWorld.getName())) {
             for (BlockState s : e.getBlocks()) {
                 Block b = s.getBlock();
                 if (b.getType() == Material.END_GATEWAY || b.getType() == Material.BEDROCK || s instanceof EndGateway) {
@@ -304,4 +349,19 @@ public class BeginningManager implements Listener {
     public void generatePortal(boolean overworld, Location location) {
         WorldEditPortal.generatePortal(overworld, location);
     }
+
+    private void runTaskLaterEntity(Entity entity, Runnable runnable, long ticks) {
+        if (Main.isRunningFolia()) {
+            entity.getScheduler().runDelayed(main, t -> runnable.run(), null, ticks);
+        } else {
+            Bukkit.getScheduler().runTaskLater(main, runnable, ticks);
+        }
+    }
 }
+
+
+
+
+
+
+

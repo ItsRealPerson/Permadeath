@@ -1,9 +1,8 @@
 package tech.sebazcrc.permadeath.nms.v1_15_R1;
 
-import tech.sebazcrc.permadeath.Main;
 import tech.sebazcrc.permadeath.nms.v1_15_R1.entity.CustomGhast;
 import tech.sebazcrc.permadeath.util.NMS;
-import tech.sebazcrc.permadeath.util.interfaces.NMSHandler;
+import tech.sebazcrc.permadeath.api.interfaces.NMSHandler;
 import net.minecraft.server.v1_15_R1.*;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -359,7 +358,7 @@ public class NMSHandlerImpl implements NMSHandler {
             LivingEntity e2 = (LivingEntity) nmsEntity.getBukkitEntity();
             e2.setHealth(100.0D);
             e2.setCustomName("§6Ender Ghast");
-            e2.getPersistentDataContainer().set(new NamespacedKey(Main.getInstance(), "ender_ghast"), PersistentDataType.BYTE, (byte) 1);
+            e2.getPersistentDataContainer().set(new NamespacedKey(org.bukkit.Bukkit.getPluginManager().getPlugin("Permadeath"), "ender_ghast"), PersistentDataType.BYTE, (byte) 1);
             e2.setCustomNameVisible(false);
         }
 
@@ -395,3 +394,4 @@ public class NMSHandlerImpl implements NMSHandler {
         } catch (Exception e) {}
     }
 }
+

@@ -71,7 +71,21 @@ public class EntityTeleport {
 
         if (b.getY() <= 0) return false;
 
-        return this.c.teleport(new Location(this.world, x, b.getY() + 1, z));
+        Location destination = new Location(this.world, x, b.getY() + 1, z);
+        if (Main.isRunningFolia()) {
+            this.c.teleportAsync(destination);
+            return true; // En Folia asumimos éxito para no bloquear el bucle
+        } else {
+            return this.c.teleport(destination);
+        }
     }
 }
+
+
+
+
+
+
+
+
 

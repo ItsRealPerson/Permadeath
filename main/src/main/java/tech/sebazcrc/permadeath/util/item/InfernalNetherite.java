@@ -1,7 +1,9 @@
 package tech.sebazcrc.permadeath.util.item;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.event.Listener;
@@ -30,14 +32,13 @@ public final class InfernalNetherite implements Listener {
 
         ItemMeta meta = item.getItemMeta();
 
-        EquipmentSlot slot = EquipmentSlot.HEAD;
         // CASCO 3, PECHERA 8, PANTALONES 6, BOTAS 3
 
-        AttributeModifier modifier = new AttributeModifier(UUID.randomUUID(), "generic.armor", 3, AttributeModifier.Operation.ADD_NUMBER, slot);
-        meta.addAttributeModifier(Attribute.GENERIC_ARMOR, modifier);
+        AttributeModifier modifier = new AttributeModifier(new NamespacedKey("permadeath", "armor"), 5, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HEAD);
+        meta.addAttributeModifier(Attribute.ARMOR, modifier);
 
-        AttributeModifier modifier2 = new AttributeModifier(UUID.randomUUID(), "generic.armorToughness", 3, AttributeModifier.Operation.ADD_NUMBER, slot);
-        meta.addAttributeModifier(Attribute.GENERIC_ARMOR_TOUGHNESS, modifier2);
+        AttributeModifier modifier2 = new AttributeModifier(new NamespacedKey("permadeath", "armor_toughness"), 5, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HEAD);
+        meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, modifier2);
 
         meta.setUnbreakable(true);
 
@@ -55,18 +56,17 @@ public final class InfernalNetherite implements Listener {
 
         ItemMeta meta = item.getItemMeta();
 
-        EquipmentSlot slot = EquipmentSlot.CHEST;
         // CASCO 3, PECHERA 8, PANTALONES 6, BOTAS 3
 
-        AttributeModifier modifier = new AttributeModifier(UUID.randomUUID(), "generic.armor", 8, AttributeModifier.Operation.ADD_NUMBER, slot);
-        meta.addAttributeModifier(Attribute.GENERIC_ARMOR, modifier);
+        AttributeModifier modifier = new AttributeModifier(new NamespacedKey("permadeath", "armor"), 10, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.CHEST);
+        meta.addAttributeModifier(Attribute.ARMOR, modifier);
 
-        AttributeModifier modifier2 = new AttributeModifier(UUID.randomUUID(), "generic.armorToughness", 3, AttributeModifier.Operation.ADD_NUMBER, slot);
-        meta.addAttributeModifier(Attribute.GENERIC_ARMOR_TOUGHNESS, modifier2);
+        AttributeModifier modifier2 = new AttributeModifier(new NamespacedKey("permadeath", "armor_toughness"), 5, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.CHEST);
+        meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, modifier2);
 
 
-        //AttributeModifier modifier3 = new AttributeModifier(UUID.randomUUID(), "generic.maxHealth", 2, AttributeModifier.Operation.ADD_NUMBER, slot);
-        //meta.addAttributeModifier(Attribute.GENERIC_MAX_HEALTH, modifier3);
+        AttributeModifier modifier3 = new AttributeModifier(new NamespacedKey("permadeath", "max_health"), 2, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.CHEST);
+        meta.addAttributeModifier(Attribute.MAX_HEALTH, modifier3);
 
         meta.setUnbreakable(true);
 
@@ -84,17 +84,16 @@ public final class InfernalNetherite implements Listener {
 
         ItemMeta meta = item.getItemMeta();
 
-        EquipmentSlot slot = EquipmentSlot.LEGS;
         // CASCO 3, PECHERA 8, PANTALONES 6, BOTAS 3
 
-        AttributeModifier modifier = new AttributeModifier(UUID.randomUUID(), "generic.armor", 6, AttributeModifier.Operation.ADD_NUMBER, slot);
-        meta.addAttributeModifier(Attribute.GENERIC_ARMOR, modifier);
+        AttributeModifier modifier = new AttributeModifier(new NamespacedKey("permadeath", "armor"), 8, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.LEGS);
+        meta.addAttributeModifier(Attribute.ARMOR, modifier);
 
-        AttributeModifier modifier2 = new AttributeModifier(UUID.randomUUID(), "generic.armorToughness", 3, AttributeModifier.Operation.ADD_NUMBER, slot);
-        meta.addAttributeModifier(Attribute.GENERIC_ARMOR_TOUGHNESS, modifier2);
+        AttributeModifier modifier2 = new AttributeModifier(new NamespacedKey("permadeath", "armor_toughness"), 5, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.LEGS);
+        meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, modifier2);
 
-        //AttributeModifier modifier3 = new AttributeModifier(UUID.randomUUID(), "generic.maxHealth", 2, AttributeModifier.Operation.ADD_NUMBER, slot);
-        //meta.addAttributeModifier(Attribute.GENERIC_MAX_HEALTH, modifier3);
+        AttributeModifier modifier3 = new AttributeModifier(new NamespacedKey("permadeath", "max_health"), 2, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.LEGS);
+        meta.addAttributeModifier(Attribute.MAX_HEALTH, modifier3);
 
         meta.setUnbreakable(true);
 
@@ -113,14 +112,13 @@ public final class InfernalNetherite implements Listener {
 
         ItemMeta meta = item.getItemMeta();
 
-        EquipmentSlot slot = EquipmentSlot.FEET;
         // CASCO 3, PECHERA 8, PANTALONES 6, BOTAS 3
 
-        AttributeModifier modifier = new AttributeModifier(UUID.randomUUID(), "generic.armor", 3, AttributeModifier.Operation.ADD_NUMBER, slot);
-        meta.addAttributeModifier(Attribute.GENERIC_ARMOR, modifier);
+        AttributeModifier modifier = new AttributeModifier(new NamespacedKey("permadeath", "armor"), 5, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.FEET);
+        meta.addAttributeModifier(Attribute.ARMOR, modifier);
 
-        AttributeModifier modifier2 = new AttributeModifier(UUID.randomUUID(), "generic.armorToughness", 3, AttributeModifier.Operation.ADD_NUMBER, slot);
-        meta.addAttributeModifier(Attribute.GENERIC_ARMOR_TOUGHNESS, modifier2);
+        AttributeModifier modifier2 = new AttributeModifier(new NamespacedKey("permadeath", "armor_toughness"), 5, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.FEET);
+        meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, modifier2);
 
         meta.setUnbreakable(true);
 
@@ -129,3 +127,11 @@ public final class InfernalNetherite implements Listener {
         return item;
     }
 }
+
+
+
+
+
+
+
+

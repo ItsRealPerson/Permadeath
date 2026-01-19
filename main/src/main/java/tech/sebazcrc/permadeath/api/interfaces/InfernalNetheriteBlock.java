@@ -1,4 +1,4 @@
-package tech.sebazcrc.permadeath.util.interfaces;
+package tech.sebazcrc.permadeath.api.interfaces;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -42,3 +42,11 @@ public interface InfernalNetheriteBlock {
 
     boolean isInfernalNetherite(Location pos);
 }
+
+
+
+
+
+
+
+

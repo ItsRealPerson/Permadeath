@@ -12,7 +12,7 @@ import org.bukkit.block.CreatureSpawner;
 import org.bukkit.craftbukkit.v1_15_R1.CraftWorld;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.block.BlockBreakEvent;
-import tech.sebazcrc.permadeath.util.interfaces.InfernalNetheriteBlock;
+import tech.sebazcrc.permadeath.api.interfaces.InfernalNetheriteBlock;
 import tech.sebazcrc.permadeath.util.item.PermadeathItems;
 
 import java.util.Objects;
@@ -91,3 +91,4 @@ public class InfernalNetheriteBlockImpl implements InfernalNetheriteBlock {
         return dataFound;
     }
 }
+

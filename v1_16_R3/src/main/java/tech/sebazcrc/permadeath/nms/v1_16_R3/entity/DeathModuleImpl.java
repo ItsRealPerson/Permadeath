@@ -11,8 +11,8 @@ import org.bukkit.entity.CaveSpider;
 import org.bukkit.entity.Shulker;
 import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.bukkit.persistence.PersistentDataType;
-import tech.sebazcrc.permadeath.Main;
-import tech.sebazcrc.permadeath.util.interfaces.DeathModule;
+
+import tech.sebazcrc.permadeath.api.interfaces.DeathModule;
 
 import java.lang.reflect.Field;
 
@@ -65,9 +65,10 @@ public class DeathModuleImpl implements DeathModule {
             x.printStackTrace();
         }
 
-        spawnerMinecart.getPersistentDataContainer().set(new NamespacedKey(Main.getInstance(), "module_minecart"), PersistentDataType.BYTE, (byte)1);
+        spawnerMinecart.getPersistentDataContainer().set(new NamespacedKey(org.bukkit.Bukkit.getPluginManager().getPlugin("Permadeath"), "module_minecart"), PersistentDataType.BYTE, (byte)1);
 
         shulker.addPassenger(spawnerMinecart);
         spider.addPassenger(shulker);
     }
 }
+

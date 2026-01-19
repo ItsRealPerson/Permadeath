@@ -6,7 +6,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.craftbukkit.v1_15_R1.entity.CraftEntity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
-import tech.sebazcrc.permadeath.util.interfaces.NMSAccessor;
+import tech.sebazcrc.permadeath.api.interfaces.NMSAccessor;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -176,3 +176,4 @@ public class NMSAccessorImpl implements NMSAccessor {
         }
     }
 }
+

@@ -10,3 +10,11 @@ public class EmptyGenerator extends ChunkGenerator {
         return createChunkData(world);
     }
 }
+
+
+
+
+
+
+
+

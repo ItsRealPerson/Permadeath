@@ -1,4 +1,4 @@
-package tech.sebazcrc.permadeath.util.interfaces;
+package tech.sebazcrc.permadeath.api.interfaces;
 
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
@@ -20,3 +20,11 @@ public interface NMSAccessor {
 
     void clearEntityPathfinders(Object goalSelector, Object targetSelector);
 }
+
+
+
+
+
+
+
+

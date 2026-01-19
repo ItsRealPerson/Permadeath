@@ -85,11 +85,11 @@ public final class Main extends JavaPlugin implements Listener {
     private EndTask task = null;
     private EndManager endManager;
     private MobFactory factory;
-    private BeginningManager begginingManager;
-    @Getter
-    private BeginningDataManager beData;
     @Getter
     private EndDataManager endData;
+    @Getter
+    private tech.sebazcrc.permadeath.world.abyss.AbyssManager abyssManager;
+    public static boolean runningFolia = false;
     private Map<Integer, Boolean> registeredDays = new HashMap<>();
     private ArrayList<Player> doneEffectPlayers = new ArrayList<>();
     private boolean loaded = false;

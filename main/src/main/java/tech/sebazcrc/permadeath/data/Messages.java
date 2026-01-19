@@ -41,8 +41,9 @@ public class Messages {
         c.set("Server-Messages.DeathMessageTitle", "&c¡Permadeath!");
         c.set("Server-Messages.DeathMessageSubtitle", "%player% ha muerto");
         c.set("Server-Messages.DeathMessageChat", "&c&lEste es el comienzo del sufrimiento eterno de &4&l%player%&c&l. ¡HA SIDO PERMABANEADO!");
-        c.set("Server-Messages.DeathTrainMessage", "&c¡Comienza el Death Train con duración de %tiempo% horas!");
-        c.set("Server-Messages.DeathTrainMessageMinutes", "&c¡Comienza el Death Train con duración de %tiempo% minutos!");
+        c.set("Server-Messages.DeathTrainMessage", "&c¡Comienza el Death Train con duración de %tiempo%!");
+        c.set("Server-Messages.DeathTrainMessageMinutes", "&c¡Comienza el Death Train con duración de %tiempo%!");
+        c.set("Server-Messages.DeathTrainIncrease", "&c¡Aumenta el Death Train a %tiempo%!");
         c.set("Server-Messages.ActionBarMessage", "&7Quedan %tiempo% de tormenta");
 
         c.save();
@@ -66,8 +67,9 @@ public class Messages {
         c.set("Server-Messages.DeathMessageTitle", "&cPermadeath!");
         c.set("Server-Messages.DeathMessageSubtitle", "%player% died");
         c.set("Server-Messages.DeathMessageChat", "&c&lThis is the beginning of the eternal suffering of &4&l%player%&c&l. HAS BEEN PERMA-BANNED!");
-        c.set("Server-Messages.DeathTrainMessage", "&cStarting the Death Train with a duration of %tiempo% hours!");
-        c.set("Server-Messages.DeathTrainMessageMinutes", "&cStarting the Death Train with a duration of %tiempo% minutes!");
+        c.set("Server-Messages.DeathTrainMessage", "&cStarting the Death Train with a duration of %tiempo%!");
+        c.set("Server-Messages.DeathTrainMessageMinutes", "&cStarting the Death Train with a duration of %tiempo%!");
+        c.set("Server-Messages.DeathTrainIncrease", "&cThe Death Train increases to %tiempo%!");
         c.set("Server-Messages.ActionBarMessage", "&7%tiempo% storm left");
 
         c.save();
@@ -122,6 +124,7 @@ public class Messages {
         FileConfiguration c = YamlConfiguration.loadConfiguration(f);
 
         String returning = c.getString(path);
+        if (returning == null) return "Missing Message: " + path;
 
         for (String a : r.keySet()) {
 
@@ -140,6 +143,7 @@ public class Messages {
         FileConfiguration c = YamlConfiguration.loadConfiguration(f);
 
         String returning = c.getString(path);
+        if (returning == null) return "Missing Message: " + path;
 
         return TextUtils.format(returning);
     }
@@ -156,6 +160,7 @@ public class Messages {
         FileConfiguration c = YamlConfiguration.loadConfiguration(f);
 
         String returning = c.getString(path);
+        if (returning == null) return "Missing Message: " + path;
 
         for (String a : r.keySet()) {
 
@@ -200,3 +205,11 @@ public class Messages {
         Bukkit.getConsoleSender().sendMessage(mensaje);
     }
 }
+
+
+
+
+
+
+
+

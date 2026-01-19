@@ -1,6 +1,6 @@
 package tech.sebazcrc.permadeath.event.player;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -27,10 +27,12 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitScheduler;
 import tech.sebazcrc.permadeath.Main;
+import tech.sebazcrc.permadeath.api.PermadeathAPI;
 import tech.sebazcrc.permadeath.util.Utils;
 import tech.sebazcrc.permadeath.util.item.InfernalNetherite;
 import tech.sebazcrc.permadeath.util.item.NetheriteArmor;
 import tech.sebazcrc.permadeath.util.item.PermadeathItems;
+import tech.sebazcrc.permadeath.util.inventory.AccessoryInventory;
 import tech.sebazcrc.permadeath.util.lib.HiddenStringUtils;
 import tech.sebazcrc.permadeath.util.lib.ItemBuilder;
 import tech.sebazcrc.permadeath.util.lib.UpdateChecker;
@@ -110,15 +112,26 @@ public class PlayerListener implements Listener {
             player.playSound(player.getLocation(), "pdc_muerte", Float.MAX_VALUE, 1.0F);
         }
 
+        // DROP ACCESSORIES
+        ItemStack[] accessories = AccessoryInventory.load(p);
+        if (accessories != null) {
+            for (ItemStack s : accessories) {
+                if (s != null && s.getType() != Material.AIR) {
+                    e.getDrops().add(s);
+                }
+            }
+            p.getPersistentDataContainer().remove(new NamespacedKey(Main.getInstance(), "accessory_inventory_v2"));
+        }
+
+        // REMOVE MENU ITEM FROM DROPS
+        e.getDrops().removeIf(item -> item.getType() == Material.NETHER_STAR && item.hasItemMeta() && item.getItemMeta().getDisplayName().contains("Menú de Accesorios"));
+
         loadTicks();
-        int stormDuration = Main.instance.world.getWeatherDuration();
-        int stormTicksToSeconds = stormDuration / 20;
-        long stormIncrement = stormTicksToSeconds + this.stormTicks;
-        int intsTicks = (int) this.stormTicks;
-        int inc = (int) stormIncrement;
+        long currentTicks = Main.instance.world.getThunderDuration();
+        boolean wasThundering = Main.instance.world.hasStorm();
+        long totalTicks = (wasThundering ? currentTicks : 0) + (this.stormTicks * 20);
 
         boolean doEnableOP = Main.instance.getConfig().getBoolean("Toggles.OP-Ban");
-        //boolean causingProblems = (!doEnableOP ? !p.hasPermission("permadeathcore.banoverride") : true);
         boolean causingProblems = true;
 
         if (!doEnableOP) {
@@ -128,18 +141,34 @@ public class PlayerListener implements Listener {
         }
 
         if (causingProblems) {
-            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "minecraft:weather thunder");
-
-            if (weather) {
-                Main.instance.world.setWeatherDuration(inc * 20);
+            if (Main.isRunningFolia()) {
+                Bukkit.getGlobalRegionScheduler().execute(Main.instance, () -> {
+                    Main.instance.world.setStorm(true);
+                    Main.instance.world.setThundering(true);
+                    Main.instance.world.setThunderDuration((int) totalTicks);
+                    Main.instance.world.setWeatherDuration((int) totalTicks);
+                });
             } else {
-                Main.instance.world.setWeatherDuration(intsTicks * 20);
+                Main.instance.world.setStorm(true);
+                Main.instance.world.setThundering(true);
+                Main.instance.world.setThunderDuration((int) totalTicks);
+                Main.instance.world.setWeatherDuration((int) totalTicks);
             }
 
             if (Main.instance.getDay() >= 25) {
-                for (World w : Bukkit.getWorlds()) {
-                    for (LivingEntity l : w.getLivingEntities()) {
-                        Main.instance.deathTrainEffects(l);
+                if (Main.isRunningFolia()) {
+                    Bukkit.getGlobalRegionScheduler().execute(Main.instance, () -> {
+                        for (World w : Bukkit.getWorlds()) {
+                            for (LivingEntity l : w.getLivingEntities()) {
+                                l.getScheduler().run(Main.instance, t -> Main.instance.deathTrainEffects(l), null);
+                            }
+                        }
+                    });
+                } else {
+                    for (World w : Bukkit.getWorlds()) {
+                        for (LivingEntity l : w.getLivingEntities()) {
+                            Main.instance.deathTrainEffects(l);
+                        }
                     }
                 }
             }
@@ -150,59 +179,44 @@ public class PlayerListener implements Listener {
                 }
 
                 Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&e¡Ha comenzado el modo UHC!"));
-                Main.instance.world.setGameRule(GameRule.NATURAL_REGENERATION, false);
+                
+                if (Main.isRunningFolia()) {
+                    Bukkit.getGlobalRegionScheduler().execute(Main.instance, () -> Main.instance.world.setGameRule(GameRule.NATURAL_REGENERATION, false));
+                }
+                else {
+                    Main.instance.world.setGameRule(GameRule.NATURAL_REGENERATION, false);
+                }
             }
 
-            scheduler.scheduleSyncDelayedTask(Main.instance, new Runnable() {
+            runTaskLater(() -> {
+                int totalSeconds = Main.instance.world.getThunderDuration() / 20;
+                long hours = totalSeconds / 3600;
+                long minutes = (totalSeconds % 3600) / 60;
+                String timeStr = (hours > 0 ? hours + "h " : "") + minutes + "m";
 
-                @Override
-                public void run() {
+                String path = wasThundering ? "DeathTrainIncrease" : "DeathTrainMessage";
 
-                    loadTicks();
-                    if (Main.getInstance().getDay() < 50) {
-                        for (Player p : Bukkit.getOnlinePlayers()) {
-                            String msg = Main.getInstance().getMessages().getMessage("DeathTrainMessage", p).replace("%tiempo%", String.valueOf(stormHours));
-                            p.sendMessage(msg);
-                            if (Objects.requireNonNull(Main.instance.getConfig().getBoolean("Toggles.DefaultDeathSoundsEnabled")))
-                                p.playSound(p.getLocation(), Sound.ENTITY_SKELETON_HORSE_DEATH, 10, 1);
-                        }
-                        Main.getInstance().getMessages().sendConsole(Main.getInstance().getMessages().getMsgForConsole("DeathTrainMessage").replace("%tiempo%", String.valueOf(stormHours)));
-                        DiscordPortal.onDeathTrain(Main.getInstance().getMessages().getMsgForConsole("DeathTrainMessage").replace("%tiempo%", String.valueOf(stormHours)));
-                    } else {
-                        long hours = stormTicks / 60 / 60;
-                        long minutes = stormTicks / 60 % 60;
-
-                        String ct = String.valueOf(hours);
-                        String path = "DeathTrainMessage";
-
-                        if (minutes == 30 || minutes == 60) {
-                            path = path + "Minutes";
-                            if (hours >= 1) {
-                                ct = "" + hours + " horas y " + minutes;
-                            } else {
-                                ct = String.valueOf(minutes);
-                            }
-                        }
-
-                        if (minutes == 0) {
-                            ct = String.valueOf(hours);
-                        }
-
-                        String time = ct;
-
-                        for (Player p : Bukkit.getOnlinePlayers()) {
-
-                            String msg = Main.getInstance().getMessages().getMessage(path, p).replace("%tiempo%", time);
-                            p.sendMessage(msg);
-                            if (Objects.requireNonNull(Main.instance.getConfig().getBoolean("Toggles.DefaultDeathSoundsEnabled")))
-                                p.playSound(p.getLocation(), Sound.ENTITY_SKELETON_HORSE_DEATH, 10, 1);
-                        }
-
-                        Main.getInstance().getMessages().sendConsole(Main.getInstance().getMessages().getMsgForConsole(path).replace("%tiempo%", time));
-                        DiscordPortal.onDeathTrain(Main.getInstance().getMessages().getMsgForConsole(path).replace("%tiempo%", time));
+                for (Player p1 : Bukkit.getOnlinePlayers()) {
+                    String msg = Main.getInstance().getMessages().getMessage(path, p1);
+                    if (msg == null) {
+                        msg = wasThundering ? "&c¡Aumenta el Death Train a %tiempo%!" : "&c¡Comienza el Death Train con duración de %tiempo%!";
                     }
+                    p1.sendMessage(TextUtils.format(msg.replace("%tiempo%", timeStr)));
+                    
+                    if (Objects.requireNonNull(Main.instance.getConfig().getBoolean("Toggles.DefaultDeathSoundsEnabled")))
+                        p1.playSound(p1.getLocation(), Sound.ENTITY_SKELETON_HORSE_DEATH, 10, 1);
                 }
+                
+                String consoleMsg = Main.getInstance().getMessages().getMsgForConsole(path);
+                if (consoleMsg == null) {
+                    consoleMsg = wasThundering ? "¡Aumenta el Death Train a %tiempo%!" : "¡Comienza el Death Train con duración de %tiempo%!";
+                }
+                consoleMsg = consoleMsg.replace("%tiempo%", timeStr);
+                
+                Main.getInstance().getMessages().sendConsole(consoleMsg);
+                DiscordPortal.onDeathTrain(consoleMsg);
             }, 100L);
+
         } else {
             Bukkit.broadcastMessage(String.format(Main.instance.prefix + TextUtils.format("&eEl jugador &b" + p.getName() + " &eno puede dar más horas de tormenta.")));
         }
@@ -230,41 +244,35 @@ public class PlayerListener implements Listener {
         }
 
         p.setGameMode(GameMode.SPECTATOR);
-        scheduler.runTaskLater(Main.instance, new Runnable() {
-            @Override
-            public void run() {
-                boolean isban = (doEnableOP ? !p.hasPermission("permadeathcore.banoverride") : true);
-                if (Main.instance.getConfig().getBoolean("ban-enabled") && isban) {
-                    if (off.isOnline()) {
-                        ((Player) off).kickPlayer(ChatColor.RED + "Has sido PERMABANEADO");
-                    }
-                    Bukkit.getBanList(BanList.Type.NAME).addBan(off.getName(), ChatColor.RED + "Has sido PERMABANEADO", null, "console");
+        runTaskLater(() -> {
+            boolean isban = (doEnableOP ? !p.hasPermission("permadeathcore.banoverride") : true);
+            if (Main.instance.getConfig().getBoolean("ban-enabled") && isban) {
+                if (off.isOnline()) {
+                    ((Player) off).kickPlayer(ChatColor.RED + "Has sido PERMABANEADO");
                 }
+                Bukkit.getBanList(BanList.Type.NAME).addBan(off.getName(), ChatColor.RED + "Has sido PERMABANEADO", null, "console");
             }
         }, 40L);
 
-        Bukkit.getScheduler().runTaskLater(Main.getInstance(), new Runnable() {
-            @Override
-            public void run() {
-                if (Main.getInstance().getConfig().getBoolean("Toggles.Player-Skulls")) {
-                    Location l = p.getEyeLocation().clone();
-                    if (l.getY() < 3) {
-                        l.setY(3);
-                    }
-                    Block skullBlock = l.getBlock();
-                    skullBlock.setType(Material.PLAYER_HEAD);
-
-                    Skull skullState = (Skull) skullBlock.getState();
-                    skullState.setOwningPlayer(p);
-                    skullState.update();
-
-                    Rotatable rotatable = (Rotatable) skullBlock.getBlockData();
-                    rotatable.setRotation(getRotation(p));
-                    skullBlock.setBlockData(rotatable);
-
-                    skullBlock.getRelative(BlockFace.DOWN).setType(Material.NETHER_BRICK_FENCE);
-                    skullBlock.getRelative(BlockFace.DOWN).getRelative(BlockFace.DOWN).setType(Material.BEDROCK);
+        runTaskLaterEntity(p, () -> {
+            if (Main.getInstance().getConfig().getBoolean("Toggles.Player-Skulls")) {
+                Location l = p.getEyeLocation().clone();
+                if (l.getY() < 3) {
+                    l.setY(3);
                 }
+                Block skullBlock = l.getBlock();
+                skullBlock.setType(Material.PLAYER_HEAD);
+
+                Skull skullState = (Skull) skullBlock.getState();
+                skullState.setOwningPlayer(p);
+                skullState.update();
+
+                Rotatable rotatable = (Rotatable) skullBlock.getBlockData();
+                rotatable.setRotation(getRotation(p));
+                skullBlock.setBlockData(rotatable);
+
+                skullBlock.getRelative(BlockFace.DOWN).setType(Material.NETHER_BRICK_FENCE);
+                skullBlock.getRelative(BlockFace.DOWN).getRelative(BlockFace.DOWN).setType(Material.BEDROCK);
             }
         }, 10L);
     }
@@ -325,7 +333,7 @@ public class PlayerListener implements Listener {
             Location playerbed = event.getBed().getLocation().add(0, 1, 0);
 
             Main.instance.world.playSound(playerbed, Sound.ENTITY_GENERIC_EXPLODE, 1.0F, 1.0F);
-            Main.instance.world.spawnParticle(Particle.EXPLOSION_HUGE, playerbed, 1);
+            Main.instance.world.spawnParticle(Particle.EXPLOSION_EMITTER, playerbed, 1);
 
             if (Main.getInstance().getDay() >= 50) {
                 if (new SplittableRandom().nextInt(100) + 1 <= 10) {
@@ -370,31 +378,27 @@ public class PlayerListener implements Listener {
 
             ArrayList<Player> sent = new ArrayList<>();
 
-            Bukkit.getServer().getScheduler().runTaskLater(Main.instance, new Runnable() {
+            runTaskLater(() -> {
 
-                @Override
-                public void run() {
+                event.getPlayer().getWorld().setTime(0L);
+                player.setStatistic(Statistic.TIME_SINCE_REST, 0);
 
-                    event.getPlayer().getWorld().setTime(0L);
-                    player.setStatistic(Statistic.TIME_SINCE_REST, 0);
+                if (!sent.contains(player)) {
 
-                    if (!sent.contains(player)) {
+                    //Bukkit.broadcastMessage(instance.format(Objects.requireNonNull(instance.getConfig().getString("Server-Messages.Sleep").replace("%player%", player.getName()))));
 
-                        //Bukkit.broadcastMessage(instance.format(Objects.requireNonNull(instance.getConfig().getString("Server-Messages.Sleep").replace("%player%", player.getName()))));
+                    Bukkit.getOnlinePlayers().forEach(p -> {
 
-                        Bukkit.getOnlinePlayers().forEach(p -> {
+                        String msg = Main.getInstance().getMessages().getMessage("Sleep", p).replace("%player%", player.getName());
 
-                            String msg = Main.getInstance().getMessages().getMessage("Sleep", p).replace("%player%", player.getName());
+                        p.sendMessage(msg);
 
-                            p.sendMessage(msg);
+                    });
 
-                        });
+                    Main.getInstance().getMessages().sendConsole(Main.getInstance().getMessages().getMsgForConsole("Sleep").replace("%player%", player.getName()));
 
-                        Main.getInstance().getMessages().sendConsole(Main.getInstance().getMessages().getMsgForConsole("Sleep").replace("%player%", player.getName()));
-
-                        sent.add(player);
-                        player.damage(0.1);
-                    }
+                    sent.add(player);
+                    player.damage(0.1);
                 }
             }, 60L);
         }
@@ -415,26 +419,23 @@ public class PlayerListener implements Listener {
 
             if (globalSleeping.size() >= neededPlayers && globalSleeping.size() < Bukkit.getOnlinePlayers().size()) {
 
-                Bukkit.getServer().getScheduler().runTaskLater(Main.instance, new Runnable() {
-                    @Override
-                    public void run() {
+                runTaskLater(() -> {
 
-                        if (globalSleeping.size() >= 4) {
+                    if (globalSleeping.size() >= 4) {
 
-                            event.getPlayer().getWorld().setTime(0L);
+                        event.getPlayer().getWorld().setTime(0L);
 
-                            for (Player all : Bukkit.getOnlinePlayers()) {
-                                if (all.isSleeping()) {
+                        for (Player all : Bukkit.getOnlinePlayers()) {
+                            if (all.isSleeping()) {
 
-                                    all.setStatistic(Statistic.TIME_SINCE_REST, 0);
-                                    all.damage(0.1);
-                                    Bukkit.broadcastMessage(TextUtils.format(Objects.requireNonNull(Main.instance.getConfig().getString("Server-Messages.Sleep").replace("%player%", all.getName()))));
-                                }
+                                all.setStatistic(Statistic.TIME_SINCE_REST, 0);
+                                all.damage(0.1);
+                                Bukkit.broadcastMessage(TextUtils.format(Objects.requireNonNull(Main.instance.getConfig().getString("Server-Messages.Sleep").replace("%player%", all.getName()))));
                             }
-
-                            Bukkit.broadcastMessage(TextUtils.format("&eHan dormido suficientes jugadores (&b4&e)."));
-                            globalSleeping.clear();
                         }
+
+                        Bukkit.broadcastMessage(TextUtils.format("&eHan dormido suficientes jugadores (&b4&e)."));
+                        globalSleeping.clear();
                     }
                 }, 40L);
             }
@@ -500,55 +501,49 @@ public class PlayerListener implements Listener {
             Main.instance.getShulkerEvent().addPlayer(e.getPlayer());
         }
 
-        Bukkit.getScheduler().runTaskLater(Main.instance, new Runnable() {
-            @Override
-            public void run() {
-                if (!player.isOnline()) return;
+        runTaskLaterEntity(player, () -> {
+            if (!player.isOnline()) return;
 
-                player.sendMessage(TextUtils.format("&e&m-------------------------------------------"));
-                player.sendMessage(TextUtils.format("        &c&lPERMA&7&lDEATH"));
-                player.sendMessage(TextUtils.format(" "));
-                player.sendMessage(TextUtils.format("&b&l - Servidor de Discord con soporte del Desarrollador: -"));
-                player.sendMessage(TextUtils.format("&7Se ofrece soporte en caso de problemas"));
-                player.sendMessage(TextUtils.format(" "));
-                player.sendMessage(TextUtils.format("&e&nInvitación a Discord&r&7 (soporte, noticias y proyectos):"));
-                player.sendMessage(TextUtils.format("&9" + Utils.DISCORD_LINK));
-                player.sendMessage(TextUtils.format("&e&m-------------------------------------------"));
-                if (!Main.optifineItemsEnabled())
-                    player.sendMessage(TextUtils.format("&cRecuerda aceptar los paquetes de Recursos para ver los ítems y texturas personalizadas."));
-                player.sendMessage(Main.prefix + TextUtils.format("&eEjecuta el comando &f&l/pdc &r&epara más información."));
+            player.sendMessage(TextUtils.format("&e&m-------------------------------------------"));
+            player.sendMessage(TextUtils.format("        &c&lPERMA&7&lDEATH"));
+            player.sendMessage(TextUtils.format(" "));
+            player.sendMessage(TextUtils.format("&b&l - Servidor de Discord con soporte del Desarrollador: -"));
+            player.sendMessage(TextUtils.format("&7Se ofrece soporte en caso de problemas"));
+            player.sendMessage(TextUtils.format(" "));
+            player.sendMessage(TextUtils.format("&e&nInvitación a Discord&r&7 (soporte, noticias y proyectos):"));
+            player.sendMessage(TextUtils.format("&9" + Utils.DISCORD_LINK));
+            player.sendMessage(TextUtils.format("&e&m-------------------------------------------"));
+            if (!PermadeathAPI.optifineItemsEnabled())
+                player.sendMessage(TextUtils.format("&cRecuerda aceptar los paquetes de Recursos para ver los ítems y texturas personalizadas."));
+            player.sendMessage(Main.prefix + TextUtils.format("&eEjecuta el comando &f&l/pdc &r&epara más información."));
 
-                if (!player.hasPlayedBefore()) {
-                    player.sendTitle(TextUtils.format("&c&lPERMA&7&lDEATH"), TextUtils.format("&7Desarrollador: &b@SebazCRC"), 1, 20 * 5, 1);
-                    player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 100.0F, 100.0F);
-                }
+            if (!player.hasPlayedBefore()) {
+                player.sendTitle(TextUtils.format("&c&lPERMA&7&lDEATH"), TextUtils.format("&7Desarrollador: &b@SebazCRC"), 1, 20 * 5, 1);
+                player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 100.0F, 100.0F);
             }
         }, 20 * 15);
 
-        Bukkit.getScheduler().runTaskLater(Main.instance, new Runnable() {
-            @Override
-            public void run() {
-                if (player == null) return;
-                if (!player.isOnline()) return;
-                if (!player.hasPlayedBefore()) {
-                    player.sendTitle(TextUtils.format("&c&lPERMA&7&lDEATH"), TextUtils.format("&7Discord: &9https://discord.gg/8evPbuxPke"), 1, 20 * 5, 1);
-                    player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 100.0F, 100.0F);
-                }
+        runTaskLaterEntity(player, () -> {
+            if (player == null) return;
+            if (!player.isOnline()) return;
+            if (!player.hasPlayedBefore()) {
+                player.sendTitle(TextUtils.format("&c&lPERMA&7&lDEATH"), TextUtils.format("&7Discord: &9https://discord.gg/8evPbuxPke"), 1, 20 * 5, 1);
+                player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 100.0F, 100.0F);
+            }
 
-                if (player.isOp()) {
-                    new UpdateChecker(Main.getInstance()).getVersion(version -> {
-                        if (Main.getInstance().getDescription().getVersion().equalsIgnoreCase(version)) {
-                            player.sendMessage(TextUtils.format(Main.prefix + "&3Estás utilizando la versión más reciente del Plugin."));
-                        } else {
-                            player.sendMessage(TextUtils.format(Main.prefix + "&3Se ha encontrado una nueva versión del Plugin"));
-                            player.sendMessage(TextUtils.format(Main.prefix + "&eDescarga en: &7" + Utils.SPIGOT_LINK));
-                        }
-                    });
-                }
+            if (player.isOp()) {
+                new UpdateChecker(Main.getInstance()).getVersion(version -> {
+                    if (Main.getInstance().getDescription().getVersion().equalsIgnoreCase(version)) {
+                        player.sendMessage(TextUtils.format(Main.prefix + "&3Estás utilizando la versión más reciente del Plugin."));
+                    } else {
+                        player.sendMessage(TextUtils.format(Main.prefix + "&3Se ha encontrado una nueva versión del Plugin"));
+                        player.sendMessage(TextUtils.format(Main.prefix + "&eDescarga en: &7" + Utils.SPIGOT_LINK));
+                    }
+                });
             }
         }, 20 * 20);
 
-        if (!Main.optifineItemsEnabled())
+        if (!PermadeathAPI.optifineItemsEnabled())
             player.setResourcePack(Utils.RESOURCE_PACK_LINK);
 
         if (Main.instance.getBeginningManager() != null && Main.instance.getBeginningManager().getBeginningWorld() != null) {
@@ -639,9 +634,28 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onAirChange(EntityAirChangeEvent e) {
-        if (!(e.getEntity() instanceof Player) || Main.instance.getDay() < 50) return;
+        if (!(e.getEntity() instanceof Player)) return;
 
         Player p = (Player) e.getEntity();
+
+        // Lógica de la Medalla de Agua (Día 30+)
+        if (Main.instance.getDay() >= 30) {
+            boolean hasMedal = false;
+            for (ItemStack item : p.getInventory().getContents()) {
+                if (item != null && item.hasItemMeta()) {
+                    if (item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(Main.getInstance(), "water_medal"), PersistentDataType.BYTE)) {
+                        hasMedal = true;
+                        break;
+                    }
+                }
+            }
+            if (hasMedal) {
+                e.setAmount(p.getMaximumAir());
+                return;
+            }
+        }
+
+        if (Main.instance.getDay() < 50) return;
 
         if (p.getRemainingAir() < e.getAmount()) return;
 
@@ -717,14 +731,11 @@ public class PlayerListener implements Listener {
         if (Main.getInstance().getDay() >= 50) {
             if (e.getItem() != null) {
                 if (e.getItem().getType() == Material.MILK_BUCKET) {
-                    if (e.getPlayer().hasPotionEffect(PotionEffectType.SLOW_DIGGING)) {
-                        PotionEffect effect = e.getPlayer().getPotionEffect(PotionEffectType.SLOW_DIGGING);
-                        Bukkit.getScheduler().runTaskLater(Main.getInstance(), new Runnable() {
-                            @Override
-                            public void run() {
+                    if (e.getPlayer().hasPotionEffect(PotionEffectType.MINING_FATIGUE)) {
+                        PotionEffect effect = e.getPlayer().getPotionEffect(PotionEffectType.MINING_FATIGUE);
+                        runTaskLaterEntity(e.getPlayer(), () -> {
 
-                                e.getPlayer().addPotionEffect(effect);
-                            }
+                            e.getPlayer().addPotionEffect(effect);
                         }, 10L);
                     }
                 }
@@ -734,51 +745,39 @@ public class PlayerListener implements Listener {
                 }
 
                 if (e.getItem().getType() == Material.SPIDER_EYE) {
-                    Bukkit.getScheduler().runTaskLater(Main.instance, new Runnable() {
-                        @Override
-                        public void run() {
-                            e.getPlayer().removePotionEffect(PotionEffectType.POISON);
-                            e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.POISON, Integer.MAX_VALUE, 0));
-                        }
+                    runTaskLaterEntity(e.getPlayer(), () -> {
+                        e.getPlayer().removePotionEffect(PotionEffectType.POISON);
+                        e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.POISON, Integer.MAX_VALUE, 0));
                     }, 5L);
                 }
 
                 if (e.getItem().getType() == Material.PUFFERFISH) {
-                    Bukkit.getScheduler().runTaskLater(Main.instance, new Runnable() {
-                        @Override
-                        public void run() {
+                    runTaskLaterEntity(e.getPlayer(), () -> {
 
-                            e.getPlayer().removePotionEffect(PotionEffectType.CONFUSION);
-                            e.getPlayer().removePotionEffect(PotionEffectType.POISON);
-                            e.getPlayer().removePotionEffect(PotionEffectType.HUNGER);
-                            e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.POISON, Integer.MAX_VALUE, 3));
-                            e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, Integer.MAX_VALUE, 2));
-                            e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, Integer.MAX_VALUE, 1));
-                        }
+                        e.getPlayer().removePotionEffect(PotionEffectType.NAUSEA);
+                        e.getPlayer().removePotionEffect(PotionEffectType.POISON);
+                        e.getPlayer().removePotionEffect(PotionEffectType.HUNGER);
+                        e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.POISON, Integer.MAX_VALUE, 3));
+                        e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, Integer.MAX_VALUE, 2));
+                        e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, Integer.MAX_VALUE, 1));
                     }, 5L);
                 }
 
                 if (e.getItem().getType() == Material.ROTTEN_FLESH) {
-                    Bukkit.getScheduler().runTaskLater(Main.instance, new Runnable() {
-                        @Override
-                        public void run() {
+                    runTaskLaterEntity(e.getPlayer(), () -> {
 
-                            e.getPlayer().removePotionEffect(PotionEffectType.HUNGER);
+                        e.getPlayer().removePotionEffect(PotionEffectType.HUNGER);
 
-                            e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, Integer.MAX_VALUE, 1));
-                        }
+                        e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, Integer.MAX_VALUE, 1));
                     }, 5L);
                 }
 
                 if (e.getItem().getType() == Material.POISONOUS_POTATO) {
-                    Bukkit.getScheduler().runTaskLater(Main.instance, new Runnable() {
-                        @Override
-                        public void run() {
+                    runTaskLaterEntity(e.getPlayer(), () -> {
 
-                            e.getPlayer().removePotionEffect(PotionEffectType.POISON);
+                        e.getPlayer().removePotionEffect(PotionEffectType.POISON);
 
-                            e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.POISON, Integer.MAX_VALUE, 0));
-                        }
+                        e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.POISON, Integer.MAX_VALUE, 0));
                     }, 5L);
                 }
             }
@@ -792,7 +791,7 @@ public class PlayerListener implements Listener {
 
                 if (s.getType() == Material.PUMPKIN_PIE) {
 
-                    e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.HARM, 1, 3));
+                    e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 1, 3));
                 }
             }
         }
@@ -859,10 +858,10 @@ public class PlayerListener implements Listener {
             centerBlock.getRelative(BlockFace.UP).getRelative(BlockFace.UP).getRelative(BlockFace.UP).getRelative(BlockFace.UP).getRelative(BlockFace.UP).setType(Material.RED_CARPET);
 
             AreaEffectCloud a = (AreaEffectCloud) Main.getInstance().endWorld.spawnEntity(centerBlock.getRelative(BlockFace.UP).getLocation(), EntityType.AREA_EFFECT_CLOUD);
-            a.addCustomEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * 5, 0), false);
+            a.addCustomEffect(new PotionEffect(PotionEffectType.RESISTANCE, 20 * 5, 0), false);
             a.addCustomEffect(new PotionEffect(PotionEffectType.REGENERATION, 20 * 5, 0), false);
             a.setDuration(999999);
-            a.setParticle(Particle.BLOCK_CRACK, Material.AIR.createBlockData());
+            a.setParticle(Particle.BLOCK, Material.AIR.createBlockData());
             a.setRadius(4.0F);
 
             ma.getConfig().set("CreatedRegenZone", true);
@@ -870,71 +869,60 @@ public class PlayerListener implements Listener {
             ma.saveFile();
             ma.reloadFile();
 
-            Bukkit.getServer().getScheduler().runTaskLaterAsynchronously(Main.getInstance(), new Runnable() {
-                @Override
-                public void run() {
+            Runnable regenTask = () -> {
+                for (Entity ents : Main.getInstance().endWorld.getEntities()) {
+                    if (ents.getType() == EntityType.ENDERMAN || ents.getType() == EntityType.CREEPER) {
+                        Block b = ents.getLocation().getBlock().getRelative(BlockFace.DOWN);
+                        int structure = new Random().nextInt(4);
+                        ArrayList<Block> toChange = new ArrayList<>();
 
-                    for (Entity ents : Main.getInstance().endWorld.getEntities()) {
+                        if (structure == 0) {
+                            toChange.add(b.getRelative(BlockFace.NORTH));
+                            toChange.add(b.getRelative(BlockFace.NORTH).getRelative(BlockFace.WEST));
+                            toChange.add(b.getRelative(BlockFace.SOUTH));
+                            toChange.add(b.getRelative(BlockFace.SOUTH_EAST));
+                            toChange.add(b.getRelative(BlockFace.SOUTH_WEST));
+                            toChange.add(b.getRelative(BlockFace.SOUTH_EAST).getRelative(BlockFace.SOUTH));
+                            toChange.add(b.getRelative(BlockFace.SOUTH_EAST).getRelative(BlockFace.NORTH));
+                            toChange.add(b.getRelative(BlockFace.NORTH).getRelative(BlockFace.NORTH));
+                        } else if (structure == 1) {
+                            toChange.add(b.getRelative(BlockFace.NORTH));
+                            toChange.add(b.getRelative(BlockFace.NORTH_EAST));
+                            toChange.add(b);
+                        } else if (structure == 2) {
+                            toChange.add(b.getRelative(BlockFace.SOUTH));
+                            toChange.add(b.getRelative(BlockFace.SOUTH_WEST));
+                            toChange.add(b);
+                        } else if (structure == 3) {
+                            toChange.add(b.getRelative(BlockFace.NORTH));
+                            toChange.add(b.getRelative(BlockFace.NORTH_EAST));
+                            toChange.add(b);
+                            toChange.add(b.getRelative(BlockFace.SOUTH));
+                            toChange.add(b.getRelative(BlockFace.EAST));
+                        } else if (structure == 4) {
+                            toChange.add(b.getRelative(BlockFace.SOUTH));
+                            toChange.add(b.getRelative(BlockFace.NORTH_WEST));
+                            toChange.add(b);
+                            toChange.add(b.getRelative(BlockFace.NORTH));
+                            toChange.add(b.getRelative(BlockFace.WEST));
+                        }
 
-                        if (ents.getType() == EntityType.ENDERMAN || ents.getType() == EntityType.CREEPER) {
-
-                            Block b = ents.getLocation().getBlock().getRelative(BlockFace.DOWN);
-
-                            int structure = new Random().nextInt(4);
-
-                            ArrayList<Block> toChange = new ArrayList<>();
-
-                            if (structure == 0) {
-
-                                toChange.add(b.getRelative(BlockFace.NORTH));
-                                toChange.add(b.getRelative(BlockFace.NORTH).getRelative(BlockFace.WEST));
-                                toChange.add(b.getRelative(BlockFace.SOUTH));
-                                toChange.add(b.getRelative(BlockFace.SOUTH_EAST));
-                                toChange.add(b.getRelative(BlockFace.SOUTH_WEST));
-                                toChange.add(b.getRelative(BlockFace.SOUTH_EAST).getRelative(BlockFace.SOUTH));
-                                toChange.add(b.getRelative(BlockFace.SOUTH_EAST).getRelative(BlockFace.NORTH));
-                                toChange.add(b.getRelative(BlockFace.NORTH).getRelative(BlockFace.NORTH));
-                            } else if (structure == 1) {
-
-                                toChange.add(b.getRelative(BlockFace.NORTH));
-                                toChange.add(b.getRelative(BlockFace.NORTH_EAST));
-                                toChange.add(b);
-                            } else if (structure == 2) {
-
-                                toChange.add(b.getRelative(BlockFace.SOUTH));
-                                toChange.add(b.getRelative(BlockFace.SOUTH_WEST));
-                                toChange.add(b);
-                            } else if (structure == 3) {
-
-                                toChange.add(b.getRelative(BlockFace.NORTH));
-                                toChange.add(b.getRelative(BlockFace.NORTH_EAST));
-                                toChange.add(b);
-                                toChange.add(b.getRelative(BlockFace.SOUTH));
-                                toChange.add(b.getRelative(BlockFace.EAST));
-                            } else if (structure == 4) {
-
-                                toChange.add(b.getRelative(BlockFace.SOUTH));
-                                toChange.add(b.getRelative(BlockFace.NORTH_WEST));
-                                toChange.add(b);
-                                toChange.add(b.getRelative(BlockFace.NORTH));
-                                toChange.add(b.getRelative(BlockFace.WEST));
-                            }
-
-                            for (Block all : toChange) {
-
-                                Location used = Main.getInstance().endWorld.getHighestBlockAt(new Location(Main.getInstance().endWorld, all.getX(), all.getY(), all.getZ())).getLocation();
-
-                                Block now = Main.getInstance().endWorld.getBlockAt(used);
-
-                                if (now.getType() == Material.END_STONE) {
-
-                                    now.setType(Material.END_STONE_BRICKS);
-                                }
+                        for (Block all : toChange) {
+                            Location used = Main.getInstance().endWorld.getHighestBlockAt(new Location(Main.getInstance().endWorld, all.getX(), all.getY(), all.getZ())).getLocation();
+                            Block now = Main.getInstance().endWorld.getBlockAt(used);
+                            if (now.getType() == Material.END_STONE) {
+                                now.setType(Material.END_STONE_BRICKS);
                             }
                         }
                     }
                 }
-            }, 100L);
+            };
+
+            if (Main.isRunningFolia()) {
+                Bukkit.getRegionScheduler().runDelayed(Main.getInstance(), a.getLocation(), t -> regenTask.run(), 100L);
+            } else {
+                Bukkit.getServer().getScheduler().runTaskLater(Main.getInstance(), regenTask, 100L);
+            }
         }
     }
 
@@ -1212,7 +1200,7 @@ public class PlayerListener implements Listener {
                     }
 
                     if (found >= 8) {
-                        e.getInventory().setResult(new ItemBuilder(Material.GOLDEN_APPLE, 1).setDisplayName(TextUtils.format("&6Hyper Golden Apple +")).addEnchant(Enchantment.ARROW_INFINITE, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS).build());
+                        e.getInventory().setResult(new ItemBuilder(Material.GOLDEN_APPLE, 1).setDisplayName(TextUtils.format("&6Hyper Golden Apple +")).addEnchant(Enchantment.INFINITY, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS).build());
                     } else {
 
                         e.getInventory().setResult(null);
@@ -1236,7 +1224,7 @@ public class PlayerListener implements Listener {
                     }
 
                     if (found >= 8 && enoughGaps) {
-                        e.getInventory().setResult(new ItemBuilder(Material.GOLDEN_APPLE, 1).setDisplayName(TextUtils.format("&6Hyper Golden Apple +")).addEnchant(Enchantment.ARROW_INFINITE, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS).build());
+                        e.getInventory().setResult(new ItemBuilder(Material.GOLDEN_APPLE, 1).setDisplayName(TextUtils.format("&6Hyper Golden Apple +")).addEnchant(Enchantment.INFINITY, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS).build());
                     } else {
 
                         e.getInventory().setResult(null);
@@ -1261,7 +1249,7 @@ public class PlayerListener implements Listener {
                     return;
                 }
                 if (found >= 8) {
-                    e.getInventory().setResult(new ItemBuilder(Material.GOLDEN_APPLE, 1).setDisplayName(TextUtils.format("&6Super Golden Apple +")).addEnchant(Enchantment.ARROW_INFINITE, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS).build());
+                    e.getInventory().setResult(new ItemBuilder(Material.GOLDEN_APPLE, 1).setDisplayName(TextUtils.format("&6Super Golden Apple +")).addEnchant(Enchantment.INFINITY, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS).build());
                 }
             }
         }
@@ -1291,4 +1279,28 @@ public class PlayerListener implements Listener {
             }
         }
     }
+
+    private void runTaskLater(Runnable runnable, long ticks) {
+        if (Main.isRunningFolia()) {
+            Bukkit.getGlobalRegionScheduler().runDelayed(Main.getInstance(), t -> runnable.run(), ticks);
+        } else {
+            Bukkit.getScheduler().runTaskLater(Main.getInstance(), runnable, ticks);
+        }
+    }
+
+    private void runTaskLaterEntity(Entity entity, Runnable runnable, long ticks) {
+        if (Main.isRunningFolia()) {
+            entity.getScheduler().runDelayed(Main.getInstance(), t -> runnable.run(), null, ticks);
+        } else {
+            Bukkit.getScheduler().runTaskLater(Main.getInstance(), runnable, ticks);
+        }
+    }
 }
+
+
+
+
+
+
+
+

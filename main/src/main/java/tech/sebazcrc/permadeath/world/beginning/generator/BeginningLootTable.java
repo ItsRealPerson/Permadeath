@@ -127,3 +127,11 @@ public class BeginningLootTable {
         return random.nextInt(max - min) + random.nextInt(min) + 1;
     }
 }
+
+
+
+
+
+
+
+

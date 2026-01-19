@@ -33,10 +33,22 @@ public class WorldEvents implements Listener {
             if (event.getWorld().getEnvironment() == World.Environment.NORMAL && Main.getInstance().getDay() >= 25) {
                 for (World w : Bukkit.getWorlds()) {
                     for (LivingEntity l : w.getLivingEntities()) {
-                        Main.getInstance().deathTrainEffects(l);
+                        if (Main.isRunningFolia()) {
+                            l.getScheduler().run(Main.instance, t -> Main.getInstance().deathTrainEffects(l), null);
+                        } else {
+                            Main.getInstance().deathTrainEffects(l);
+                        }
                     }
                 }
             }
         }
     }
 }
+
+
+
+
+
+
+
+

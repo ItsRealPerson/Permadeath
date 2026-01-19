@@ -2,26 +2,32 @@ package tech.sebazcrc.permadeath.util.item;
 
 import org.bukkit.GameMode;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import tech.sebazcrc.permadeath.Main;
+import org.bukkit.persistence.PersistentDataType;
+import tech.sebazcrc.permadeath.api.PermadeathAPI;
 import tech.sebazcrc.permadeath.util.lib.HiddenStringUtils;
 import tech.sebazcrc.permadeath.util.lib.ItemBuilder;
 import tech.sebazcrc.permadeath.util.TextUtils;
+import tech.sebazcrc.permadeath.util.inventory.AccessoryInventory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
-public class PermadeathItems {
+public class PermadeathItems{
     private static final int[] beginningRelicLockedSlots = {40, 34, 33, 32, 30, 29, 28, 27, 26, 25, 24, 23, 21, 20, 19, 18, 17, 16, 15, 14, 12, 11, 10, 9, 8, 7};
 
     public static ItemStack crearReliquia() {
 
-        ItemStack s = new ItemBuilder(Material.LIGHT_BLUE_DYE).setCustomModelData(1, !Main.optifineItemsEnabled()).setDisplayName(TextUtils.format("&6Reliquia Del Fin")).build();
+        ItemStack s = new ItemBuilder(Material.LIGHT_BLUE_DYE).setCustomModelData(1, !PermadeathAPI.optifineItemsEnabled()).setDisplayName(TextUtils.format("&6Reliquia Del Fin")).build();
 
         ItemMeta meta = s.getItemMeta();
         meta.setUnbreakable(true);
@@ -32,11 +38,20 @@ public class PermadeathItems {
     }
 
     public static ItemStack createLifeOrb() {
-        return new ItemBuilder(Material.BROWN_DYE).setCustomModelData(1, !Main.optifineItemsEnabled()).setUnbrekeable(true).setDisplayName(TextUtils.format("&6Orbe de Vida")).build();
+        return new ItemBuilder(Material.BROWN_DYE).setCustomModelData(1, !PermadeathAPI.optifineItemsEnabled()).setUnbrekeable(true).setDisplayName(TextUtils.format("&6Orbe de Vida")).build();
     }
 
     public static ItemStack createBeginningRelic() {
-        return new ItemBuilder(Material.CYAN_DYE).setCustomModelData(1, !Main.optifineItemsEnabled()).setUnbrekeable(true).setDisplayName(TextUtils.format("&6Reliquia del Comienzo")).build();
+        return new ItemBuilder(Material.CYAN_DYE).setCustomModelData(1, !PermadeathAPI.optifineItemsEnabled()).setUnbrekeable(true).setDisplayName(TextUtils.format("&6Reliquia del Comienzo")).build();
+    }
+
+    public static ItemStack createWaterMedal() {
+        ItemStack s = new ItemBuilder(Material.HEART_OF_THE_SEA).setDisplayName(TextUtils.format("&b&lMedalla de Protección Acuática")).setUnbrekeable(true).build();
+        ItemMeta meta = s.getItemMeta();
+        meta.getPersistentDataContainer().set(new NamespacedKey(Bukkit.getPluginManager().getPlugin("Permadeath"), "water_medal"), PersistentDataType.BYTE, (byte) 1);
+        meta.setLore(Arrays.asList(TextUtils.format("&7Inmunidad al ahogamiento."), TextUtils.format("&eDisponible desde el día 30.")));
+        s.setItemMeta(meta);
+        return s;
     }
 
     public static ItemStack craftInfernalElytra() {
@@ -45,12 +60,12 @@ public class PermadeathItems {
 
         ItemMeta meta = s.getItemMeta();
 
-        AttributeModifier m = new AttributeModifier(UUID.randomUUID(), "generic.armor", 8, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.CHEST);
-        AttributeModifier m2 = new AttributeModifier(UUID.randomUUID(), "generic.armorToughness", 3, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.CHEST);
+        AttributeModifier m = new AttributeModifier(new NamespacedKey("permadeath", "armor"), 8, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.CHEST);
+        AttributeModifier m2 = new AttributeModifier(new NamespacedKey("permadeath", "armor_toughness"), 3, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.CHEST);
 
         assert meta != null;
-        meta.addAttributeModifier(Attribute.GENERIC_ARMOR, m);
-        meta.addAttributeModifier(Attribute.GENERIC_ARMOR_TOUGHNESS, m2);
+        meta.addAttributeModifier(Attribute.ARMOR, m);
+        meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, m2);
 
         s.setItemMeta(meta);
 
@@ -59,14 +74,14 @@ public class PermadeathItems {
 
     public static ItemStack craftNetheriteSword() {
 
-        ItemStack s = new ItemBuilder(Material.DIAMOND_SWORD).setCustomModelData(1, !Main.optifineItemsEnabled()).setDisplayName(TextUtils.format("&6Espada de Netherite")).build();
+        ItemStack s = new ItemBuilder(Material.DIAMOND_SWORD).setCustomModelData(1, !PermadeathAPI.optifineItemsEnabled()).setDisplayName(TextUtils.format("&6Espada de Netherite")).build();
         ItemMeta meta = s.getItemMeta();
 
-        AttributeModifier modifier = new AttributeModifier(UUID.randomUUID(), "generic.attackDamage", 8.0, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND);
-        AttributeModifier modifier2 = new AttributeModifier(UUID.randomUUID(), "generic.attackSpeed", -2.4D, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND);
+        AttributeModifier modifier = new AttributeModifier(new NamespacedKey("permadeath", "attack_damage"), 8.0, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND);
+        AttributeModifier modifier2 = new AttributeModifier(new NamespacedKey("permadeath", "attack_speed"), -2.4, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND);
         assert meta != null;
-        meta.addAttributeModifier(Attribute.GENERIC_ATTACK_DAMAGE, modifier);
-        meta.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED, modifier2);
+        meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, modifier);
+        meta.addAttributeModifier(Attribute.ATTACK_SPEED, modifier2);
         meta.setUnbreakable(true);
         s.setItemMeta(meta);
 
@@ -75,12 +90,12 @@ public class PermadeathItems {
 
     public static ItemStack craftNetheritePickaxe() {
 
-        ItemStack s = new ItemBuilder(Material.DIAMOND_PICKAXE).setCustomModelData(1, !Main.optifineItemsEnabled()).setDisplayName(TextUtils.format("&6Pico de Netherite")).build();
+        ItemStack s = new ItemBuilder(Material.DIAMOND_PICKAXE).setCustomModelData(1, !PermadeathAPI.optifineItemsEnabled()).setDisplayName(TextUtils.format("&6Pico de Netherite")).build();
         ItemMeta meta = s.getItemMeta();
-        AttributeModifier modifier = new AttributeModifier(UUID.randomUUID(), "generic.attackDamage", 6.0, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND);
-        AttributeModifier modifier2 = new AttributeModifier(UUID.randomUUID(), "generic.attackSpeed", 1.2, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND);
-        meta.addAttributeModifier(Attribute.GENERIC_ATTACK_DAMAGE, modifier);
-        meta.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED, modifier2);
+        AttributeModifier modifier = new AttributeModifier(new NamespacedKey("permadeath", "attack_damage"), 6.0, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND);
+        AttributeModifier modifier2 = new AttributeModifier(new NamespacedKey("permadeath", "attack_speed"), 1.2, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND);
+        meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, modifier);
+        meta.addAttributeModifier(Attribute.ATTACK_SPEED, modifier2);
         meta.setUnbreakable(true);
         s.setItemMeta(meta);
 
@@ -89,7 +104,7 @@ public class PermadeathItems {
 
     public static ItemStack craftNetheriteHoe() {
 
-        ItemStack s = new ItemBuilder(Material.DIAMOND_HOE).setCustomModelData(1, !Main.optifineItemsEnabled()).setDisplayName(TextUtils.format("&6Azada de Netherite")).build();
+        ItemStack s = new ItemBuilder(Material.DIAMOND_HOE).setCustomModelData(1, !PermadeathAPI.optifineItemsEnabled()).setDisplayName(TextUtils.format("&6Azada de Netherite")).build();
         ItemMeta meta = s.getItemMeta();
         meta.setUnbreakable(true);
         s.setItemMeta(meta);
@@ -99,12 +114,12 @@ public class PermadeathItems {
 
     public static ItemStack craftNetheriteAxe() {
 
-        ItemStack s = new ItemBuilder(Material.DIAMOND_AXE).setCustomModelData(1, !Main.optifineItemsEnabled()).setDisplayName(TextUtils.format("&6Hacha de Netherite")).build();
+        ItemStack s = new ItemBuilder(Material.DIAMOND_AXE).setCustomModelData(1, !PermadeathAPI.optifineItemsEnabled()).setDisplayName(TextUtils.format("&6Hacha de Netherite")).build();
         ItemMeta meta = s.getItemMeta();
-        AttributeModifier modifier = new AttributeModifier(UUID.randomUUID(), "generic.attackDamage", 10.0, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND);
-        AttributeModifier modifier2 = new AttributeModifier(UUID.randomUUID(), "generic.attackSpeed", 1.0, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND);
-        meta.addAttributeModifier(Attribute.GENERIC_ATTACK_DAMAGE, modifier);
-        meta.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED, modifier2);
+        AttributeModifier modifier = new AttributeModifier(new NamespacedKey("permadeath", "attack_damage"), 10.0, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND);
+        AttributeModifier modifier2 = new AttributeModifier(new NamespacedKey("permadeath", "attack_speed"), 1.0, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND);
+        meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, modifier);
+        meta.addAttributeModifier(Attribute.ATTACK_SPEED, modifier2);
         meta.setUnbreakable(true);
         s.setItemMeta(meta);
 
@@ -113,12 +128,12 @@ public class PermadeathItems {
 
     public static ItemStack craftNetheriteShovel() {
 
-        ItemStack s = new ItemBuilder(Material.DIAMOND_SHOVEL).setCustomModelData(1, !Main.optifineItemsEnabled()).setDisplayName(TextUtils.format("&6Pala de Netherite")).build();
+        ItemStack s = new ItemBuilder(Material.DIAMOND_SHOVEL).setCustomModelData(1, !PermadeathAPI.optifineItemsEnabled()).setDisplayName(TextUtils.format("&6Pala de Netherite")).build();
         ItemMeta meta = s.getItemMeta();
-        AttributeModifier modifier = new AttributeModifier(UUID.randomUUID(), "generic.attackDamage", 6.5, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND);
-        AttributeModifier modifier2 = new AttributeModifier(UUID.randomUUID(), "generic.attackSpeed", 1.0, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND);
-        meta.addAttributeModifier(Attribute.GENERIC_ATTACK_DAMAGE, modifier);
-        meta.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED, modifier2);
+        AttributeModifier modifier = new AttributeModifier(new NamespacedKey("permadeath", "attack_damage"), 6.5, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND);
+        AttributeModifier modifier2 = new AttributeModifier(new NamespacedKey("permadeath", "attack_speed"), 1.0, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.MAINHAND);
+        meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, modifier);
+        meta.addAttributeModifier(Attribute.ATTACK_SPEED, modifier2);
         meta.setUnbreakable(true);
         s.setItemMeta(meta);
 
@@ -127,7 +142,7 @@ public class PermadeathItems {
 
     public static ItemStack craftInfernalNetheriteIngot() {
 
-        ItemStack s = new ItemBuilder(Material.DIAMOND).setCustomModelData(1, !Main.optifineItemsEnabled()).setDisplayName(TextUtils.format("&6Infernal Netherite Block")).build();
+        ItemStack s = new ItemBuilder(Material.DIAMOND).setCustomModelData(1, !PermadeathAPI.optifineItemsEnabled()).setDisplayName(TextUtils.format("&6Infernal Netherite Block")).build();
         ItemMeta meta = s.getItemMeta();
         meta.setUnbreakable(true);
         meta.setLore(Arrays.asList(HiddenStringUtils.encodeString("{" + UUID.randomUUID() + ": 0}")));
@@ -136,22 +151,38 @@ public class PermadeathItems {
         return s;
     }
 
+    public static ItemStack createAccessoryTrigger() {
+        return new ItemBuilder(Material.NETHER_STAR)
+                .setDisplayName(TextUtils.format("&6&lMenú de Accesorios &7(Click Derecho)"))
+                .setLore(java.util.Arrays.asList(
+                        TextUtils.format("&7Usa este ítem para gestionar"),
+                        TextUtils.format("&7tus accesorios especiales."),
+                        " ",
+                        TextUtils.format("&cNo se puede tirar ni perder.")
+                ))
+                .setUnbrekeable(true)
+                .build();
+    }
+
     public static void slotBlock(Player p) {
-        if (Main.getInstance().getDay() < 40) return;
+        if (PermadeathAPI.getDay() < 40) return;
         if (p.getGameMode() == GameMode.SPECTATOR || p.isDead() || !p.isOnline()) return;
 
         boolean hasEndRelic = false;
         boolean hasBeginningRelic = false;
 
         int[] endRelicLockedSlots;
-        if (Main.getInstance().getDay() < 60) {
+        if (PermadeathAPI.getDay() < 60) {
             endRelicLockedSlots = new int[]{40, 13, 22, 31, 4};
         } else {
             endRelicLockedSlots = new int[]{13, 22, 31, 4};
         }
 
+        List<ItemStack> allItems = new ArrayList<>(Arrays.asList(p.getInventory().getContents()));
+        ItemStack[] accessories = AccessoryInventory.load(p);
+        if (accessories != null) allItems.addAll(Arrays.asList(accessories));
 
-        for (ItemStack contents : p.getInventory().getContents()) {
+        for (ItemStack contents : allItems) {
             if (!hasBeginningRelic && isBeginningRelic(contents)) {
                 hasBeginningRelic = true;
                 hasEndRelic = true;
@@ -161,9 +192,10 @@ public class PermadeathItems {
         }
 
         int slot;
-        if (Main.getInstance().getDay() >= 40) {
+        if (PermadeathAPI.getDay() >= 40) {
             for (int i = 0; i < endRelicLockedSlots.length; i++) {
                 slot = endRelicLockedSlots[i];
+                if (slot == 8) continue; // EXENTO: SLOT DEL MENU
                 if (hasEndRelic) {
                     unlockSlot(p, slot);
                 } else {
@@ -172,9 +204,10 @@ public class PermadeathItems {
             }
         }
 
-        if (Main.getInstance().getDay() >= 60) {
+        if (PermadeathAPI.getDay() >= 60) {
             for (int i = 0; i < beginningRelicLockedSlots.length; i++) {
                 slot = beginningRelicLockedSlots[i];
+                if (slot == 8) continue; // EXENTO: SLOT DEL MENU
                 if (hasBeginningRelic) {
                     unlockSlot(p, slot);
                 } else {
@@ -219,12 +252,44 @@ public class PermadeathItems {
     }
 
     public static boolean isBeginningRelic(ItemStack stack) {
+
         if (stack == null) return false;
         if (!stack.hasItemMeta()) return false;
 
         if (stack.getType() == Material.CYAN_DYE && stack.getItemMeta().getDisplayName().endsWith(TextUtils.format("&6Reliquia del Comienzo"))) {
             return true;
         }
+
         return false;
     }
+
+    public static boolean isLifeOrb(ItemStack stack) {
+        if (stack == null) return false;
+        if (!stack.hasItemMeta()) return false;
+        return stack.getType() == Material.BROWN_DYE && stack.getItemMeta().isUnbreakable() && stack.getItemMeta().getDisplayName().endsWith(TextUtils.format("&6Orbe de Vida"));
+    }
+
+    public static boolean isWaterMedal(ItemStack stack) {
+        if (stack == null) return false;
+        if (!stack.hasItemMeta()) return false;
+        return stack.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(Bukkit.getPluginManager().getPlugin("Permadeath"), "water_medal"), PersistentDataType.BYTE);
+    }
+
+    public static boolean isSurvivorMedal(ItemStack stack) {
+        if (stack == null) return false;
+        if (!stack.hasItemMeta()) return false;
+        return stack.getType() == Material.TOTEM_OF_UNDYING && stack.getItemMeta().getDisplayName().endsWith(TextUtils.format("&6&lMedalla de Superviviente"));
+    }
+
+    public static boolean isSpecialAccessory(ItemStack stack) {
+        return isLifeOrb(stack) || isWaterMedal(stack) || isSurvivorMedal(stack) || isEndRelic(stack) || isBeginningRelic(stack);
+    }
 }
+
+
+
+
+
+
+
+

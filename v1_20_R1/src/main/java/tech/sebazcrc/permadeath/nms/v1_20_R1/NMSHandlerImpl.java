@@ -15,10 +15,10 @@ import org.bukkit.entity.Ghast;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.persistence.PersistentDataType;
-import tech.sebazcrc.permadeath.Main;
-import tech.sebazcrc.permadeath.nms.v1_20_R1.entity.CustomGhast;
+
 import tech.sebazcrc.permadeath.util.NMS;
-import tech.sebazcrc.permadeath.util.interfaces.NMSHandler;
+import tech.sebazcrc.permadeath.api.interfaces.NMSHandler;
+import tech.sebazcrc.permadeath.nms.v1_20_R1.entity.CustomGhast;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
@@ -305,7 +305,7 @@ public class NMSHandlerImpl implements NMSHandler {
             ghast.setHealth(100.0F);
             ghast.setCustomName(CraftChatMessage.fromStringOrNull("§6Ender Ghast"));
             ghast.setCustomNameVisible(false);
-            ghast.getBukkitEntity().getPersistentDataContainer().set(new NamespacedKey(Main.getInstance(), "ender_ghast"), PersistentDataType.BYTE, (byte) 1);
+            ghast.getBukkitEntity().getPersistentDataContainer().set(new NamespacedKey(org.bukkit.Bukkit.getPluginManager().getPlugin("Permadeath"), "ender_ghast"), PersistentDataType.BYTE, (byte) 1);
         }
         return ghast.getBukkitEntity();
     }
@@ -315,3 +315,4 @@ public class NMSHandlerImpl implements NMSHandler {
         // TODO
     }
 }
+

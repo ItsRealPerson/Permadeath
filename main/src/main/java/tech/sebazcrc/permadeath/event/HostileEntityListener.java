@@ -22,13 +22,16 @@ public class HostileEntityListener implements Listener {
 
     public void initialize() {
         if (instance.getDay() >= 20) {
-            EntityType type;
             for (World w : Bukkit.getWorlds()) {
                 for (LivingEntity entity : w.getLivingEntities()) {
-                    type = entity.getType();
+                    EntityType type = entity.getType();
 
                     if (!Utils.isHostileMob(type) && type != EntityType.ENDERMAN) {
-                        injectHostileBehavior(entity);
+                        if (Main.isRunningFolia()) {
+                            entity.getScheduler().run(instance, t -> injectHostileBehavior(entity), null);
+                        } else {
+                            injectHostileBehavior(entity);
+                        }
                     }
                 }
             }
@@ -46,8 +49,8 @@ public class HostileEntityListener implements Listener {
 
     private void injectHostileBehavior(LivingEntity entity) {
         instance.getNmsAccessor().injectHostilePathfinders(entity);
-        if (entity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE) == null) {
-            instance.getNmsAccessor().registerAttribute(Attribute.GENERIC_ATTACK_DAMAGE, 8.0D, entity);
+        if (entity.getAttribute(Attribute.ATTACK_DAMAGE) == null) {
+            instance.getNmsAccessor().registerAttribute(Attribute.ATTACK_DAMAGE, 8.0D, entity);
         }
     }
 
@@ -69,3 +72,11 @@ public class HostileEntityListener implements Listener {
         }
     }
 }
+
+
+
+
+
+
+
+

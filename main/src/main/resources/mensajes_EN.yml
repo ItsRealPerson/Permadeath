@@ -8,6 +8,7 @@ Server-Messages:
   DeathMessageTitle: '&cPermadeath!'
   DeathMessageSubtitle: '%player% died'
   DeathMessageChat: "&c&lThis is the beginning of &4&l%player%&7's eternal suffering. &c&lTHEY'VE BEEN PERMA-BANNED!"
-  DeathTrainMessage: '&cThe Death Train is now ongoing for %tiempo% hours!'
-  DeathTrainMessageMinutes: '&cThe Death Train is now ongoing for %tiempo% minutes!'
-  ActionBarMessage: '&7The storm will end on %tiempo%'
+  DeathTrainMessage: '&cThe Death Train begins with a duration of %tiempo%!'
+  DeathTrainMessageMinutes: '&cThe Death Train begins with a duration of %tiempo%!'
+  DeathTrainIncrease: '&cThe Death Train increases to %tiempo%!'
+  ActionBarMessage: '&7%tiempo% of storm remaining'

@@ -3,7 +3,8 @@ package tech.sebazcrc.permadeath.util;
 public enum MinecraftVersion {
     v1_15_R1,
     v1_16_R3,
-    v1_20_R1;
+    v1_20_R1,
+    v1_21_R3;
 
     private static final String REVISION_PATTERN = "_R\\d";
 
@@ -19,3 +20,11 @@ public enum MinecraftVersion {
         return this.name().replaceAll(REVISION_PATTERN, "").replace("_", ".");
     }
 }
+
+
+
+
+
+
+
+

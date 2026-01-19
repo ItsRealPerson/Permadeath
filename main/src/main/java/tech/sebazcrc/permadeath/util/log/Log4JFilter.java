@@ -59,3 +59,10 @@ public class Log4JFilter extends AbstractFilter {
         return validateMessage(candidate);
     }
 }
+
+
+
+
+
+
+

@@ -4,3 +4,11 @@ public enum DemonPhase {
 
     ENRAGED, NORMAL, DEAD
 }
+
+
+
+
+
+
+
+

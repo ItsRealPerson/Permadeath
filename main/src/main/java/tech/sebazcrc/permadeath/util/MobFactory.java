@@ -38,6 +38,12 @@ public class MobFactory {
         c.setCustomName(format("&6Quantum Creeper"));
         addPersistentData(c, "quantum_creeper");
         c.setExplosionRadius(instance.getConfig().getInt("Toggles.Quantum-Explosion-Power"));
+        
+        // Soporte 1.21
+        if (VersionManager.getRev().equals("1_21_R3")) {
+            instance.getNmsHandler().spawnNMSCustomEntity("QuantumCreeper", null, l, null);
+            if (c.isValid()) c.remove();
+        }
         return c;
     }
 
@@ -50,7 +56,20 @@ public class MobFactory {
         addPersistentData(c, "ender_quantum_creeper");
         c.setExplosionRadius(instance.getConfig().getInt("Toggles.Quantum-Explosion-Power"));
 
+        // Soporte 1.21
+        if (VersionManager.getRev().equals("1_21_R3")) {
+            instance.getNmsHandler().spawnNMSCustomEntity("EnderQuantumCreeper", null, l, null);
+            if (c.isValid()) c.remove();
+        }
         return c;
+    }
+
+    public void spawnCustomGiant(Location l) {
+        instance.getNmsHandler().spawnNMSCustomEntity("CustomGiant", null, l, null);
+    }
+
+    public void spawnMinion(String type, Location l) {
+        instance.getNmsHandler().spawnNMSCustomEntity(type, null, l, null);
     }
 
     public boolean hasData(Entity entity, String id) {
@@ -65,3 +84,10 @@ public class MobFactory {
         return TextUtils.format(s);
     }
 }
+
+
+
+
+
+
+

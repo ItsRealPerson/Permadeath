@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -13,7 +12,7 @@ import org.bukkit.block.CreatureSpawner;
 import org.bukkit.craftbukkit.v1_20_R1.CraftWorld;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.block.BlockBreakEvent;
-import tech.sebazcrc.permadeath.util.interfaces.InfernalNetheriteBlock;
+import tech.sebazcrc.permadeath.api.interfaces.InfernalNetheriteBlock;
 import tech.sebazcrc.permadeath.util.item.PermadeathItems;
 
 import java.util.Objects;
@@ -96,3 +95,4 @@ public class InfernalNetheriteBlockImpl implements InfernalNetheriteBlock {
         return dataFound;
     }
 }
+

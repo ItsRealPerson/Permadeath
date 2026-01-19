@@ -1,5 +1,7 @@
-package tech.sebazcrc.permadeath.util.interfaces;
+package tech.sebazcrc.permadeath.api.interfaces;
 
 public interface DeathModule {
     void spawn(org.bukkit.Location where);
 }
+
+

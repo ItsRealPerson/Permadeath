@@ -93,7 +93,13 @@ public class DateManager {
 
         PDCLog.getInstance().log("Día cambiado a: " + nD);
 
-        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "pdc reload");
+        Runnable reloadTask = () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "pdc reload");
+        if (Main.isRunningFolia()) {
+            Bukkit.getGlobalRegionScheduler().execute(instance, reloadTask);
+        } else {
+            reloadTask.run();
+        }
+
         if (Bukkit.getOnlinePlayers() != null && Bukkit.getOnlinePlayers().size() >= 1) {
             for (OfflinePlayer off : Bukkit.getOfflinePlayers()) {
 
@@ -172,3 +178,11 @@ public class DateManager {
         return dai;
     }
 }
+
+
+
+
+
+
+
+
