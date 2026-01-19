@@ -211,6 +211,7 @@ public class PDCCommand implements CommandExecutor {
             case "endrelic" -> p.getInventory().addItem(PermadeathItems.crearReliquia());
             case "beginningrelic" -> p.getInventory().addItem(PermadeathItems.createBeginningRelic());
             case "watermedal" -> p.getInventory().addItem(PermadeathItems.createWaterMedal());
+            case "abyssalheart" -> p.getInventory().addItem(PermadeathItems.createAbyssalHeart());
         }
     }
 
