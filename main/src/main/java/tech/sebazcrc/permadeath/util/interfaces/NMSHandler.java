@@ -1,4 +1,4 @@
-package tech.sebazcrc.permadeath.api.interfaces;
+package tech.sebazcrc.permadeath.util.interfaces;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -18,12 +18,3 @@ public interface NMSHandler {
 
     void addMushrooms();
 }
-
-
-
-
-
-
-
-
-

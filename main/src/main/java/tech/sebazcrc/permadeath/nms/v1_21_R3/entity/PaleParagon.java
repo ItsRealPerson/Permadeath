@@ -12,6 +12,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
+import org.bukkit.NamespacedKey;
+import org.bukkit.persistence.PersistentDataType;
+import tech.sebazcrc.permadeath.Main;
 import tech.sebazcrc.permadeath.nms.v1_21_R3.utils.EffectUtils;
 import tech.sebazcrc.permadeath.nms.v1_21_R3.utils.MobUtils;
 
@@ -20,6 +23,7 @@ public class PaleParagon {
         IronGolem golem = (IronGolem) loc.getWorld().spawnEntity(loc, EntityType.IRON_GOLEM, CreatureSpawnEvent.SpawnReason.CUSTOM);
         golem.setCustomName("§f§lPale Paragon");
         golem.setPlayerCreated(false);
+        golem.getPersistentDataContainer().set(new NamespacedKey(Main.getInstance(), "pale_paragon"), PersistentDataType.BYTE, (byte) 1);
 
         EffectUtils.setMaxHealth(golem, 250.0);
         EffectUtils.setKnockbackResistance(golem, 1.0);
@@ -72,6 +76,14 @@ public class PaleParagon {
         return golem;
     }
 }
+
+
+
+
+
+
+
+
 
 
 

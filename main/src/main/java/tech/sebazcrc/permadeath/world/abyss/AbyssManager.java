@@ -15,7 +15,6 @@ public class AbyssManager implements Listener {
 
     public AbyssManager(Main plugin) {
         this.plugin = plugin;
-        Bukkit.getPluginManager().registerEvents(this, plugin);
         this.abyssWorld = Bukkit.getWorld(WORLD_NAME);
     }
 
@@ -72,4 +71,12 @@ public class AbyssManager implements Listener {
         }
     }
 }
+
+
+
+
+
+
+
+
 

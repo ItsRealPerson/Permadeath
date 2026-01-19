@@ -3,7 +3,7 @@ package tech.sebazcrc.permadeath.util;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import tech.sebazcrc.permadeath.api.PermadeathAPI;
+import tech.sebazcrc.permadeath.util.PermadeathAPI;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -91,6 +91,14 @@ public class TextUtils {
         Bukkit.getConsoleSender().sendMessage(format((!s.isEmpty() ? PermadeathAPI.getPrefix() : "") + s));
     }
 }
+
+
+
+
+
+
+
+
 
 
 

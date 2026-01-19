@@ -1,6 +1,7 @@
 package tech.sebazcrc.permadeath;
 
 import lombok.Getter;
+import lombok.Setter;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.apache.logging.log4j.LogManager;
@@ -52,6 +53,7 @@ import tech.sebazcrc.permadeath.util.interfaces.NMSAccessor;
 import tech.sebazcrc.permadeath.util.interfaces.NMSHandler;
 import tech.sebazcrc.permadeath.task.EndTask;
 import tech.sebazcrc.permadeath.world.beginning.BeginningManager;
+import tech.sebazcrc.permadeath.world.abyss.AbyssManager;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -65,38 +67,33 @@ public final class Main extends JavaPlugin implements Listener {
     private static final int CURRENT_CONFIG_VERSION = 3;
     public static boolean DEBUG = false;
     public static boolean DISABLED_LINGERING = false;
-
     public static boolean SPEED_RUN_MODE = false;
-    @Getter
     public static Main instance;
     public static String prefix = "";
-    @Getter
     public static boolean runningPaperSpigot = false;
+    public static boolean runningFolia = false;
     public static boolean worldEditFound;
     private final SplittableRandom random = new SplittableRandom();
     public World world = null;
     public World endWorld = null;
     private int playTime = 0;
-    private HostileEntityListener hostile;
-    private RecipeManager recipes;
-    @Getter
-    private Messages messages;
-    @Getter
-    private EndTask task = null;
-    private EndManager endManager;
-    private MobFactory factory;
-    @Getter
-    private EndDataManager endData;
-    @Getter
-    private tech.sebazcrc.permadeath.world.abyss.AbyssManager abyssManager;
-    public static boolean runningFolia = false;
+    public HostileEntityListener hostile;
+    public RecipeManager recipes;
+    public Messages messages;
+    public EndTask task = null;
+    public EndManager endManager;
+    public MobFactory factory;
+    public BeginningManager begginingManager;
+    public BeginningDataManager beData;
+    public EndDataManager endData;
+    public AbyssManager abyssManager;
     private Map<Integer, Boolean> registeredDays = new HashMap<>();
     private ArrayList<Player> doneEffectPlayers = new ArrayList<>();
     private boolean loaded = false;
     private boolean alreadyRegisteredChanges = false;
-    private ShellEvent shulkerEvent;
-    private LifeOrbEvent orbEvent;
-    private SpawnListener spawnListener;
+    public ShellEvent shulkerEvent;
+    public LifeOrbEvent orbEvent;
+    public SpawnListener spawnListener;
 
     public static boolean optifineItemsEnabled() {
         if (instance == null) return false;
@@ -106,6 +103,7 @@ public final class Main extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         instance = this;
+        runningFolia = isRunningFolia();
 
         this.saveDefaultConfig();
         setupConsoleFilter();
@@ -120,10 +118,11 @@ public final class Main extends JavaPlugin implements Listener {
     @Override
     public void onLoad() {
         instance = this;
+        this.abyssManager = new AbyssManager(this);
         try {
             NMS.loadInfernalNetheriteBlock();
             NMS.loadNMSAccessor();
-            NMS.loadNMSHandler();
+            NMS.loadNMSHandler(this);
 
             getNmsAccessor().registerHostileMobs();
         } catch (Exception ex) {
@@ -149,81 +148,84 @@ public final class Main extends JavaPlugin implements Listener {
         this.instance = null;
     }
 
+    // --- GETTERS PARA COMPATIBILIDAD ---
+    public static Main getInstance() { return instance; }
+    public Messages getMessages() { return messages; }
+    public LifeOrbEvent getOrbEvent() { return orbEvent; }
+    public ShellEvent getShulkerEvent() { return shulkerEvent; }
+    public MobFactory getFactory() { return factory; }
+    public BeginningDataManager getBeData() { return beData; }
+    public EndDataManager getEndData() { return endData; }
+    public BeginningManager getBeginningManager() { return begginingManager; }
+    public AbyssManager getAbyssManager() { return abyssManager; }
+    public SpawnListener getSpawnListener() { return spawnListener; }
+    public NMSHandler getNmsHandler() { return NMS.getHandler(); }
+    public NMSAccessor getNmsAccessor() { return NMS.getAccessor(); }
+    public InfernalNetheriteBlock getNetheriteBlock() { return NMS.getNetheriteBlock(); }
+    public EndTask getTask() { return task; }
+    public void setTask(EndTask task) { this.task = task; }
+    public int getDay() { return (int) DateManager.getInstance().getDay(); }
+    public int getPlayTime() { return playTime; }
+    public void setPlayTime(int playTime) { this.playTime = playTime; }
+    public ArrayList<Player> getDoneEffectPlayers() { return doneEffectPlayers; }
+    public boolean isSmallIslandsEnabled() { return true; }
+    public static boolean isRunningPaperSpigot() { return runningPaperSpigot; }
+
+    public static boolean isRunningFolia() {
+        try {
+            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    public void setupFoliaWorldConfig(CommandSender sender) {
+        File bukkitConfig = new File("bukkit.yml");
+        if (!bukkitConfig.exists()) bukkitConfig = new File(Bukkit.getWorldContainer(), "bukkit.yml");
+        if (!bukkitConfig.exists()) return;
+
+        FileConfiguration config = YamlConfiguration.loadConfiguration(bukkitConfig);
+        if (!config.contains("worlds.pdc_the_beginning")) {
+            config.set("worlds.pdc_the_beginning.generator", "Permadeath");
+            try { config.save(bukkitConfig); } catch (Exception ignored) {}
+        }
+    }
+
+    @Override
+    public org.bukkit.generator.ChunkGenerator getDefaultWorldGenerator(String worldName, String id) {
+        if (worldName.equalsIgnoreCase("pdc_the_beginning")) {
+            return new tech.sebazcrc.permadeath.world.beginning.generator.BeginningGenerator();
+        }
+        if (worldName.equalsIgnoreCase("pdc_the_abyss")) {
+            return new tech.sebazcrc.permadeath.world.abyss.generator.DeepDarkAbyssGenerator();
+        }
+        return null;
+    }
+
     private void tickAll() {
-        Bukkit.getScheduler().runTaskTimer(this, new Runnable() {
+        Runnable task = new Runnable() {
             @Override
             public void run() {
-
-                if (!getFile().exists()) {
-                    saveDefaultConfig();
-                }
-
+                if (!getFile().exists()) saveDefaultConfig();
                 if (!loaded) {
-
-                    if (DiscordPortal.isJDAInstalled()) {
-                        Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefix + "&aSe ha encontrado la librería JDA, cargando bot de Discord."));
-                        DiscordPortal.reload();
-                    } else {
-                        Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefix + "&cNo se ha encontrado una librería JDA, deberás instalar una en caso de querer utilizar un bot de Discord."));
-                        Bukkit.getConsoleSender().sendMessage(TextUtils.format("&eDescarga aquí: &f" + Utils.SPIGOT_LINK));
-                        Bukkit.getConsoleSender().sendMessage(TextUtils.format("&eSi no puedes descargarlo allí, únete a este Discord y te daremos acceso al enlace: &ehttps://discord.gg/8evPbuxPke"));
-                    }
-
                     startPlugin();
                     setupConfig();
-
-                    if (!getConfig().contains("config-version")) {
-                        PDCLog.getInstance().log("Eliminando config.yml por versión antigua.");
-                        getFile().delete();
-                        saveDefaultConfig();
-                    } else {
-                        try {
-                            int version = getConfig().getInt("config-version");
-                            if (version != CURRENT_CONFIG_VERSION) {
-                                Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefix + "&eEstamos eliminando config.yml debido a que está desactualizado."));
-                                PDCLog.getInstance().log("Eliminando config.yml por versión antigua.");
-                                getFile().delete();
-                                saveDefaultConfig();
-                            }
-                        } catch (Exception x) {
-                            getFile().delete();
-                        }
-                    }
-
-                    if (getConfig().getBoolean("Toggles.Replace-Mobs-On-Chunk-Load")) {
-                        for (World worlds : Bukkit.getWorlds()) {
-                            for (LivingEntity liv : worlds.getLivingEntities()) {
-                                spawnListener.applyDayChanges(liv);
-                            }
-                        }
-                    }
                     loaded = true;
                 }
-
                 DateManager.getInstance().tick();
                 registerListeners();
-
-                if (Bukkit.getOnlinePlayers().size() >= 1 && SPEED_RUN_MODE) {
-                    playTime++;
-
-                    if (playTime % (3600) == 0) {
-                        Bukkit.broadcastMessage(prefix + TextUtils.format("&cFelicitaciones, han avanzado a la hora número: " + getDay()));
-                        for (Player player : Bukkit.getOnlinePlayers()) {
-                            player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 100.0F, 100.0F);
-                        }
-                    }
-                }
-
-                if (getDay() >= 60 && !getConfig().getBoolean("DontTouch.Event.LifeOrbEnded") && !getOrbEvent().isRunning()) {
-                    if (SPEED_RUN_MODE) orbEvent.setTimeLeft(60 * 8);
-                    orbEvent.setRunning(true);
-                }
-
                 tickEvents();
                 tickPlayers();
                 tickWorlds();
             }
-        }, 0, 30L);
+        };
+
+        if (runningFolia) {
+            Bukkit.getGlobalRegionScheduler().runAtFixedRate(this, t -> task.run(), 1, 30L);
+        } else {
+            Bukkit.getScheduler().runTaskTimer(this, task, 0, 30L);
+        }
     }
 
     private void tickWorlds() {
@@ -234,9 +236,9 @@ public final class Main extends JavaPlugin implements Listener {
                         List<Block> b = ravager.getLineOfSight(null, 5);
 
                         for (Block block : b) {
-                            for (int i = -1; i < 1; i++) {
-                                for (int j = -1; j < 1; j++) {
-                                    for (int k = -1; k < 1; k++) {
+                            for (int i = -1; i <= 1; i++) {
+                                for (int j = -1; j <= 1; j++) {
+                                    for (int k = -1; k <= 1; k++) {
                                         Block r = block.getRelative(i, j, k);
                                         if (r.getType() == Material.NETHERRACK) {
                                             r.setType(Material.AIR);
@@ -256,7 +258,7 @@ public final class Main extends JavaPlugin implements Listener {
 
         if (Bukkit.getOnlinePlayers().size() < 1) return;
 
-        long segundosbrutos = world.getWeatherDuration() / 20;
+        long segundosbrutos = world != null ? world.getWeatherDuration() / 20 : 0;
 
         long hours = segundosbrutos % 86400 / 3600;
         long minutes = (segundosbrutos % 3600) / 60;
@@ -269,13 +271,13 @@ public final class Main extends JavaPlugin implements Listener {
 
             World w = player.getWorld();
 
-            if (this.shulkerEvent.isRunning()) {
+            if (this.shulkerEvent != null && this.shulkerEvent.isRunning()) {
                 if (!this.shulkerEvent.getBossBar().getPlayers().contains(player)) {
                     this.shulkerEvent.getBossBar().addPlayer(player);
                 }
             }
 
-            if (this.orbEvent.isRunning()) {
+            if (this.orbEvent != null && this.orbEvent.isRunning()) {
                 if (!this.orbEvent.getBossBar().getPlayers().contains(player)) {
                     this.orbEvent.getBossBar().addPlayer(player);
                 }
@@ -287,14 +289,14 @@ public final class Main extends JavaPlugin implements Listener {
             if (SPEED_RUN_MODE) {
                 String actionBar = "";
 
-                if (world.hasStorm()) {
+                if (world != null && world.hasStorm()) {
                     actionBar = getMessages().getMessageByPlayer("Server-Messages.ActionBarMessage", player.getName()).replace("%tiempo%", time) + " - ";
                 }
                 actionBar = actionBar + ChatColor.GRAY + "Tiempo total: " + TextUtils.formatInterval(playTime);
                 player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(actionBar));
 
             } else {
-                if (world.hasStorm()) {
+                if (world != null && world.hasStorm()) {
                     String msg = getMessages().getMessageByPlayer("Server-Messages.ActionBarMessage", player.getName()).replace("%tiempo%", time);
                     player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(msg));
                 }
@@ -362,12 +364,12 @@ public final class Main extends JavaPlugin implements Listener {
                     }
                 }
 
-                if (player.hasPotionEffect(PotionEffectType.SLOW_DIGGING)) {
-                    PotionEffect e = player.getPotionEffect(PotionEffectType.SLOW_DIGGING);
+                if (player.hasPotionEffect(PotionEffectType.MINING_FATIGUE)) {
+                    PotionEffect e = player.getPotionEffect(PotionEffectType.MINING_FATIGUE);
                     if (e.getDuration() >= 4 * 60 * 20 && !getDoneEffectPlayers().contains(player)) {
                         int min = 10 * 60;
-                        player.removePotionEffect(PotionEffectType.SLOW_DIGGING);
-                        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, min * 20, 2));
+                        player.removePotionEffect(PotionEffectType.MINING_FATIGUE);
+                        player.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, min * 20, 2));
                         getDoneEffectPlayers().add(player);
                     }
 
@@ -378,9 +380,9 @@ public final class Main extends JavaPlugin implements Listener {
 
                 if (player.getWorld().getEnvironment() == World.Environment.NETHER && getDay() < 60) {
 
-                    int random = this.random.nextInt(4500) + 1;
+                    int randomVal = this.random.nextInt(4500) + 1;
 
-                    if (random <= 10 && player.getWorld().getLivingEntities().size() < 110) {
+                    if (randomVal <= 10 && player.getWorld().getLivingEntities().size() < 110) {
 
                         Location ploc = player.getLocation().clone();
 
@@ -403,7 +405,7 @@ public final class Main extends JavaPlugin implements Listener {
 
             if (getDay() >= 60) {
                 if (player.getLocation().getBlock().getRelative(BlockFace.DOWN).getType() == Material.SOUL_SAND) {
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 30 * 20, 2));
+                    player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 30 * 20, 2));
                 }
                 Integer timeForWither = player.getPersistentDataContainer().get(new NamespacedKey(this, "wither"), PersistentDataType.INTEGER);
                 if (timeForWither == null) {
@@ -447,7 +449,7 @@ public final class Main extends JavaPlugin implements Listener {
 
     private void tickEvents() {
 
-        if (this.orbEvent.isRunning()) {
+        if (this.orbEvent != null && this.orbEvent.isRunning()) {
             if (this.orbEvent.getTimeLeft() > 0) {
 
                 this.orbEvent.reduceTime();
@@ -477,7 +479,7 @@ public final class Main extends JavaPlugin implements Listener {
             }
         }
 
-        if (this.shulkerEvent.isRunning()) {
+        if (this.shulkerEvent != null && this.shulkerEvent.isRunning()) {
 
             if (this.shulkerEvent.getTimeLeft() > 0) {
 
@@ -568,6 +570,10 @@ public final class Main extends JavaPlugin implements Listener {
         } catch (ClassNotFoundException e) {
         }
 
+        if (runningFolia) {
+            software = "Folia (Compatible)";
+        }
+
         String worldState = setupWorld();
 
         Bukkit.getConsoleSender().sendMessage(TextUtils.format("&f&m------------------------------------------"));
@@ -617,24 +623,24 @@ public final class Main extends JavaPlugin implements Listener {
     }
 
     private void registerListeners() {
-        String prefix = "&e[PermaDeath] &7> ";
+        String prefixStr = "&e[PermaDeath] &7> ";
 
-        if (!registeredDays.get(1)) {
-            registeredDays.replace(1, true);
+        if (!registeredDays.getOrDefault(1, false)) {
+            registeredDays.put(1, true);
 
             this.getServer().getPluginManager().registerEvents(new AnvilListener(this), this);
         }
 
-        if (DateManager.getInstance().getDay() >= 20 && !registeredDays.get(20)) {
-            registeredDays.replace(20, true);
+        if (DateManager.getInstance().getDay() >= 20 && !registeredDays.getOrDefault(20, false)) {
+            registeredDays.put(20, true);
 
             this.hostile = new HostileEntityListener(this);
             getServer().getPluginManager().registerEvents(hostile, instance);
-            Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefix + "&eSe han registrado los cambios de Mobs pacíficos hostiles."));
+            Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado los cambios de Mobs pacíficos hostiles."));
         }
 
-        if (DateManager.getInstance().getDay() >= 30 && endManager == null && endData == null && !registeredDays.get(30)) {
-            registeredDays.replace(30, true);
+        if (DateManager.getInstance().getDay() >= 30 && endManager == null && endData == null && !registeredDays.getOrDefault(30, false)) {
+            registeredDays.put(30, true);
 
             this.endManager = new EndManager(instance);
             getServer().getPluginManager().registerEvents(endManager, instance);
@@ -643,42 +649,42 @@ public final class Main extends JavaPlugin implements Listener {
 
             if (runningPaperSpigot) {
                 getServer().getPluginManager().registerEvents(new PaperListeners(instance), instance);
-                Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefix + "&eSe han registrado cambios especiales para &c&lPaperMC&e."));
+                Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado cambios especiales para &c&lPaperMC&e."));
             }
         }
 
-        if (DateManager.getInstance().getDay() >= 40 && !registeredDays.get(40)) {
+        if (DateManager.getInstance().getDay() >= 40 && !registeredDays.getOrDefault(40, false)) {
 
-            registeredDays.replace(40, true);
+            registeredDays.put(40, true);
             if (this.recipes == null) this.recipes = new RecipeManager(this);
             this.recipes.registerRecipes();
             this.getNmsHandler().addMushrooms();
             getServer().getPluginManager().registerEvents(new SlotBlockListener(instance), instance);
-            Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefix + "&eSe han registrado cambios para el día &b40"));
+            Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado cambios para el día &b40"));
 
             if (Bukkit.getPluginManager().getPlugin("WorldEdit") == null) {
-                Bukkit.broadcastMessage(TextUtils.format(prefix + "&4&lNo se pudo registrar TheBeginning ya que no se ha encontrado el plugin &7WorldEdit"));
-                Bukkit.broadcastMessage(TextUtils.format(prefix + "&7Si necesitas soporte entra a este discord: &e" + Utils.SPIGOT_LINK));
+                Bukkit.broadcastMessage(TextUtils.format(prefixStr + "&4&lNo se pudo registrar TheBeginning ya que no se ha encontrado el plugin &7WorldEdit"));
+                Bukkit.broadcastMessage(TextUtils.format(prefixStr + "&7Si necesitas soporte entra a este discord: &e" + Utils.SPIGOT_LINK));
                 return;
             }
             this.beData = new BeginningDataManager(this);
             this.begginingManager = new BeginningManager(this);
-            Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefix + "&eSe han registrado cambios de TheBeginning"));
+            Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado cambios de TheBeginning"));
         }
 
-        if (DateManager.getInstance().getDay() >= 50 && !registeredDays.get(50)) {
+        if (DateManager.getInstance().getDay() >= 50 && !registeredDays.getOrDefault(50, false)) {
 
             if (this.recipes == null) {
                 this.recipes = new RecipeManager(this);
                 this.recipes.registerRecipes();
             }
 
-            Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefix + "&eSe han registrado cambios para el día &b50"));
+            Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado cambios para el día &b50"));
             this.recipes.registerD50Recipes();
-            registeredDays.replace(50, true);
+            registeredDays.put(50, true);
         }
 
-        if (DateManager.getInstance().getDay() >= 60 && !registeredDays.get(60)) {
+        if (DateManager.getInstance().getDay() >= 60 && !registeredDays.getOrDefault(60, false)) {
 
             if (this.recipes == null) {
                 this.recipes = new RecipeManager(this);
@@ -687,8 +693,8 @@ public final class Main extends JavaPlugin implements Listener {
             }
 
             this.recipes.registerD60Recipes();
-            Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefix + "&eSe han registrado cambios para el día &b60"));
-            registeredDays.replace(60, true);
+            Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado cambios para el día &b60"));
+            registeredDays.put(60, true);
         }
     }
 
@@ -721,7 +727,9 @@ public final class Main extends JavaPlugin implements Listener {
 
             PDCLog.getInstance().log("[ERROR] Error al cargar el mundo principal, esto hará que los Death Train no se presenten.", true);
             PDCLog.getInstance().log("[ERROR] Abre el archivo config.yml y establece el mundo principal en la opción: MainWorld", true);
-            PDCLog.getInstance().log("[INFO] El plugin utilizará el mundo " + world.getName() + " como mundo principal.", true);
+            if (world != null) {
+                PDCLog.getInstance().log("[INFO] El plugin utilizará el mundo " + world.getName() + " como mundo principal.", true);
+            }
             PDCLog.getInstance().log("[INFO] Si deseas utilizar otro mundo, configura en el archivo config.yml.", true);
 
         } else {
@@ -735,7 +743,7 @@ public final class Main extends JavaPlugin implements Listener {
 
             for (World w : Bukkit.getWorlds()) {
                 if (w.getEnvironment() == World.Environment.THE_END) {
-                    this.endWorld = world;
+                    this.endWorld = w;
                     PDCLog.getInstance().log("[INFO] El plugin utilizará el mundo " + w.getName() + " como mundo del End.", true);
                     break;
                 }
@@ -772,7 +780,7 @@ public final class Main extends JavaPlugin implements Listener {
             }
         }
 
-        return "&aOverworld: &b" + this.world.getName() + " &eEnd: &b" + this.endWorld.getName();
+        return "&aOverworld: &b" + (this.world != null ? this.world.getName() : "null") + " &eEnd: &b" + (this.endWorld != null ? this.endWorld.getName() : "null");
     }
 
     public void reload(CommandSender sender) {
@@ -794,6 +802,10 @@ public final class Main extends JavaPlugin implements Listener {
 
     private void setupListeners() {
         getServer().getPluginManager().registerEvents(this, this);
+
+        if (this.abyssManager != null) {
+            getServer().getPluginManager().registerEvents(this.abyssManager, instance);
+        }
 
         this.spawnListener = new SpawnListener(this);
         getServer().getPluginManager().registerEvents(spawnListener, instance);
@@ -885,54 +897,6 @@ public final class Main extends JavaPlugin implements Listener {
         c.load();
     }
 
-    public MobFactory getFactory() {
-        return factory;
-    }
-
-    public NMSHandler getNmsHandler() {
-        return NMS.getHandler();
-    }
-
-    public BeginningManager getBeginningManager() {
-        return begginingManager;
-    }
-
-    public void setTask(EndTask task) {
-        this.task = task;
-    }
-
-    public NMSAccessor getNmsAccessor() {
-        return NMS.getAccessor();
-    }
-
-    public long getDay() {
-        return DateManager.getInstance().getDay();
-    }
-
-    public HostileEntityListener getHostile() {
-        return hostile;
-    }
-
-    public ArrayList<Player> getDoneEffectPlayers() {
-        return doneEffectPlayers;
-    }
-
-    public ShellEvent getShulkerEvent() {
-        return shulkerEvent;
-    }
-
-    public LifeOrbEvent getOrbEvent() {
-        return orbEvent;
-    }
-
-    public InfernalNetheriteBlock getNetheriteBlock() {
-        return NMS.getNetheriteBlock();
-    }
-
-    public boolean isSmallIslandsEnabled() {
-        return true;
-    }
-
     public void deathTrainEffects(LivingEntity entity) {
         if (entity instanceof Player) return;
 
@@ -941,24 +905,12 @@ public final class Main extends JavaPlugin implements Listener {
             int lvl = (getDay() >= 50 ? 1 : 0);
 
             entity.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, lvl));
-            entity.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, Integer.MAX_VALUE, lvl));
-            entity.addPotionEffect(new PotionEffect(PotionEffectType.INCREASE_DAMAGE, Integer.MAX_VALUE, lvl));
+            entity.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, Integer.MAX_VALUE, lvl));
+            entity.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, lvl));
 
             if (getDay() >= 50 && getDay() < 60) {
                 entity.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, Integer.MAX_VALUE, 0));
             }
         }
-    }
-
-    public SpawnListener getSpawnListener() {
-        return spawnListener;
-    }
-
-    public int getPlayTime() {
-        return playTime;
-    }
-
-    public void setPlayTime(int playTime) {
-        this.playTime = playTime;
     }
 }

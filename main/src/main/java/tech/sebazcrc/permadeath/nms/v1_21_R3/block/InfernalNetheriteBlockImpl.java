@@ -13,7 +13,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
-import tech.sebazcrc.permadeath.api.interfaces.InfernalNetheriteBlock;
+import tech.sebazcrc.permadeath.util.interfaces.InfernalNetheriteBlock;
 
 import java.util.Objects;
 
@@ -75,6 +75,14 @@ public class InfernalNetheriteBlockImpl implements InfernalNetheriteBlock {
         return false;
     }
 }
+
+
+
+
+
+
+
+
 
 
 

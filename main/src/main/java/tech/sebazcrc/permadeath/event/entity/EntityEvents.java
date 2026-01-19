@@ -45,6 +45,15 @@ public class EntityEvents implements Listener {
     }
 
     @EventHandler
+    public void onTarget(EntityTargetLivingEntityEvent e) {
+        if (e.getEntity().getPersistentDataContainer().has(new NamespacedKey(Main.getInstance(), "pale_paragon"), PersistentDataType.BYTE)) {
+            if (!(e.getTarget() instanceof Player)) {
+                e.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
     public void onVD(VehicleDestroyEvent e) {
         if (e.getVehicle().getPersistentDataContainer().has(new NamespacedKey(Main.getInstance(), "module_minecart"), PersistentDataType.BYTE)) {
             e.setCancelled(true);
@@ -111,6 +120,13 @@ public class EntityEvents implements Listener {
 
     @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
+        if (e.getEntity().getPersistentDataContainer().has(new NamespacedKey(Main.getInstance(), "pale_paragon"), PersistentDataType.BYTE)) {
+            if (!(e.getDamager() instanceof Player) && !(e.getDamager() instanceof Projectile projectile && projectile.getShooter() instanceof Player)) {
+                e.setCancelled(true);
+                return;
+            }
+        }
+
         if (Main.getInstance().getDay() >= 50) {
             if (e.getEntity() instanceof Player && e.getDamager() instanceof PolarBear) {
                 Player p = (Player) e.getEntity();
@@ -171,6 +187,14 @@ public class EntityEvents implements Listener {
         }
     }
 }
+
+
+
+
+
+
+
+
 
 
 

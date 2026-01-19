@@ -3,7 +3,7 @@ package tech.sebazcrc.permadeath.nms.v1_21_R3;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import tech.sebazcrc.permadeath.api.interfaces.NMSAccessor;
+import tech.sebazcrc.permadeath.util.interfaces.NMSAccessor;
 
 public class NMSAccessorImpl implements NMSAccessor {
 
@@ -54,6 +54,14 @@ public class NMSAccessorImpl implements NMSAccessor {
     public void clearEntityPathfinders(Object goalSelector, Object targetSelector) {
     }
 }
+
+
+
+
+
+
+
+
 
 
 

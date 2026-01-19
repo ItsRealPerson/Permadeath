@@ -1427,7 +1427,7 @@ public class SpawnListener implements Listener {
 
         ItemStack arrow = new ItemStack(Material.TIPPED_ARROW);
         PotionMeta meta = (PotionMeta) arrow.getItemMeta();
-        meta.addCustomEffect(new PotionEffect(PotionEffectType.SLOWNESSNESS, 3 * 60 * 20, 2), false);
+        meta.addCustomEffect(new PotionEffect(PotionEffectType.SLOWNESS, 3 * 60 * 20, 2), false);
         meta.addCustomEffect(new PotionEffect(PotionEffectType.WEAKNESS, 3 * 60 * 20, 0), false);
         meta.addCustomEffect(new PotionEffect(PotionEffectType.GLOWING, 3 * 60 * 20, 0), false);
         meta.addCustomEffect(new PotionEffect(PotionEffectType.POISON, 3 * 60 * 20, 2), false);
@@ -1439,6 +1439,14 @@ public class SpawnListener implements Listener {
         return new ItemBuilder(mat);
     }
 }
+
+
+
+
+
+
+
+
 
 
 

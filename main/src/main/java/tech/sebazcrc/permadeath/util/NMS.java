@@ -4,10 +4,10 @@ import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.plugin.Plugin;
-import tech.sebazcrc.permadeath.api.interfaces.DeathModule;
-import tech.sebazcrc.permadeath.api.interfaces.InfernalNetheriteBlock;
-import tech.sebazcrc.permadeath.api.interfaces.NMSAccessor;
-import tech.sebazcrc.permadeath.api.interfaces.NMSHandler;
+import tech.sebazcrc.permadeath.util.interfaces.DeathModule;
+import tech.sebazcrc.permadeath.util.interfaces.InfernalNetheriteBlock;
+import tech.sebazcrc.permadeath.util.interfaces.NMSAccessor;
+import tech.sebazcrc.permadeath.util.interfaces.NMSHandler;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -84,6 +84,14 @@ public class NMS {
         }
     }
 }
+
+
+
+
+
+
+
+
 
 
 

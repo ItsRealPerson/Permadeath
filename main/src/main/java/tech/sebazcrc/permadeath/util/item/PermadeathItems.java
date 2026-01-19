@@ -11,7 +11,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
-import tech.sebazcrc.permadeath.api.PermadeathAPI;
+import tech.sebazcrc.permadeath.util.PermadeathAPI;
 import tech.sebazcrc.permadeath.util.lib.HiddenStringUtils;
 import tech.sebazcrc.permadeath.util.lib.ItemBuilder;
 import tech.sebazcrc.permadeath.util.TextUtils;
@@ -285,6 +285,14 @@ public class PermadeathItems{
         return isLifeOrb(stack) || isWaterMedal(stack) || isSurvivorMedal(stack) || isEndRelic(stack) || isBeginningRelic(stack);
     }
 }
+
+
+
+
+
+
+
+
 
 
 

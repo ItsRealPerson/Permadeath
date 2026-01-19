@@ -34,7 +34,7 @@ public class SpecialPig {
         effects.add(PotionEffectType.STRENGTH);
         effects.add(PotionEffectType.INVISIBILITY);
         effects.add(PotionEffectType.JUMP_BOOST);
-        effects.add(PotionEffectType.SLOWNESS_FALLING);
+        effects.add(PotionEffectType.SLOW_FALLING);
         effects.add(PotionEffectType.GLOWING);
         effects.add(PotionEffectType.RESISTANCE);
 
@@ -85,6 +85,14 @@ public class SpecialPig {
         return pig;
     }
 }
+
+
+
+
+
+
+
+
 
 
 

@@ -27,7 +27,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitScheduler;
 import tech.sebazcrc.permadeath.Main;
-import tech.sebazcrc.permadeath.api.PermadeathAPI;
+import tech.sebazcrc.permadeath.util.PermadeathAPI;
 import tech.sebazcrc.permadeath.util.Utils;
 import tech.sebazcrc.permadeath.util.item.InfernalNetherite;
 import tech.sebazcrc.permadeath.util.item.NetheriteArmor;
@@ -687,8 +687,8 @@ public class PlayerListener implements Listener {
                     if (e.getItem().getItemMeta().getDisplayName().equalsIgnoreCase(TextUtils.format("&6Super Golden Apple +"))) {
                         Player p = e.getPlayer();
                         int fmin = 60 * 5;
-                        if (!p.hasPotionEffect(PotionEffectType.INSTANT_HEALTHTH_BOOST)) {
-                            p.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_HEALTHTH_BOOST, 20 * fmin, 0));
+                        if (!p.hasPotionEffect(PotionEffectType.HEALTH_BOOST)) {
+                            p.addPotionEffect(new PotionEffect(PotionEffectType.HEALTH_BOOST, 20 * fmin, 0));
                         }
 
                     } else if (e.getItem().getItemMeta().getDisplayName().equalsIgnoreCase(TextUtils.format("&6Hyper Golden Apple +"))) {
@@ -719,8 +719,8 @@ public class PlayerListener implements Listener {
                     } else if (e.getItem().getItemMeta().getDisplayName().equalsIgnoreCase(TextUtils.format("&6Super Golden Apple +"))) {
                         Player p = e.getPlayer();
                         int fmin = 60 * 5;
-                        if (!p.hasPotionEffect(PotionEffectType.INSTANT_HEALTHTH_BOOST)) {
-                            p.addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_HEALTHTH_BOOST, 20 * fmin, 0));
+                        if (!p.hasPotionEffect(PotionEffectType.HEALTH_BOOST)) {
+                            p.addPotionEffect(new PotionEffect(PotionEffectType.HEALTH_BOOST, 20 * fmin, 0));
                         }
                     }
                 }
@@ -1296,6 +1296,14 @@ public class PlayerListener implements Listener {
         }
     }
 }
+
+
+
+
+
+
+
+
 
 
 
