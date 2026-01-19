@@ -8,4 +8,5 @@ public interface PermadeathAPIProvider {
 
     String getPrefix();
 
+    boolean isExtendedDifficulty();
 }

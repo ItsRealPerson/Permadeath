@@ -244,10 +244,14 @@ public class PDCCommand implements CommandExecutor {
     }
 
     private void handleInfo(CommandSender sender) {
-        sender.sendMessage(instance.prefix + ChatColor.RED + "Version Info:");
-        sender.sendMessage(ChatColor.GRAY + "- Plugin: " + ChatColor.GREEN + "PermaDeathCore.jar v" + instance.getDescription().getVersion());
-        sender.sendMessage(ChatColor.GRAY + "- Dificultad: " + ChatColor.GREEN + "Días 1-60");
-        sender.sendMessage(ChatColor.GRAY + "- Autor: " + ChatColor.GREEN + "InfernalCore Team");
+        if (sender instanceof Player p) {
+            tech.sebazcrc.permadeath.util.gui.InfoGUI.open(p);
+        } else {
+            sender.sendMessage(instance.prefix + ChatColor.RED + "Version Info:");
+            sender.sendMessage(ChatColor.GRAY + "- Plugin: " + ChatColor.GREEN + "PermaDeathCore.jar v" + instance.getDescription().getVersion());
+            sender.sendMessage(ChatColor.GRAY + "- Dificultad: " + ChatColor.GREEN + "Días 1-60");
+            sender.sendMessage(ChatColor.GRAY + "- Autor: " + ChatColor.GREEN + "InfernalCore Team");
+        }
     }
 
     private void handleCambios(CommandSender sender) {

@@ -87,6 +87,12 @@ public class NMSHandlerImpl implements NMSHandler {
             case "CustomWarden":
             case "Warden":
                 return CustomWarden.spawn(location, plugin);
+            case "TwistedWarden":
+                return CustomWarden.spawn(location, plugin);
+            case "AbyssalCreeper":
+                return AbyssalCreeper.spawn(location, plugin);
+            case "VoidSkeleton":
+                return VoidSkeleton.spawn(location, plugin);
             default:
                 return null;
         }

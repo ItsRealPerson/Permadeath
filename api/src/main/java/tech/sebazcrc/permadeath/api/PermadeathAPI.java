@@ -25,6 +25,13 @@ public class PermadeathAPI {
         return provider.isOptifineEnabled();
     }
 
+    public static boolean isExtended() {
+        if (provider == null) {
+            return false;
+        }
+        return provider.isExtendedDifficulty();
+    }
+
     public static void setProvider(PermadeathAPIProvider newProvider) {
         if (provider != null) {
             // To prevent multiple initializations, although not strictly necessary.

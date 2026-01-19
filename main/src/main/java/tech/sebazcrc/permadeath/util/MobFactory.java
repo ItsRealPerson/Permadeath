@@ -64,6 +64,14 @@ public class MobFactory {
         return c;
     }
 
+    public void spawnAbyssalCreeper(Location l) {
+        instance.getNmsHandler().spawnNMSCustomEntity("AbyssalCreeper", null, l, null);
+    }
+
+    public void spawnVoidSkeleton(Location l) {
+        instance.getNmsHandler().spawnNMSCustomEntity("VoidSkeleton", null, l, null);
+    }
+
     public void spawnCustomGiant(Location l) {
         instance.getNmsHandler().spawnNMSCustomEntity("CustomGiant", null, l, null);
     }

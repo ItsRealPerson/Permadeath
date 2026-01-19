@@ -88,6 +88,44 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
+    public void onInteract(PlayerInteractEvent e) {
+        if (e.getAction().name().contains("RIGHT_CLICK") && e.getItem() != null) {
+            ItemStack item = e.getItem();
+            if (item.isSimilar(PermadeathItems.createAbyssalHeart())) {
+                e.setCancelled(true);
+                Player p = e.getPlayer();
+                
+                if (Main.instance.getDay() < 60) {
+                    p.sendMessage(TextUtils.format(Main.prefix + "&cEl mundo aún no es lo suficientemente viejo para este poder... (Requiere Día 60)"));
+                    return;
+                }
+                
+                if (!Main.instance.getConfig().getBoolean("Toggles.ExtendToDay90")) {
+                    p.sendMessage(TextUtils.format(Main.prefix + "&cLa extensión de dificultad no está habilitada en la configuración."));
+                    return;
+                }
+                
+                if (Main.instance.getConfig().getBoolean("DontTouch.ExtendedDifficultyActive")) {
+                    p.sendMessage(TextUtils.format(Main.prefix + "&eLa dificultad ya ha sido extendida."));
+                    return;
+                }
+
+                item.setAmount(item.getAmount() - 1);
+                Main.instance.getConfig().set("DontTouch.ExtendedDifficultyActive", true);
+                Main.instance.saveConfig();
+                
+                Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&5&l¡EL CORAZÓN DEL ABISMO HA SIDO DESPERTADO!"));
+                Bukkit.broadcastMessage(TextUtils.format("&d&oNuevos horrores se avecinan... el límite de dificultad ha subido al Día 90."));
+                
+                Bukkit.getOnlinePlayers().forEach(all -> {
+                    all.playSound(all.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.0f, 0.5f);
+                    all.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 20 * 10, 0));
+                });
+            }
+        }
+    }
+
+    @EventHandler
     public void onPlayerDeath(PlayerDeathEvent e) {
 
         Player p = e.getEntity();

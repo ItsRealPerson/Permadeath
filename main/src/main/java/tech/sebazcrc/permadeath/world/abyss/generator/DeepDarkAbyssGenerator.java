@@ -1,14 +1,64 @@
 package tech.sebazcrc.permadeath.world.abyss.generator;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.WorldInfo;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.noise.SimplexOctaveGenerator;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class DeepDarkAbyssGenerator extends ChunkGenerator {
+
+    @Override
+    public List<org.bukkit.generator.BlockPopulator> getDefaultPopulators(@NotNull World world) {
+        List<org.bukkit.generator.BlockPopulator> populators = new ArrayList<>();
+        populators.add(new org.bukkit.generator.BlockPopulator() {
+            @Override
+            public void populate(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull org.bukkit.generator.LimitedRegion limitedRegion) {
+                if (random.nextInt(100) < 5) {
+                    int x = (chunkX << 4) + random.nextInt(16);
+                    int z = (chunkZ << 4) + random.nextInt(16);
+                    int y = random.nextInt(60) + 20;
+
+                    generateCapsule(limitedRegion, x, y, z, random);
+                }
+            }
+
+            private void generateCapsule(org.bukkit.generator.LimitedRegion region, int cx, int cy, int cz, Random random) {
+                int radius = 3 + random.nextInt(2);
+                for (int x = -radius; x <= radius; x++) {
+                    for (int y = -radius; y <= radius; y++) {
+                        for (int z = -radius; z <= radius; z++) {
+                            double dist = x * x + y * y + z * z;
+                            
+                            if (dist < radius * radius) {
+                                if (dist > (radius - 1) * (radius - 1)) {
+                                    region.setType(cx + x, cy + y, cz + z, Material.REINFORCED_DEEPSLATE);
+                                } else {
+                                    region.setType(cx + x, cy + y, cz + z, Material.AIR);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                region.setType(cx, cy, cz, Material.CHEST);
+                if (region.getBlockState(cx, cy, cz) instanceof org.bukkit.block.Chest chest) {
+                    org.bukkit.inventory.Inventory inv = chest.getInventory();
+                    inv.addItem(tech.sebazcrc.permadeath.util.item.NetheriteArmor.craftAncestralFragment());
+                    if (random.nextBoolean()) inv.addItem(new ItemStack(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE));
+                    inv.addItem(new ItemStack(Material.ECHO_SHARD, random.nextInt(3) + 1));
+                }
+            }
+        });
+        return populators;
+    }
 
     @Override
     public void generateNoise(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) {

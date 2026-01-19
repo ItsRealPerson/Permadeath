@@ -87,13 +87,14 @@ public class RecipeManager {
     }
 
     public void registerD60Recipes() {
-        try {
-            registerIE();
-            registerLifeOrb();
-            registerBeginningRelic();
-        } catch (IllegalStateException ex) {
-            // Ignorar, la receta fue registrada antes probablemente
-        }
+        if (!Main.instance.getConfig().getBoolean("Toggles.ExtendToDay90")) return;
+
+        ShapedRecipe heart = new ShapedRecipe(new NamespacedKey(Main.instance, "abyssal_heart"), PermadeathItems.createAbyssalHeart());
+        heart.shape("ENE", "EHE", "EEE");
+        heart.setIngredient('E', Material.ECHO_SHARD);
+        heart.setIngredient('N', Material.NETHERITE_BLOCK);
+        heart.setIngredient('H', Material.HEART_OF_THE_SEA);
+        Bukkit.addRecipe(heart);
     }
 
     private void registerBeginningRelic() {

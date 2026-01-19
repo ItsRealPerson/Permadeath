@@ -1,5 +1,7 @@
 package tech.sebazcrc.permadeath.util;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -14,6 +16,11 @@ import java.util.stream.Collectors;
 
 public class TextUtils {
     public static final Pattern HEX_COLOR_PATTERN = Pattern.compile("#[a-fA-F0-9]{6}");
+    private static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.builder()
+            .character('&')
+            .hexCharacter('#')
+            .hexColors()
+            .build();
 
     public static List<String> formatList(String... s) {
         return Arrays.stream(s).map(TextUtils::format).collect(Collectors.toList());
@@ -25,17 +32,12 @@ public class TextUtils {
 
     public static String format(String s) {
         if (s == null) return "";
-        s = s.replace("#&", "#");
-        if (VersionManager.isRunningPostNetherUpdate()) {
-            Matcher m = HEX_COLOR_PATTERN.matcher(s);
-            while (m.find()) {
-                String cl = s.substring(m.start(), m.end());
-                s = s.replace(cl, "" + net.md_5.bungee.api.ChatColor.of(cl));
-                m = HEX_COLOR_PATTERN.matcher(s);
-            }
-        }
-
         return ChatColor.translateAlternateColorCodes('&', s);
+    }
+
+    public static Component formatComponent(String s) {
+        if (s == null) return Component.empty();
+        return LEGACY_SERIALIZER.deserialize(s);
     }
 
     public static String formatStringArray(String[] args, int startIndex) {

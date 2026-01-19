@@ -395,10 +395,27 @@ public class SpawnListener implements Listener {
                                 plugin.getFactory().spawnQuantumCreeper(location, c);
                             }
                         } else {
+                            // Día 60+
+                            boolean extended = tech.sebazcrc.permadeath.api.PermadeathAPI.isExtended();
+                            if (extended && plugin.getDay() >= 75 && random.nextInt(100) < 5) {
+                                event.setCancelled(true);
+                                plugin.getFactory().spawnAbyssalCreeper(location);
+                                return;
+                            }
+                            
                             plugin.getFactory().spawnEnderQuantumCreeper(location, c);
                             c.setMaxFuseTicks(c.getMaxFuseTicks() / 2);
                         }
                     }
+                }
+            }
+
+            if (entity instanceof Skeleton) {
+                boolean isDefinitivo = entity.getPersistentDataContainer().has(new NamespacedKey(plugin, "skeleton_definitivo"), PersistentDataType.BYTE);
+                if (!isDefinitivo && tech.sebazcrc.permadeath.api.PermadeathAPI.isExtended() && plugin.getDay() >= 90 && random.nextInt(100) < 5) {
+                    event.setCancelled(true);
+                    plugin.getFactory().spawnVoidSkeleton(location);
+                    return;
                 }
             }
 

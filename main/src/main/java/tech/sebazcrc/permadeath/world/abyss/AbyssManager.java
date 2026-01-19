@@ -53,6 +53,12 @@ public class AbyssManager implements Listener {
     }
 
     public void teleportToAbyss(Player player) {
+        if (!tech.sebazcrc.permadeath.api.PermadeathAPI.isExtended()) {
+            player.sendMessage(ChatColor.RED + "El Abismo está sellado. Necesitas despertar el Corazón del Abismo para entrar.");
+            player.playSound(player.getLocation(), Sound.BLOCK_CHEST_LOCKED, 1.0f, 1.0f);
+            return;
+        }
+
         if (abyssWorld == null) loadWorld(); // Intentar cargar si es null
 
         if (abyssWorld != null) {
@@ -72,6 +78,21 @@ public class AbyssManager implements Listener {
             }
         } else {
             player.sendMessage(ChatColor.RED + "Error: La dimensión del Abismo no se ha podido cargar.");
+        }
+    }
+
+    public void tickAbyssEffects(Player player) {
+        if (abyssWorld == null || !player.getWorld().equals(abyssWorld)) return;
+
+        // 1. Niebla de Vacío (Partículas)
+        Location loc = player.getLocation();
+        player.spawnParticle(Particle.ASH, loc, 50, 8, 4, 8, 0.02);
+        player.spawnParticle(Particle.SQUID_INK, loc, 10, 5, 3, 5, 0.01);
+
+        // 2. Sonidos ambientales ocasionales
+        if (new java.util.Random().nextInt(40) == 0) {
+            Sound[] abyssSounds = {Sound.BLOCK_SCULK_SHRIEKER_SHRIEK, Sound.ENTITY_WARDEN_HEARTBEAT, Sound.AMBIENT_CAVE, Sound.BLOCK_SCULK_CATALYST_BLOOM};
+            player.playSound(loc, abyssSounds[new java.util.Random().nextInt(abyssSounds.length)], 0.4f, 0.5f);
         }
     }
 
@@ -95,8 +116,14 @@ public class AbyssManager implements Listener {
             java.util.Random random = new java.util.Random();
             
             if (random.nextInt(100) < 15) { // 15% de probabilidad de reemplazo
-                String[] deepDarkMobs = {"SilentSeeker", "SculkParasite", "EchoArcher", "HollowGuard"};
+                String[] deepDarkMobs = {"SilentSeeker", "SculkParasite", "EchoArcher", "HollowGuard", "TwistedWarden"};
                 String selected = deepDarkMobs[random.nextInt(deepDarkMobs.length)];
+                
+                // Probabilidad extra baja para el jefe
+                if (selected.equals("TwistedWarden") && random.nextInt(10) != 0) {
+                    selected = "SilentSeeker"; // Reemplazo si no sale el 10% de ese 15% (1.5% total)
+                }
+                
                 plugin.getNmsHandler().spawnNMSCustomEntity(selected, null, loc, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM);
             }
             return;

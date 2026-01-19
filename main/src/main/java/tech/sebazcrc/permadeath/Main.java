@@ -116,6 +116,11 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     }
 
     @Override
+    public boolean isExtendedDifficulty() {
+        return getConfig().getBoolean("DontTouch.ExtendedDifficultyActive");
+    }
+
+    @Override
     public void onEnable() {
         instance = this;
         runningFolia = isRunningFolia();
@@ -374,6 +379,10 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
         // Efecto Darkness aleatorio en el Abismo
         if (player.getWorld().getName().equalsIgnoreCase("pdc_the_abyss")) {
+            if (instance.getAbyssManager() != null) {
+                instance.getAbyssManager().tickAbyssEffects(player);
+            }
+            
             if (random.nextInt(100) < 5) { // 5% de probabilidad por segundo
                 int duration = 100 + random.nextInt(100); // 5 a 10 segundos
                 player.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, duration, 0));
@@ -906,6 +915,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         c.set("Toggles.Gatos-Supernova.Destruir-Bloques", true);
         c.set("Toggles.Gatos-Supernova.Fuego", true);
         c.set("Toggles.Gatos-Supernova.Explosion-Power", 200);
+        c.set("Toggles.ExtendToDay90", false);
         c.set("Server-Messages.coords-msg-enable", true);
         c.set("TotemFail.Enable", true);
         c.set("TotemFail.Medalla", "&7¡El jugador %player% ha usado su medalla de superviviente!");

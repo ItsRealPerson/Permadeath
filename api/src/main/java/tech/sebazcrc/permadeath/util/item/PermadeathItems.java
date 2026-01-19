@@ -1,11 +1,14 @@
 package tech.sebazcrc.permadeath.util.item;
 
-import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Bukkit;
+import org.bukkit.Sound;
+import org.bukkit.Particle;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -41,12 +44,28 @@ public class PermadeathItems {
     }
 
     public static ItemStack createWaterMedal() {
-        ItemStack s = new ItemBuilder(Material.HEART_OF_THE_SEA).setDisplayName(TextUtils.format("&b&lMedalla de Protección Acuática")).setUnbrekeable(true).build();
-        ItemMeta meta = s.getItemMeta();
-        meta.getPersistentDataContainer().set(new NamespacedKey(Bukkit.getPluginManager().getPlugin("Permadeath"), "water_medal"), PersistentDataType.BYTE, (byte) 1);
-        meta.setLore(Arrays.asList(TextUtils.format("&7Inmunidad al ahogamiento."), TextUtils.format("&eDisponible desde el día 30.")));
-        s.setItemMeta(meta);
-        return s;
+        return new ItemBuilder(Material.HEART_OF_THE_SEA)
+                .setDisplayName(TextUtils.format("&b&lMedalla de Agua"))
+                .setLore(Arrays.asList(TextUtils.format("&7Otorga respiración infinita"), TextUtils.format("&7mientras esté en el inventario.")))
+                .setUnbrekeable(true)
+                .addEnchant(Enchantment.INFINITY, 1)
+                .addItemFlag(org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS)
+                .build();
+    }
+
+    public static ItemStack createAbyssalHeart() {
+        return new ItemBuilder(Material.RECOVERY_COMPASS)
+                .setDisplayName(TextUtils.format("&3&lCorazón del Abismo"))
+                .setLore(Arrays.asList(
+                        TextUtils.format("&7Un núcleo de energía oscura extraído"),
+                        TextUtils.format("&7de las profundidades del Abismo."),
+                        "",
+                        TextUtils.format("&eClick derecho para despertar al mundo..."),
+                        TextUtils.format("&c(Requiere estar en el Día 60)")
+                ))
+                .addEnchant(Enchantment.INFINITY, 1)
+                .addItemFlag(org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS)
+                .build();
     }
 
     public static ItemStack craftInfernalElytra() {
@@ -211,20 +230,34 @@ public class PermadeathItems {
     private static void lockSlot(Player p, int slot) {
         ItemStack item = p.getInventory().getItem(slot);
 
-        if (item != null && item.getType() != Material.AIR) {
-            if (item.getType() == Material.STRUCTURE_VOID) return;
-            
-            p.getWorld().dropItem(p.getLocation(), item.clone());
+        if (item != null) {
+            if (item.getType() != Material.AIR && item.getType() != Material.STRUCTURE_VOID) {
+                p.getWorld().dropItem(p.getLocation(), item.clone());
+                
+                // Feedback visual y sonoro
+                p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_LAND, 0.5f, 2.0f);
+                p.spawnParticle(Particle.SMOKE, p.getLocation().add(0, 1, 0), 5, 0.2, 0.2, 0.2, 0.05);
+            }
+            if (item.getType() != Material.STRUCTURE_VOID) {
+                item.setType(Material.STRUCTURE_VOID);
+                item.setAmount(1);
+                // Mantenemos metadata por compatibilidad con el listener actual
+                ItemMeta meta = item.getItemMeta();
+                if (meta != null) {
+                    meta.setDisplayName(TextUtils.format("&c&lSLOT BLOQUEADO"));
+                    meta.setCustomModelData(666);
+                    item.setItemMeta(meta);
+                }
+            }
+        } else {
+            ItemStack lock = new ItemBuilder(Material.STRUCTURE_VOID)
+                    .setDisplayName(TextUtils.format("&c&lSLOT BLOQUEADO"))
+                    .setCustomModelData(666)
+                    .build();
+            p.getInventory().setItem(slot, lock);
         }
-        
-        ItemStack lock = new ItemBuilder(Material.STRUCTURE_VOID)
-                .setDisplayName(TextUtils.format("&c&lSLOT BLOQUEADO"))
-                .setLore(Arrays.asList(TextUtils.format("&7Necesitas una reliquia"), TextUtils.format("&7para usar este espacio.")))
-                .setCustomModelData(666)
-                .build();
-        
-        p.getInventory().setItem(slot, lock);
     }
+
 
     private static void unlockSlot(Player p, int slot) {
         ItemStack item = p.getInventory().getItem(slot);

@@ -2,6 +2,7 @@ package tech.sebazcrc.permadeath.data;
 
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -57,6 +58,12 @@ public class DateManager {
         if (this.currentDate.isBefore(now)) {
             this.currentDate = now;
             DiscordPortal.onDayChange();
+            
+            // Efecto de sonido épico para todos
+            Bukkit.getOnlinePlayers().forEach(p -> {
+                p.playSound(p.getLocation(), Sound.EVENT_RAID_HORN, 1.0f, 0.8f);
+                p.sendMessage(TextUtils.format(Main.prefix + "&eEl mundo ha envejecido... el día &b" + getDay() + " &eha comenzado."));
+            });
         }
     }
 
