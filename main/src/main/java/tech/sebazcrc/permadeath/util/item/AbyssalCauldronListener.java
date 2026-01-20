@@ -41,7 +41,6 @@ public class AbyssalCauldronListener implements Listener {
     public AbyssalCauldronListener() {
         this.data = new CauldronDataManager();
         
-        // Tarea inicial de recuperación (Compatible con Folia)
         Runnable initTask = () -> {
             for (org.bukkit.World w : Bukkit.getWorlds()) {
                 for (Entity e : w.getEntitiesByClass(ArmorStand.class)) {

@@ -361,13 +361,19 @@ public class PlayerDataManager {
         final FileConfiguration configToSave = this.config;
         final File fileToSave = this.playersFile;
         
-        Bukkit.getScheduler().runTaskAsynchronously(instance, () -> {
+        Runnable task = () -> {
             try {
                 configToSave.save(fileToSave);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        });
+        };
+
+        if (Main.isRunningFolia()) {
+            Bukkit.getAsyncScheduler().runNow(instance, scheduledTask -> task.run());
+        } else {
+            Bukkit.getScheduler().runTaskAsynchronously(instance, task);
+        }
     }
 
     public void reloadFile() {
