@@ -231,14 +231,17 @@ public class EndManager implements Listener {
                     enderGhasts.add(g);
                     alreadyExploded.add(loc);
 
-                    Bukkit.getScheduler().runTaskLater(instance, new Runnable() {
-                        @Override
-                        public void run() {
-                            if (alreadyExploded.contains(loc)) {
-                                alreadyExploded.remove(loc);
-                            }
+                    Runnable removeExplodedTask = () -> {
+                        if (alreadyExploded.contains(loc)) {
+                            alreadyExploded.remove(loc);
                         }
-                    }, 20 * 5);
+                    };
+
+                    if (Main.isRunningFolia()) {
+                        Bukkit.getRegionScheduler().runDelayed(main, loc, t -> removeExplodedTask.run(), 20 * 5L);
+                    } else {
+                        Bukkit.getScheduler().runTaskLater(instance, removeExplodedTask, 20 * 5L);
+                    }
 
                     for (Player all : main.endWorld.getPlayers()) {
                         all.playSound(nL, Sound.ENTITY_WITHER_SPAWN, 100.0F, 100.0F);
