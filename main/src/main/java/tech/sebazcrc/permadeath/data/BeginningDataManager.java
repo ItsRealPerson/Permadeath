@@ -131,6 +131,26 @@ public class BeginningDataManager {
     }
 
     public void saveFile() {
+        final String data;
+        synchronized (this.config) {
+            data = this.config.saveToString();
+        }
+        
+        final File fileToSave = this.beginningFile;
+        Runnable task = () -> {
+            try {
+                java.nio.file.Files.writeString(fileToSave.toPath(), data);
+            } catch (java.io.IOException e) {
+                e.printStackTrace();
+            }
+        };
+
+        if (Main.isRunningFolia()) {
+            Bukkit.getAsyncScheduler().runNow(instance, t -> task.run());
+        } else {
+            Bukkit.getScheduler().runTaskAsynchronously(instance, task);
+        }
+    }
 
     public boolean killedED() {
         return config.getBoolean("KilledED");
