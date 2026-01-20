@@ -238,7 +238,7 @@ public class EndManager implements Listener {
                     };
 
                     if (Main.isRunningFolia()) {
-                        Bukkit.getRegionScheduler().runDelayed(main, loc, t -> removeExplodedTask.run(), 20 * 5L);
+                        Bukkit.getRegionScheduler().runDelayed(main, loc, taskFolia -> removeExplodedTask.run(), 20 * 5L);
                     } else {
                         Bukkit.getScheduler().runTaskLater(instance, removeExplodedTask, 20 * 5L);
                     }
