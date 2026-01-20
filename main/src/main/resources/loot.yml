@@ -1,0 +1,11 @@
+# Loot Table para las Cápsulas del Abismo
+# Formato: MATERIAL;CANTIDAD_MAXIMA;PROBABILIDAD(0-100)
+# Los Fragmentos Ancestrales son loot fijo y no necesitan estar aquí.
+
+AbyssCapsule:
+  - NETHERITE_UPGRADE_SMITHING_TEMPLATE;1;50
+  - ECHO_SHARD;3;100
+  - ENCHANTED_GOLDEN_APPLE;1;10
+  - DIAMOND_BLOCK;2;30
+  - NETHERITE_SCRAP;2;25
+  - TOTEM_OF_UNDYING;1;5

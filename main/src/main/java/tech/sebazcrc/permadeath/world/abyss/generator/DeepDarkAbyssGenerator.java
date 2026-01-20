@@ -51,9 +51,7 @@ public class DeepDarkAbyssGenerator extends ChunkGenerator {
                 region.setType(cx, cy, cz, Material.CHEST);
                 if (region.getBlockState(cx, cy, cz) instanceof org.bukkit.block.Chest chest) {
                     org.bukkit.inventory.Inventory inv = chest.getInventory();
-                    inv.addItem(tech.sebazcrc.permadeath.util.item.NetheriteArmor.craftAncestralFragment());
-                    if (random.nextBoolean()) inv.addItem(new ItemStack(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE));
-                    inv.addItem(new ItemStack(Material.ECHO_SHARD, random.nextInt(3) + 1));
+                    tech.sebazcrc.permadeath.Main.getInstance().getLootManager().generateAbyssLoot().forEach(inv::addItem);
                 }
             }
         });
@@ -81,23 +79,22 @@ public class DeepDarkAbyssGenerator extends ChunkGenerator {
                 }
 
                 for (int y = minHeight + 1; y < 119; y++) {
-                    // Capa solida de Deepslate (-63 a -20)
-                    if (y >= -63 && y <= -20) {
+                    // Capa solida de Deepslate hasta la capa 19 (Suelo masivo)
+                    if (y <= 19) {
                         chunkData.setBlock(x, y, z, Material.DEEPSLATE);
                         continue; 
                     }
 
-                    // Generación de cuevas conectadas (Túneles/Spaghetti)
-                    if (y > -20) {
-                        double noise = generator.noise(realX, y, realZ, 0.5D, 0.5D, true);
-                        
-                        // Usamos valor absoluto para crear "túneles" donde el ruido se acerca a 0.
-                        // Si Math.abs(noise) es bajo (ej < 0.15), es aire (cueva).
-                        // Si es alto, es roca. Esto garantiza conectividad.
-                        if (Math.abs(noise) >= 0.12D) { 
+                    // Generación de cuevas conectadas (Y=20 a Y=118)
+                    double noise = generator.noise(realX, y, realZ, 0.5D, 0.5D, true);
+                    
+                    if (Math.abs(noise) >= 0.12D) { 
+                        // Probabilidad de ser Abyssal Ore (1%)
+                        if (random.nextInt(100) == 0) {
+                            chunkData.setBlock(x, y, z, Material.DEEPSLATE_EMERALD_ORE);
+                        } else {
                             chunkData.setBlock(x, y, z, Material.DEEPSLATE);
                         }
-                        // Si es < 0.12, dejamos Aire (cueva túnel)
                     }
                 }
             }

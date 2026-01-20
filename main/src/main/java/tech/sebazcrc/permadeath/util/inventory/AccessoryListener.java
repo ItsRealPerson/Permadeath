@@ -1,5 +1,6 @@
 package tech.sebazcrc.permadeath.util.inventory;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -53,7 +54,7 @@ public class AccessoryListener implements Listener {
             // Bloquear interacción con el fondo (Cristal Gris) o los placeholders especiales
             if (itemInClick != null && itemInClick.hasItemMeta() && itemInClick.getType().name().contains("STAINED_GLASS_PANE")) {
                 String name = itemInClick.getItemMeta().getDisplayName();
-                if (name.equals(" ") || name.contains("Slot de Orbe") || name.contains("Slot de Medalla") || name.contains("Slot de Reliquia")) {
+                if (name.equals(" ") || name.contains("Slot de Orbe") || name.contains("Slot de Medalla") || name.contains("Slot de Reliquia") || name.contains("Slot de Máscara")) {
                     
                     ItemStack cursor = e.getCursor();
                     if (cursor != null && cursor.getType() != Material.AIR) {
@@ -61,16 +62,27 @@ public class AccessoryListener implements Listener {
                         if (slot == AccessoryInventory.ACCESSORY_SLOTS[0] && PermadeathItems.isLifeOrb(cursor)) canPlace = true;
                         if (slot == AccessoryInventory.ACCESSORY_SLOTS[1] && PermadeathItems.isWaterMedal(cursor)) canPlace = true;
                         if (slot == AccessoryInventory.ACCESSORY_SLOTS[2] && (PermadeathItems.isEndRelic(cursor) || PermadeathItems.isBeginningRelic(cursor))) canPlace = true;
+                        if (slot == AccessoryInventory.MASK_SLOT && PermadeathItems.isAbyssalMask(cursor)) canPlace = true;
 
                         if (canPlace) {
                             e.setCancelled(true);
                             e.getInventory().setItem(slot, cursor.clone());
                             e.setCursor(new ItemStack(Material.AIR));
+                            Bukkit.getScheduler().runTaskLater(tech.sebazcrc.permadeath.Main.getInstance(), () -> ((Player)e.getWhoClicked()).updateInventory(), 1L);
                             return;
                         }
                     }
                     
                     e.setCancelled(true);
+                    return;
+                }
+            }
+
+            // Bloquear Máscara en el slot de Casco
+            if (slot == AccessoryInventory.HELMET_SLOT) {
+                if (PermadeathItems.isAbyssalMask(e.getCursor())) {
+                    e.setCancelled(true);
+                    ((Player)e.getWhoClicked()).sendMessage(TextUtils.format("&cEsta máscara solo funciona en los slots de accesorios."));
                     return;
                 }
             }
@@ -97,15 +109,18 @@ public class AccessoryListener implements Listener {
             if (isAccessory) {
                 ItemStack itemToPlace = null;
                 if (e.getClick().isShiftClick()) {
-                    if (accessoryIndex <= 2) {
-                        restorePlaceholder((Player) e.getWhoClicked(), e.getInventory(), slot, accessoryIndex);
+                    // Solo restaurar si el slot tenía algo y ahora estará vacío (sacando item)
+                    if (itemInClick != null && itemInClick.getType() != Material.AIR && !itemInClick.getType().name().contains("STAINED_GLASS_PANE")) {
+                        if (accessoryIndex <= 2 || slot == AccessoryInventory.MASK_SLOT) {
+                            restorePlaceholder((Player) e.getWhoClicked(), e.getInventory(), slot, accessoryIndex);
+                        }
                     }
                 } else {
                     itemToPlace = e.getCursor();
                     
-                    // Si está sacando un item
-                    if ((itemToPlace == null || itemToPlace.getType() == Material.AIR) && (itemInClick != null && itemInClick.getType() != Material.AIR)) {
-                        if (accessoryIndex <= 2) {
+                    // Si está sacando un item (cursor aire, click item real)
+                    if ((itemToPlace == null || itemToPlace.getType() == Material.AIR) && (itemInClick != null && itemInClick.getType() != Material.AIR && !itemInClick.getType().name().contains("STAINED_GLASS_PANE"))) {
+                        if (accessoryIndex <= 2 || slot == AccessoryInventory.MASK_SLOT) {
                             restorePlaceholder((Player) e.getWhoClicked(), e.getInventory(), slot, accessoryIndex);
                         }
                     }
@@ -118,10 +133,12 @@ public class AccessoryListener implements Listener {
                         if (!PermadeathItems.isWaterMedal(itemToPlace)) { e.setCancelled(true); return; }
                     } else if (accessoryIndex == 2) { // Slot Reliquias
                         if (!PermadeathItems.isEndRelic(itemToPlace) && !PermadeathItems.isBeginningRelic(itemToPlace)) { e.setCancelled(true); return; }
+                    } else if (slot == AccessoryInventory.MASK_SLOT) { // Slot Máscara
+                        if (!PermadeathItems.isAbyssalMask(itemToPlace)) { e.setCancelled(true); return; }
                     } else {
-                        // Slots normales: NO permitir Orbe, Medalla de Agua o Reliquias
+                        // Slots normales: NO permitir ítems especiales
                         if (PermadeathItems.isLifeOrb(itemToPlace) || PermadeathItems.isWaterMedal(itemToPlace) || 
-                            PermadeathItems.isEndRelic(itemToPlace) || PermadeathItems.isBeginningRelic(itemToPlace)) {
+                            PermadeathItems.isEndRelic(itemToPlace) || PermadeathItems.isBeginningRelic(itemToPlace) || PermadeathItems.isAbyssalMask(itemToPlace)) {
                             e.setCancelled(true);
                             return;
                         }
@@ -177,6 +194,7 @@ public class AccessoryListener implements Listener {
             String name = "&6Slot de Orbe de Vida";
             if (index == 1) { mat = Material.BLUE_STAINED_GLASS_PANE; name = "&bSlot de Medalla de Agua"; }
             else if (index == 2) { mat = Material.LIGHT_BLUE_STAINED_GLASS_PANE; name = "&3Slot de Reliquia"; }
+            else if (slot == AccessoryInventory.MASK_SLOT) { mat = Material.BLACK_STAINED_GLASS_PANE; name = "&bSlot de Máscara del Abismo"; }
             
             inv.setItem(slot, new tech.sebazcrc.permadeath.util.lib.ItemBuilder(mat).setDisplayName(TextUtils.format(name)).build());
         };

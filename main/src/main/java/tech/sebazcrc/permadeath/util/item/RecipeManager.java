@@ -34,9 +34,21 @@ public class RecipeManager {
             registerShulkerUnCraft();
             registerEndRel();
             registerSmithingArmor();
+            registerWaterMedal();
         } catch (IllegalStateException ex) {
             // Ignorar, la receta fue registrada antes probablemente
         }
+    }
+
+    private void registerWaterMedal() {
+        ItemStack s = PermadeathItems.createWaterMedal();
+        NamespacedKey key = new NamespacedKey(instance, "water_medal_craft");
+        ShapedRecipe recipe = new ShapedRecipe(key, s);
+        recipe.shape("TGT", "GNG", "GGG");
+        recipe.setIngredient('T', Material.TRIDENT);
+        recipe.setIngredient('G', Material.GOLD_BLOCK);
+        recipe.setIngredient('N', Material.HEART_OF_THE_SEA);
+        Bukkit.addRecipe(recipe);
     }
 
     private void registerSmithingArmor() {
@@ -95,6 +107,23 @@ public class RecipeManager {
         heart.setIngredient('N', Material.NETHERITE_BLOCK);
         heart.setIngredient('H', Material.HEART_OF_THE_SEA);
         Bukkit.addRecipe(heart);
+
+        ShapedRecipe filter = new ShapedRecipe(new NamespacedKey(Main.instance, "abyssal_filter"), PermadeathItems.createAbyssalFilter());
+        filter.shape(" S ", "SES", " S ");
+        filter.setIngredient('S', Material.AMETHYST_SHARD); // Representa Fragmento de Vacío en receta
+        filter.setIngredient('E', Material.ECHO_SHARD);
+        Bukkit.addRecipe(filter);
+
+        ShapedRecipe mask = new ShapedRecipe(new NamespacedKey(Main.instance, "abyssal_mask"), PermadeathItems.createAbyssalMask());
+        mask.shape("FSF", "VHV", "VVV");
+        mask.setIngredient('F', new org.bukkit.inventory.RecipeChoice.ExactChoice(PermadeathItems.createAbyssalFilter()));
+        mask.setIngredient('S', new org.bukkit.inventory.RecipeChoice.ExactChoice(NetheriteArmor.craftTemplate("helmet")));
+        mask.setIngredient('V', new org.bukkit.inventory.RecipeChoice.ExactChoice(PermadeathItems.createVoidShard()));
+        mask.setIngredient('H', Material.NETHERITE_HELMET);
+        Bukkit.addRecipe(mask);
+
+        // Receta de Alquimia (Brewing)
+
     }
 
     private void registerBeginningRelic() {

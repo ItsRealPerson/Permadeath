@@ -357,12 +357,17 @@ public class PlayerDataManager {
     }
 
     public void saveFile() {
-
-        try {
-            config.save(playersFile);
-        } catch (IOException e) {
-            System.out.println("[ERROR] Ha ocurrido un error al guardar el archivo 'players.yml'");
-        }
+        // Guardar de forma asíncrona para no bloquear el hilo principal
+        final FileConfiguration configToSave = this.config;
+        final File fileToSave = this.playersFile;
+        
+        Bukkit.getScheduler().runTaskAsynchronously(instance, () -> {
+            try {
+                configToSave.save(fileToSave);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     public void reloadFile() {

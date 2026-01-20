@@ -1,9 +1,10 @@
 package tech.sebazcrc.permadeath.util.item;
 
 import org.bukkit.GameMode;
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.Particle;
 import org.bukkit.attribute.Attribute;
@@ -66,6 +67,84 @@ public class PermadeathItems {
                 .addEnchant(Enchantment.INFINITY, 1)
                 .addItemFlag(org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS)
                 .build();
+    }
+
+    public static ItemStack createAbyssalMask() {
+        ItemStack s = new tech.sebazcrc.permadeath.util.lib.LeatherArmorBuilder(Material.LEATHER_HELMET, 1)
+                .setColor(org.bukkit.Color.fromRGB(0x1A1A1A))
+                .setDisplayName(TextUtils.format("&b&lMáscara del Abismo"))
+                .setLore(Arrays.asList(
+                        TextUtils.format("&7Protege contra la presión del Abismo."),
+                        TextUtils.format("&7Se desgasta mientras estás en la dimensión."),
+                        "",
+                        TextUtils.format("&eUsa un Filtro Abisal para recuperarte.")
+                ))
+                .build();
+        return s;
+    }
+
+    public static ItemStack createAbyssalFilter() {
+        return new ItemBuilder(Material.NETHER_WART)
+                .setDisplayName(TextUtils.format("&b&lFiltro Abisal"))
+                .setLore(Arrays.asList(
+                        TextUtils.format("&7Un purificador de aire diseñado"),
+                        TextUtils.format("&7para entornos de vacío."),
+                        "",
+                        TextUtils.format("&eClick derecho con la máscara en la"),
+                        TextUtils.format("&emano para restaurar el oxígeno.")
+                ))
+                .setCustomModelData(101)
+                .build();
+    }
+
+    public static ItemStack createVoidShard() {
+        return new ItemBuilder(Material.AMETHYST_SHARD)
+                .setDisplayName(TextUtils.format("&3&lFragmento de Vacío"))
+                .setLore(Arrays.asList(TextUtils.format("&7Materia cristalizada del Abismo.")))
+                .setCustomModelData(102)
+                .build();
+    }
+
+    public static ItemStack createAbyssalOre() {
+        return new ItemBuilder(Material.DEEPSLATE_EMERALD_ORE)
+                .setDisplayName(TextUtils.format("&b&lMineral Abisal"))
+                .setLore(Arrays.asList(
+                        TextUtils.format("&7Un mineral imbuido con"),
+                        TextUtils.format("&7la energía del vacío."),
+                        "",
+                        TextUtils.format("&7Puede ser procesado para obtener"),
+                        TextUtils.format("&7materiales de Netherite Infernal.")
+                ))
+                .setCustomModelData(103)
+                .build();
+    }
+
+    public static ItemStack createAbyssalPotion() {
+        ItemStack potion = new ItemStack(Material.POTION);
+        org.bukkit.inventory.meta.PotionMeta meta = (org.bukkit.inventory.meta.PotionMeta) potion.getItemMeta();
+        meta.setDisplayName(TextUtils.format("&b&lPoción de Respiración Abisal"));
+        meta.setLore(Arrays.asList(
+                TextUtils.format("&7Proporciona inmunidad a la"),
+                TextUtils.format("&7presión del Abismo."),
+                "",
+                TextUtils.format("&fDuración: &b2:00"),
+                "",
+                TextUtils.format("&eClick derecho para beber.")
+        ));
+        meta.setColor(Color.fromRGB(0x001A33)); // Azul muy oscuro
+        // Marcador persistente
+        meta.getPersistentDataContainer().set(new NamespacedKey("permadeath", "abyssal_potion"), PersistentDataType.BYTE, (byte) 1);
+        
+        meta.addCustomEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.WATER_BREATHING, 20 * 120, 0, false, false, true), true);
+        potion.setItemMeta(meta);
+        return potion;
+    }
+
+    public static boolean isAbyssalPotion(ItemStack stack) {
+        if (stack == null || stack.getType() == Material.AIR) return false;
+        if (!stack.hasItemMeta()) return false;
+        NamespacedKey key = new NamespacedKey("permadeath", "abyssal_potion");
+        return stack.getItemMeta().getPersistentDataContainer().has(key, PersistentDataType.BYTE);
     }
 
     public static ItemStack craftInfernalElytra() {
@@ -135,6 +214,27 @@ public class PermadeathItems {
         meta.setUnbreakable(true);
         s.setItemMeta(meta);
         return s;
+    }
+
+    public static ItemStack createInfernalNetheriteBlock() {
+        ItemStack s = new ItemStack(Material.DIAMOND);
+        ItemMeta meta = s.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName("§6Infernal Netherite Block");
+            meta.setUnbreakable(true);
+            s.setItemMeta(meta);
+        }
+        return s;
+    }
+
+    public static java.util.List<ItemStack> createNetheriteTools() {
+        return java.util.Arrays.asList(
+                craftNetheriteSword(),
+                craftNetheritePickaxe(),
+                craftNetheriteAxe(),
+                craftNetheriteShovel(),
+                craftNetheriteHoe()
+        );
     }
 
     public static ItemStack craftInfernalNetheriteIngot() {
@@ -286,6 +386,12 @@ public class PermadeathItems {
             return true;
         }
         return false;
+    }
+
+    public static boolean isAbyssalMask(ItemStack item) {
+        if (item == null || item.getType() != Material.LEATHER_HELMET) return false;
+        if (!item.hasItemMeta() || !item.getItemMeta().hasDisplayName()) return false;
+        return item.getItemMeta().getDisplayName().contains("Máscara del Abismo");
     }
     
     // Métodos auxiliares para no romper otras clases que los usan, pero slotBlock ya no los usa

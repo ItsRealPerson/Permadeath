@@ -120,6 +120,7 @@ public class PlayerListener implements Listener {
                 Bukkit.getOnlinePlayers().forEach(all -> {
                     all.playSound(all.getLocation(), Sound.ENTITY_WITHER_SPAWN, 1.0f, 0.5f);
                     all.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 20 * 10, 0));
+                    tech.sebazcrc.permadeath.util.AdvancementManager.grantAdvancement(all, tech.sebazcrc.permadeath.util.AdvancementManager.PDA.ABYSS_HEART);
                 });
             }
         }
@@ -1042,9 +1043,11 @@ public class PlayerListener implements Listener {
 
         manager.runCheckForLifeOrb();
         manager.runCheckForBeginningRelic();
+        manager.runCheckForAbyssalMask();
         manager.runCheckForInfernalPiece();
         manager.runCheckForInfernalElytra();
         manager.runCheckForGaps();
+        manager.runCheckForWaterMedal();
 
         if (e.getInventory().getResult() != null && e.getInventory().getResult().getType().name().toLowerCase().contains("leather_") && !e.getInventory().getResult().getItemMeta().isUnbreakable() && Main.instance.getDay() >= 25) {
             e.getInventory().setResult(new ItemStack(Material.AIR));
@@ -1154,6 +1157,38 @@ public class PlayerListener implements Listener {
 
                 if (diamondBlocks >= 4 && r >= 1) {
                     e.getInventory().setResult(PermadeathItems.createBeginningRelic());
+                }
+            }
+        }
+
+        public void runCheckForAbyssalMask() {
+            if (result == null) return;
+            
+            // 1. Validar crafteo del Corazón y el Filtro (Disponibles en Dia 60)
+            if (result.isSimilar(PermadeathItems.createAbyssalHeart()) || result.isSimilar(PermadeathItems.createAbyssalFilter())) {
+                if (Main.instance.getDay() < 60 || !Main.instance.getConfig().getBoolean("Toggles.ExtendToDay90")) {
+                    e.getInventory().setResult(null);
+                }
+                return;
+            }
+
+            // 2. Validar crafteo de la Máscara (Requiere Corazón DESPERTADO)
+            if (PermadeathItems.isAbyssalMask(result)) {
+                if (!Main.instance.isExtendedDifficulty()) {
+                    e.getInventory().setResult(null);
+                    return;
+                }
+                
+                int filters = 0;
+                int shards = 0;
+                for (ItemStack s : e.getInventory().getMatrix()) {
+                    if (s != null) {
+                        if (s.isSimilar(PermadeathItems.createAbyssalFilter())) filters++;
+                        if (s.isSimilar(PermadeathItems.createVoidShard())) shards++;
+                    }
+                }
+                if (filters < 2 || shards < 4) {
+                    e.getInventory().setResult(null);
                 }
             }
         }
@@ -1329,6 +1364,23 @@ public class PlayerListener implements Listener {
             }
             if (items >= 9) {
                 e.getInventory().setResult(PermadeathItems.createLifeOrb());
+            }
+        }
+
+        public void runCheckForWaterMedal() {
+            if (result == null) return;
+            if (result.isSimilar(PermadeathItems.createWaterMedal())) {
+                int goldSlots = 0;
+                int tridents = 0;
+                for (ItemStack s : e.getInventory().getMatrix()) {
+                    if (s != null) {
+                        if (s.getType() == Material.GOLD_BLOCK && s.getAmount() >= 32) goldSlots++;
+                        if (s.getType() == Material.TRIDENT) tridents++;
+                    }
+                }
+                if (goldSlots < 6 || tridents < 2) {
+                    e.getInventory().setResult(null);
+                }
             }
         }
     }

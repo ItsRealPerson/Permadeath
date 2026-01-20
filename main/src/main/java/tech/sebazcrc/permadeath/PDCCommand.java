@@ -71,10 +71,16 @@ public class PDCCommand implements CommandExecutor {
             case "storm" -> handleStorm(sender, args);
             case "accesorios" -> handleAccesorios(sender);
             case "abyss" -> handleAbyss(sender, args);
+            case "recipes" -> handleRecipes(sender);
             default -> sendHelp(sender);
         }
 
         return true;
+    }
+
+    private void handleRecipes(CommandSender sender) {
+        if (!(sender instanceof Player p)) return;
+        tech.sebazcrc.permadeath.util.gui.RecipeGUI.openMain(p);
     }
 
     private void handleAbyss(CommandSender sender, String[] args) {
@@ -205,13 +211,21 @@ public class PDCCommand implements CommandExecutor {
             case "ancestralfragment" -> p.getInventory().addItem(NetheriteArmor.craftAncestralFragment());
             case "moldes" -> p.getInventory().addItem(NetheriteArmor.craftTemplate("helmet"), NetheriteArmor.craftTemplate("chestplate"), NetheriteArmor.craftTemplate("leggings"), NetheriteArmor.craftTemplate("boots"));
             case "medalla" -> p.getInventory().addItem(new ItemBuilder(Material.TOTEM_OF_UNDYING).setUnbrekeable(true).setDisplayName(TextUtils.format("&6&lMedalla de Superviviente")).build());
-            case "infernalarmor" -> p.getInventory().addItem(InfernalNetherite.craftNetheriteHelmet(), InfernalNetherite.craftNetheriteChest(), InfernalNetherite.craftNetheriteLegs(), InfernalNetherite.craftNetheriteBoots());
-            case "netheritetools" -> p.getInventory().addItem(PermadeathItems.craftNetheritePickaxe(), PermadeathItems.craftNetheriteSword(), PermadeathItems.craftNetheriteAxe(), PermadeathItems.craftNetheriteShovel(), PermadeathItems.craftNetheriteHoe());
+            case "infernalarmor" -> {
+                p.getInventory().addItem(InfernalNetherite.craftNetheriteHelmet(), InfernalNetherite.craftNetheriteChest(), InfernalNetherite.craftNetheriteLegs(), InfernalNetherite.craftNetheriteBoots());
+                p.sendMessage(TextUtils.format("&eArmadura infernal entregada."));
+            }
+            case "netheritetools" -> PermadeathItems.createNetheriteTools().forEach(i -> p.getInventory().addItem(i));
             case "lifeorb" -> p.getInventory().addItem(PermadeathItems.createLifeOrb());
             case "endrelic" -> p.getInventory().addItem(PermadeathItems.crearReliquia());
+            case "infernalblock" -> p.getInventory().addItem(PermadeathItems.createInfernalNetheriteBlock());
             case "beginningrelic" -> p.getInventory().addItem(PermadeathItems.createBeginningRelic());
             case "watermedal" -> p.getInventory().addItem(PermadeathItems.createWaterMedal());
             case "abyssalheart" -> p.getInventory().addItem(PermadeathItems.createAbyssalHeart());
+            case "abyssalmask" -> p.getInventory().addItem(PermadeathItems.createAbyssalMask());
+            case "abyssalfilter" -> p.getInventory().addItem(PermadeathItems.createAbyssalFilter());
+            case "voidshard" -> p.getInventory().addItem(PermadeathItems.createVoidShard());
+            case "abyssalpotion" -> p.getInventory().addItem(PermadeathItems.createAbyssalPotion());
         }
     }
 
@@ -348,6 +362,7 @@ public class PDCCommand implements CommandExecutor {
         sender.sendMessage(ChatColor.RED + "/pdc dias " + ChatColor.GRAY + "(Día actual)");
         sender.sendMessage(ChatColor.RED + "/pdc duracion " + ChatColor.GRAY + "(Tiempo de tormenta)");
         sender.sendMessage(ChatColor.RED + "/pdc cambios " + ChatColor.GRAY + "(Link a la wiki)");
+        sender.sendMessage(ChatColor.RED + "/pdc recipes " + ChatColor.GRAY + "(Menú de recetas)");
         if (sender instanceof Player) {
             sender.sendMessage(ChatColor.RED + "/pdc mensaje <msj> " + ChatColor.GRAY + "(Tu mensaje de muerte)");
             sender.sendMessage(ChatColor.RED + "/pdc awake " + ChatColor.GRAY + "(Tiempo despierto)");

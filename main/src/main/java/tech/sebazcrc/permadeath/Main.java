@@ -94,9 +94,15 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     public LifeOrbEvent orbEvent;
     public SpawnListener spawnListener;
     private int deathTrainVersion = 0;
+    private tech.sebazcrc.permadeath.util.LootManager lootManager;
+    private boolean isStormingCache = false;
+    private long weatherDurationCache = 0;
 
     public void incrementDeathTrainVersion() { this.deathTrainVersion++; }
     public int getDeathTrainVersion() { return deathTrainVersion; }
+    public tech.sebazcrc.permadeath.util.LootManager getLootManager() { return lootManager; }
+    public boolean isStorming() { return isStormingCache; }
+    public long getWeatherDuration() { return weatherDurationCache; }
 
     public static boolean optifineItemsEnabled() {
         if (instance == null) return false;
@@ -121,13 +127,16 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
     @Override
     public boolean isExtendedDifficulty() {
-        return getConfig().getBoolean("DontTouch.ExtendedDifficultyActive");
+        // Solo puede estar activa si el toggle global está en true Y el corazón ha sido usado
+        if (!getConfig().getBoolean("Toggles.ExtendToDay90")) return false;
+        return getConfig().getBoolean("DontTouch.ExtendedDifficultyActive", false);
     }
 
     @Override
     public void onEnable() {
         instance = this;
         runningFolia = isRunningFolia();
+        this.lootManager = new tech.sebazcrc.permadeath.util.LootManager(this);
         
         // Registrar proveedor de API
         PermadeathAPI.setProvider(this);
@@ -242,6 +251,11 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
                 DateManager.getInstance().tick();
                 registerListeners();
 
+                if (world != null) {
+                    isStormingCache = world.hasStorm();
+                    weatherDurationCache = world.getWeatherDuration();
+                }
+
                 if (Bukkit.getOnlinePlayers().size() >= 1 && SPEED_RUN_MODE) {
                     playTime++;
 
@@ -285,13 +299,18 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
                         }
                         // if (DEBUG) Bukkit.getLogger().info("[Folia] Ticking player: " + p.getName());
                         tickPlayer(p);
-                    }, null, 1, 20L);
+                    }, null, 1, 100L); // Reducido a cada 5 segundos (100 ticks)
                     
                     p.setMetadata("pdc_ticking", new FixedMetadataValue(this, true));
+                    
+                    // Logro Día 60
+                    if (getDay() >= 60) {
+                        tech.sebazcrc.permadeath.util.AdvancementManager.grantAdvancement(p, tech.sebazcrc.permadeath.util.AdvancementManager.PDA.SURVIVOR_60);
+                    }
                 }
             }, 20L, 40L); // Revisar cada 2 segundos
         } else {
-            Bukkit.getScheduler().runTaskTimer(this, task, 0, 20L);
+            Bukkit.getScheduler().runTaskTimer(this, task, 0, 100L); // Reducido a cada 5 segundos
         }
     }
 
@@ -846,6 +865,8 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         this.spawnListener = new SpawnListener(this);
         getServer().getPluginManager().registerEvents(spawnListener, instance);
         getServer().getPluginManager().registerEvents(new AccessoryListener(), instance);
+        getServer().getPluginManager().registerEvents(new tech.sebazcrc.permadeath.util.item.AbyssalCauldronListener(), instance);
+        getServer().getPluginManager().registerEvents(new tech.sebazcrc.permadeath.util.gui.GUIListener(), instance);
         getServer().getPluginManager().registerEvents(new CustomSkeletons(instance), instance);
         getServer().getPluginManager().registerEvents(new PlayerListener(), instance);
         getServer().getPluginManager().registerEvents(new BlockListener(), instance);
@@ -929,7 +950,11 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         c.set("TotemFail.PlayerUsedTotemsMessage", "&7El jugador %player% ha consumido {ammount} tótems (Probabilidad: %totem_fail% %porcent% %number%)");
         c.set("Worlds.MainWorld", "world");
         c.set("Worlds.EndWorld", "world_the_end");
+        c.set("Alquimia.Tiempo-Segundos", 120);
+        c.set("Alquimia.Ingrediente-Principal", "ECHO_SHARD");
+        c.set("Alquimia.Dia-Requerido", 60);
         c.set("DontTouch.PlayTime", 0);
+        c.set("DontTouch.ExtendedDifficultyActive", false);
 
         c.save();
         c.load();
@@ -948,6 +973,17 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
             if (getDay() >= 50 && getDay() < 60) {
                 entity.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, Integer.MAX_VALUE, 0));
+            }
+            
+            // Evolución de mobs (Día 60 a 90)
+            if (getDay() >= 60) {
+                double multiplier = 1.0 + ((getDay() - 60) * 0.01); // +1% cada día
+                org.bukkit.attribute.AttributeInstance health = entity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+                org.bukkit.attribute.AttributeInstance damage = entity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE);
+                
+                if (health != null) health.setBaseValue(health.getBaseValue() * multiplier);
+                if (damage != null) damage.setBaseValue(damage.getBaseValue() * multiplier);
+                entity.setHealth(entity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue());
             }
         }
     }

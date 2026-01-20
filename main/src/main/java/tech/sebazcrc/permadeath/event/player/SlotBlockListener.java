@@ -1,6 +1,8 @@
 package tech.sebazcrc.permadeath.event.player;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.Witch;
@@ -15,11 +17,13 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import tech.sebazcrc.permadeath.Main;
 import tech.sebazcrc.permadeath.api.PermadeathAPI;
 import tech.sebazcrc.permadeath.util.TextUtils;
+import tech.sebazcrc.permadeath.util.item.PermadeathItems;
 import java.util.Random;
 
 public class SlotBlockListener implements Listener {
@@ -107,6 +111,18 @@ public class SlotBlockListener implements Listener {
             if (e.getItem().getItemStack().getType() == Material.STRUCTURE_VOID) {
                 e.setCancelled(true);
             }
+        }
+        // Disparar bloqueo reactivo si el inventario pertenece a un jugador
+        if (e.getInventory().getHolder() instanceof Player p) {
+            PermadeathItems.slotBlock(p);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onPickupPlayer(org.bukkit.event.entity.EntityPickupItemEvent e) {
+        if (e.getEntity() instanceof Player p) {
+            // Un pequeño delay para que el item llegue al inventario antes de bloquear
+            Bukkit.getScheduler().runTaskLater(main, () -> PermadeathItems.slotBlock(p), 1L);
         }
     }
 

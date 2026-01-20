@@ -22,7 +22,8 @@ public class PDCCommandCompleter implements TabCompleter {
     private static final List<String> GIVE_ITEMS = Arrays.asList(
             "medalla", "netheriteArmor", "infernalArmor", "infernalBlock", 
             "netheriteTools", "lifeOrb", "endrelic", "beginningrelic", 
-            "waterMedal", "ancestralFragment", "moldes"
+            "waterMedal", "ancestralFragment", "moldes", "abyssalheart",
+            "abyssalmask", "abyssalfilter", "voidshard", "abyssalpotion"
     );
 
     private static final List<String> MOBS = Arrays.asList(

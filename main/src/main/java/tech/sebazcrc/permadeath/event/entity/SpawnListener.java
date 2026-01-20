@@ -1162,21 +1162,18 @@ public class SpawnListener implements Listener {
                 entity.getPersistentDataContainer().set(new NamespacedKey(plugin, "dt_version"), PersistentDataType.INTEGER, currentVersion);
             }
 
-            // 2. Lógica de Ultra Ravager (Antes estaba en Main.tickWorlds, ahora es regional)
+            // 2. Lógica de Ultra Ravager (Optimizada: sin RayTrace)
             if (entity instanceof Ravager ravager && plugin.getDay() >= 40) {
                 if (ravager.getPersistentDataContainer().has(new NamespacedKey(plugin, "ultra_ravager"), PersistentDataType.BYTE)) {
-                    java.util.List<org.bukkit.block.Block> b = ravager.getLineOfSight(null, 5);
-                    for (org.bukkit.block.Block block : b) {
-                        for (int i = -1; i <= 1; i++) {
-                            for (int j = -1; j <= 1; j++) {
-                                for (int k = -1; k <= 1; k++) {
-                                    org.bukkit.block.Block r = block.getRelative(i, j, k);
-                                    if (r.getType() == Material.NETHERRACK) {
-                                        r.setType(Material.AIR);
-                                        r.getWorld().playSound(r.getLocation(), Sound.BLOCK_STONE_BREAK, 2.0F, 1.0F);
-                                    }
-                                }
-                            }
+                    // Solo chequear bloques en frente del Ravager
+                    org.bukkit.block.BlockFace face = ravager.getFacing();
+                    org.bukkit.block.Block b = ravager.getLocation().getBlock().getRelative(face);
+                    
+                    for (int y = 0; y <= 1; y++) { // Altura del ravager
+                        org.bukkit.block.Block target = b.getRelative(0, y, 0);
+                        if (target.getType() == Material.NETHERRACK) {
+                            target.setType(Material.AIR);
+                            target.getWorld().playSound(target.getLocation(), Sound.BLOCK_STONE_BREAK, 1.0F, 1.0F);
                         }
                     }
                 }
