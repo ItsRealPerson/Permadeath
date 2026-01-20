@@ -46,6 +46,9 @@ public class EndTask extends BukkitRunnable {
     private Location eggLocation;
 
     private SplittableRandom random = new SplittableRandom();
+    
+    // Para Folia
+    private Object foliaTask;
 
     public EndTask(Main plugin, EnderDragon enderDragon) {
         this.main = plugin;
@@ -59,8 +62,12 @@ public class EndTask extends BukkitRunnable {
         }
         this.eggLocation = main.endWorld.getHighestBlockAt(new Location(main.endWorld, 0, y, 0)).getLocation();
 
-        enderDragon.getAttribute(Attribute.MAX_HEALTH).setBaseValue(Main.instance.getConfig().getInt("Toggles.End.PermadeathDemon.Health"));
-        enderDragon.setHealth(Main.instance.getConfig().getInt("Toggles.End.PermadeathDemon.Health"));
+        double maxHealth = Main.instance.getConfig().getDouble("Toggles.End.PermadeathDemon.Health", 2000.0);
+        org.bukkit.attribute.AttributeInstance attr = enderDragon.getAttribute(Attribute.MAX_HEALTH);
+        if (attr != null) {
+            attr.setBaseValue(maxHealth);
+            enderDragon.setHealth(attr.getValue());
+        }
 
         teleportLocation = eggLocation.clone().add(0, 2, 0);
         teleportLocation.setPitch(enderDragon.getLocation().getPitch());
@@ -70,9 +77,28 @@ public class EndTask extends BukkitRunnable {
         }
     }
 
+    public void start() {
+        if (Main.isRunningFolia()) {
+            this.foliaTask = enderDragon.getScheduler().runAtFixedRate(main, t -> run(), null, 1L, 20L);
+        } else {
+            this.runTaskTimer(main, 0, 20L);
+        }
+    }
+
+    @Override
+    public void cancel() {
+        if (Main.isRunningFolia() && foliaTask != null) {
+            ((io.papermc.paper.threadedregions.scheduler.ScheduledTask) foliaTask).cancel();
+        } else {
+            try {
+                super.cancel();
+            } catch (IllegalStateException ignored) {}
+        }
+    }
+
     @Override
     public void run() {
-        if (isDied || enderDragon.isDead()) {
+        if (isDied || enderDragon.isDead() || !enderDragon.isValid()) {
             main.setTask(null);
             cancel();
             return;
@@ -173,7 +199,7 @@ public class EndTask extends BukkitRunnable {
 
             if (timeForEnd360 == 15) {
                 this.currentMovesTask = new MovesTask(main, (EnderDragon) enderDragon, teleportLocation);
-                currentMovesTask.runTaskTimer(main, 5L, 5L);
+                currentMovesTask.start();
             }
 
             if (timeForEnd360 == 0) {

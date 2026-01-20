@@ -55,6 +55,7 @@ import tech.sebazcrc.permadeath.world.beginning.BeginningManager;
 import tech.sebazcrc.permadeath.util.inventory.AccessoryListener;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.logging.Filter;
@@ -667,6 +668,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
         setupListeners();
         setupCommands();
+        checkSpigotConfig();
 
         new UpdateChecker(this).getVersion(version -> {
             if (this.getDescription().getVersion().equalsIgnoreCase(version)) {
@@ -964,6 +966,25 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
         c.save();
         c.load();
+    }
+
+    public void checkSpigotConfig() {
+        File spigotFile = new File("spigot.yml");
+        if (spigotFile.exists()) {
+            YamlConfiguration spigotConfig = YamlConfiguration.loadConfiguration(spigotFile);
+            double currentMax = spigotConfig.getDouble("settings.attribute.max_health.max", 1024.0);
+            
+            if (currentMax < 2048.0) {
+                Bukkit.getConsoleSender().sendMessage(prefix + ChatColor.YELLOW + "Detectado límite de vida bajo en spigot.yml (" + currentMax + "). Actualizando a 2048.0...");
+                spigotConfig.set("settings.attribute.max_health.max", 2048.0);
+                try {
+                    spigotConfig.save(spigotFile);
+                    Bukkit.getConsoleSender().sendMessage(prefix + ChatColor.GREEN + "¡spigot.yml actualizado! Los cambios surtirán efecto tras el PRÓXIMO REINICIO.");
+                } catch (IOException e) {
+                    Bukkit.getConsoleSender().sendMessage(prefix + ChatColor.RED + "No se pudo guardar spigot.yml automáticamente.");
+                }
+            }
+        }
     }
 
     public void deathTrainEffects(LivingEntity entity) {

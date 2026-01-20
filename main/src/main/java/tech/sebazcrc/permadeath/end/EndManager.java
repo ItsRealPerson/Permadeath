@@ -314,10 +314,19 @@ public class EndManager implements Listener {
                 for (Entity n : e.getLocation().getWorld().getEntitiesByClass(EnderDragon.class)) {
                     if (n.isValid() && !n.isDead()) {
                         n.setCustomName(TextUtils.format(instance.getConfig().getString("Toggles.End.PermadeathDemon.DisplayName")));
-                        ((LivingEntity) n).getAttribute(Attribute.MAX_HEALTH).setBaseValue(instance.getConfig().getInt("Toggles.End.PermadeathDemon.Health"));
-                        ((LivingEntity) n).setHealth(instance.getConfig().getInt("Toggles.End.PermadeathDemon.Health"));
+                        
+                        double targetHealth = instance.getConfig().getDouble("Toggles.End.PermadeathDemon.Health");
+                        org.bukkit.attribute.AttributeInstance healthAttr = ((LivingEntity) n).getAttribute(Attribute.MAX_HEALTH);
+                        
+                        if (healthAttr != null) {
+                            healthAttr.setBaseValue(targetHealth);
+                            // En Paper/Folia, getValue() nos dará el valor real tras aplicar los límites de spigot.yml
+                            double effectiveMax = healthAttr.getValue();
+                            ((LivingEntity) n).setHealth(Math.min(targetHealth, effectiveMax));
+                        }
+                        
                         main.setTask(new EndTask(main, (EnderDragon) n));
-                        main.getTask().runTaskTimer(main, 0, 20L);
+                        main.getTask().start();
                     }
                 }
             } else {

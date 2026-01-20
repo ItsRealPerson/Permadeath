@@ -23,6 +23,8 @@ public class MovesTask extends BukkitRunnable {
     int currentPitchRotation = -360;
     Location teleportLocation;
     boolean spawnedPaticles = false;
+    
+    private Object foliaTask;
 
     public MovesTask(Main main, EnderDragon dragon, Location tp) {
         this.main = main;
@@ -30,11 +32,29 @@ public class MovesTask extends BukkitRunnable {
         this.teleportLocation = tp;
     }
 
+    public void start() {
+        if (Main.isRunningFolia()) {
+            this.foliaTask = dragon.getScheduler().runAtFixedRate(main, t -> run(), null, 1L, 5L);
+        } else {
+            this.runTaskTimer(main, 5L, 5L);
+        }
+    }
+
+    @Override
+    public void cancel() {
+        if (Main.isRunningFolia() && foliaTask != null) {
+            ((io.papermc.paper.threadedregions.scheduler.ScheduledTask) foliaTask).cancel();
+        } else {
+            try {
+                super.cancel();
+            } catch (IllegalStateException ignored) {}
+        }
+    }
 
     @Override
     public void run() {
 
-        if (dragon.isDead() || main.getTask() == null) {
+        if (dragon.isDead() || !dragon.isValid() || main.getTask() == null) {
 
             cancel();
             return;
