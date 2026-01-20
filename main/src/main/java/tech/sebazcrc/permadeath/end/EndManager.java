@@ -273,23 +273,27 @@ public class EndManager implements Listener {
 
                     if (b.getType() == Material.END_STONE || b.getType() == Material.END_STONE_BRICKS) {
 
-                        FallingBlock fb = b.getWorld().spawnFallingBlock(b.getLocation(), b.getState().getData());
-                        b.getState().setData(b.getState().getData());
+                        FallingBlock fb = b.getWorld().spawnFallingBlock(b.getLocation(), b.getBlockData());
                         fb.setVelocity(new Vector(x, y, z));
                         fb.setDropItem(false);
                         fb.setMetadata("Exploded", new FixedMetadataValue(main, 0));
                         fallingBlocks.add(fb);
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                for (Block b : blockList) {
-                                    b.getState().update();
-                                    this.cancel();
-                                }
-                            }
-                        }.runTaskLater(main, 2L);
-                        e.blockList().clear();
                     }
+                }
+                
+                if (!fallingBlocks.isEmpty()) {
+                    Runnable task = () -> {
+                        for (Block b : blockList) {
+                            b.getState().update();
+                        }
+                    };
+                    
+                    if (Main.isRunningFolia()) {
+                        Bukkit.getRegionScheduler().runDelayed(main, e.getLocation(), t -> task.run(), 2L);
+                    } else {
+                        Bukkit.getScheduler().runTaskLater(main, task, 2L);
+                    }
+                    e.blockList().clear();
                 }
             }
         }
