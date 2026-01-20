@@ -289,7 +289,7 @@ public class EndManager implements Listener {
                     };
                     
                     if (Main.isRunningFolia()) {
-                        Bukkit.getRegionScheduler().runDelayed(main, e.getLocation(), t -> task.run(), 2L);
+                        Bukkit.getRegionScheduler().runDelayed(main, e.getLocation(), taskFolia -> task.run(), 2L);
                     } else {
                         Bukkit.getScheduler().runTaskLater(main, task, 2L);
                     }
