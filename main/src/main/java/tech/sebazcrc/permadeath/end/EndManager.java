@@ -186,9 +186,10 @@ public class EndManager implements Listener {
     @EventHandler
     public void onCrystalBreak(EntityDamageByEntityEvent e) {
         if (e.getEntity() instanceof EnderCrystal crystal && crystal.hasMetadata("ShieldCrystal")) {
-            shieldCrystals.remove(crystal);
-            if (shieldCrystals.isEmpty()) {
-                Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&a&l¡ESCUDO DESTRUIDO! El Demonio es vulnerable."));
+            if (shieldCrystals.remove(crystal)) {
+                if (shieldCrystals.isEmpty()) {
+                    Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&a&l¡ESCUDO DESTRUIDO! El Demonio es vulnerable."));
+                }
             }
         }
     }
