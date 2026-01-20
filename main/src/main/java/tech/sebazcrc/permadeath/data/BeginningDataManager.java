@@ -103,7 +103,7 @@ public class BeginningDataManager {
         }
         config.set("GeneratedBeginningPortal", true);
         config.set("BeginningPortal", locationToString(loc));
-        saveFile();
+        saveFileSync(); // Guardado síncrono crítico
     }
 
     public Location getOverWorldPortal() {
@@ -119,8 +119,18 @@ public class BeginningDataManager {
         }
         config.set("GeneratedOverWorldBeginningPortal", true);
         config.set("OverWorldPortal", locationToString(loc));
-        saveFile();
+        saveFileSync(); // Guardado síncrono crítico
     }
+
+    public void saveFileSync() {
+        try {
+            config.save(beginningFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void saveFile() {
 
     public boolean killedED() {
         return config.getBoolean("KilledED");
