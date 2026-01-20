@@ -332,14 +332,27 @@ public class EndTask extends BukkitRunnable {
     private void tickGravityWell() {
         if (currentAttack == DemonCurrentAttack.GRAVITY_WELL && gravityWellDuration > 0) {
             gravityWellDuration--;
-            eggLocation.getWorld().spawnParticle(Particle.PORTAL, eggLocation.clone().add(0, 1, 0), 100, 5, 2, 5, 0.1);
+            eggLocation.getWorld().spawnParticle(Particle.PORTAL, eggLocation.clone().add(0, 1, 0), 200, 5, 2, 5, 0.2);
+            
+            if (gravityWellDuration % 10 == 0) {
+                eggLocation.getWorld().playSound(eggLocation, Sound.ENTITY_ZOMBIE_VILLAGER_CONVERTED, 10.0F, 0.5F);
+            }
+
             for (Player p : eggLocation.getWorld().getPlayers()) {
-                if (p.getLocation().distanceSquared(eggLocation) < 2500) {
+                double distSq = p.getLocation().distanceSquared(eggLocation);
+                if (distSq < 3600) { // Radio aumentado a 60 bloques
                     Vector direction = eggLocation.toVector().subtract(p.getLocation().toVector()).normalize();
-                    p.setVelocity(p.getVelocity().add(direction.multiply(0.15)));
-                    if (p.getLocation().distanceSquared(eggLocation) < 4) {
-                        p.damage(4.0);
-                        p.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 40, 2));
+                    
+                    // Fuerza base más potente (0.35 en lugar de 0.15)
+                    // La fuerza aumenta a medida que te acercas al centro
+                    double force = 0.35 + (1.0 - (Math.sqrt(distSq) / 60.0)) * 0.25;
+                    
+                    p.setVelocity(p.getVelocity().add(direction.multiply(force)));
+                    
+                    if (distSq < 9) { // 3 bloques de distancia
+                        p.damage(6.0);
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 60, 3));
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 60, 0));
                     }
                 }
             }
