@@ -93,6 +93,10 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     public ShellEvent shulkerEvent;
     public LifeOrbEvent orbEvent;
     public SpawnListener spawnListener;
+    private int deathTrainVersion = 0;
+
+    public void incrementDeathTrainVersion() { this.deathTrainVersion++; }
+    public int getDeathTrainVersion() { return deathTrainVersion; }
 
     public static boolean optifineItemsEnabled() {
         if (instance == null) return false;
@@ -253,7 +257,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
                 if (!runningFolia) {
                     tickPlayers();
                 }
-                tickWorlds();
+                // tickWorlds() eliminado - La lógica ahora es regional por entidad
 
                 // Chequeo constante del evento de Orbe (como en master)
                 if (getDay() >= 60 && !getConfig().getBoolean("DontTouch.Event.LifeOrbEnded") && !getOrbEvent().isRunning()) {
@@ -350,7 +354,6 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         // Debug log for slotBlock
         // if (DEBUG) Bukkit.getLogger().info("Executing slotBlock for " + player.getName());
         PermadeathItems.slotBlock(player);
-        player.updateInventory();
 
         if (SPEED_RUN_MODE) {
             String actionBar = "";

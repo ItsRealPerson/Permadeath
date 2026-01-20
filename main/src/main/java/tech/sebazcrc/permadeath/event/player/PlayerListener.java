@@ -194,21 +194,8 @@ public class PlayerListener implements Listener {
             }
 
             if (Main.instance.getDay() >= 25) {
-                if (Main.isRunningFolia()) {
-                    Bukkit.getGlobalRegionScheduler().execute(Main.instance, () -> {
-                        for (World w : Bukkit.getWorlds()) {
-                            for (LivingEntity l : w.getLivingEntities()) {
-                                l.getScheduler().run(Main.instance, t -> Main.instance.deathTrainEffects(l), null);
-                            }
-                        }
-                    });
-                } else {
-                    for (World w : Bukkit.getWorlds()) {
-                        for (LivingEntity l : w.getLivingEntities()) {
-                            Main.instance.deathTrainEffects(l);
-                        }
-                    }
-                }
+                // Incrementar versión global para que las entidades se actualicen en sus hilos regionales
+                Main.instance.incrementDeathTrainVersion();
             }
 
             if (Main.instance.getDay() >= 50) {

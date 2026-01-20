@@ -133,7 +133,8 @@ public class SpawnListener implements Listener {
         spawnBeginningMob(event);
         spawnNetheriteMob(event);
 
-        plugin.deathTrainEffects(entity);
+        // Iniciar lógica regional/por entidad
+        startRegionalEntityTask(entity);
 
         if (entity instanceof Spider || eventEntityType == EntityType.SKELETON) {
             if (plugin.getConfig().getBoolean("Toggles.Spider-Effect") && entity instanceof Spider) {
@@ -1141,6 +1142,46 @@ public class SpawnListener implements Listener {
             gatosSupernova.remove(cat);
             cat.remove();
         }, 20 * 30);
+    }
+
+    private void startRegionalEntityTask(LivingEntity entity) {
+        if (entity instanceof Player) return;
+
+        entity.getScheduler().runAtFixedRate(plugin, task -> {
+            if (entity.isDead() || !entity.isValid()) {
+                task.cancel();
+                return;
+            }
+
+            // 1. Lógica de Death Train (Regionalizada por versión)
+            int currentVersion = plugin.getDeathTrainVersion();
+            int entityVersion = entity.getPersistentDataContainer().getOrDefault(new NamespacedKey(plugin, "dt_version"), PersistentDataType.INTEGER, -1);
+
+            if (entityVersion < currentVersion) {
+                plugin.deathTrainEffects(entity);
+                entity.getPersistentDataContainer().set(new NamespacedKey(plugin, "dt_version"), PersistentDataType.INTEGER, currentVersion);
+            }
+
+            // 2. Lógica de Ultra Ravager (Antes estaba en Main.tickWorlds, ahora es regional)
+            if (entity instanceof Ravager ravager && plugin.getDay() >= 40) {
+                if (ravager.getPersistentDataContainer().has(new NamespacedKey(plugin, "ultra_ravager"), PersistentDataType.BYTE)) {
+                    java.util.List<org.bukkit.block.Block> b = ravager.getLineOfSight(null, 5);
+                    for (org.bukkit.block.Block block : b) {
+                        for (int i = -1; i <= 1; i++) {
+                            for (int j = -1; j <= 1; j++) {
+                                for (int k = -1; k <= 1; k++) {
+                                    org.bukkit.block.Block r = block.getRelative(i, j, k);
+                                    if (r.getType() == Material.NETHERRACK) {
+                                        r.setType(Material.AIR);
+                                        r.getWorld().playSound(r.getLocation(), Sound.BLOCK_STONE_BREAK, 2.0F, 1.0F);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }, null, 20L, 20L); // Ejecutar cada segundo (20 ticks)
     }
 
     private void runTaskEntity(Entity entity, Runnable runnable) {

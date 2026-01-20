@@ -184,6 +184,17 @@ public class PermadeathItems {
             }
         }
         
+        // También revisar el CURSOR (Importante para evitar bloqueos mientras se mueve la reliquia)
+        ItemStack cursor = p.getItemOnCursor();
+        if (cursor != null && cursor.getType() != Material.AIR) {
+            if (!hasBeginningRelic && isBeginningRelic(cursor)) {
+                hasBeginningRelic = true;
+                hasEndRelic = true;
+            } else if (!hasEndRelic && isEndRelic(cursor)) {
+                hasEndRelic = true;
+            }
+        }
+        
         // Check accessories too
         if (!hasEndRelic || !hasBeginningRelic) {
             ItemStack[] acc = AccessoryInventory.load(p);
@@ -230,34 +241,27 @@ public class PermadeathItems {
     private static void lockSlot(Player p, int slot) {
         ItemStack item = p.getInventory().getItem(slot);
 
-        if (item != null) {
-            if (item.getType() != Material.AIR && item.getType() != Material.STRUCTURE_VOID) {
-                p.getWorld().dropItem(p.getLocation(), item.clone());
-                
-                // Feedback visual y sonoro
-                p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_LAND, 0.5f, 2.0f);
-                p.spawnParticle(Particle.SMOKE, p.getLocation().add(0, 1, 0), 5, 0.2, 0.2, 0.2, 0.05);
-            }
-            if (item.getType() != Material.STRUCTURE_VOID) {
-                item.setType(Material.STRUCTURE_VOID);
-                item.setAmount(1);
-                // Mantenemos metadata por compatibilidad con el listener actual
-                ItemMeta meta = item.getItemMeta();
-                if (meta != null) {
-                    meta.setDisplayName(TextUtils.format("&c&lSLOT BLOQUEADO"));
-                    meta.setCustomModelData(666);
-                    item.setItemMeta(meta);
-                }
-            }
-        } else {
-            ItemStack lock = new ItemBuilder(Material.STRUCTURE_VOID)
-                    .setDisplayName(TextUtils.format("&c&lSLOT BLOQUEADO"))
-                    .setCustomModelData(666)
-                    .build();
-            p.getInventory().setItem(slot, lock);
+        if (item != null && item.getType() != Material.AIR) {
+            // Si ya está bloqueado, no hacer nada
+            if (item.getType() == Material.STRUCTURE_VOID) return;
+            
+            // Si hay un item real, expulsarlo
+            p.getWorld().dropItem(p.getLocation(), item.clone());
+            
+            // Feedback visual y sonoro (solo al expulsar)
+            p.playSound(p.getLocation(), Sound.BLOCK_ANVIL_LAND, 0.5f, 2.0f);
+            p.spawnParticle(Particle.SMOKE, p.getLocation().add(0, 1, 0), 5, 0.2, 0.2, 0.2, 0.05);
         }
+        
+        // Bloquear el slot
+        ItemStack lock = new ItemBuilder(Material.STRUCTURE_VOID)
+                .setDisplayName(TextUtils.format("&c&lSLOT BLOQUEADO"))
+                .setLore(Arrays.asList(TextUtils.format("&7Necesitas una reliquia"), TextUtils.format("&7para usar este espacio.")))
+                .setCustomModelData(666)
+                .build();
+        
+        p.getInventory().setItem(slot, lock);
     }
-
 
     private static void unlockSlot(Player p, int slot) {
         ItemStack item = p.getInventory().getItem(slot);
