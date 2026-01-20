@@ -95,7 +95,11 @@ public class BeginningManager implements Listener {
     public void closeBeginning() {
         if (beginningWorld == null) return;
         beginningWorld.getPlayers().forEach(p -> {
-            p.teleport(main.world.getSpawnLocation());
+            if (Main.isRunningFolia()) {
+                p.teleportAsync(main.world.getSpawnLocation());
+            } else {
+                p.teleport(main.world.getSpawnLocation());
+            }
             p.playSound(p.getLocation(), Sound.ITEM_TRIDENT_THUNDER, 1.0F, 1.0F);
         });
         Bukkit.broadcastMessage(TextUtils.format(main.prefix + "&eThe Beginning ha cerrado temporalmente (DeathTrain)."));

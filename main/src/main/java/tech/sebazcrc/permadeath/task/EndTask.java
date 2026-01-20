@@ -194,7 +194,11 @@ public class EndTask extends BukkitRunnable {
                 if (dragon.getPhase() != EnderDragon.Phase.LAND_ON_PORTAL) {
                     dragon.setPhase(EnderDragon.Phase.LAND_ON_PORTAL);
                 }
-                dragon.teleport(teleportLocation);
+                if (Main.isRunningFolia()) {
+                    dragon.teleportAsync(teleportLocation);
+                } else {
+                    dragon.teleport(teleportLocation);
+                }
             }
 
             if (timeForEnd360 == 15) {

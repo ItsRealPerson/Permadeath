@@ -138,23 +138,34 @@ public class PaperListeners implements Listener {
                 loc.setDirection(direction);
                 loc.setPitch(pitch);
                 loc.setYaw(yaw);
-                entity.teleport(loc, PlayerTeleportEvent.TeleportCause.PLUGIN);
+                if (Main.isRunningFolia()) {
+                    entity.teleportAsync(loc, PlayerTeleportEvent.TeleportCause.PLUGIN);
+                } else {
+                    entity.teleport(loc, PlayerTeleportEvent.TeleportCause.PLUGIN);
+                }
                 entity.setVelocity(velocity);
             }
 
-            if (world.getName().equalsIgnoreCase("pdc_the_beginning")) {
+            if (world.getName().endsWith("permadeath_beginning") || world.getName().endsWith("permadeath/beginning")) {
 
-                Bukkit.getScheduler().runTaskLater(main, new Runnable() {
-                    @Override
-                    public void run() {
-                        Location loc = main.world.getSpawnLocation();
-                        loc.setDirection(direction);
-                        loc.setPitch(pitch);
-                        loc.setYaw(yaw);
+                Runnable task = () -> {
+                    Location loc = main.world.getSpawnLocation();
+                    loc.setDirection(direction);
+                    loc.setPitch(pitch);
+                    loc.setYaw(yaw);
+                    if (Main.isRunningFolia()) {
+                        entity.teleportAsync(loc, PlayerTeleportEvent.TeleportCause.PLUGIN);
+                    } else {
                         entity.teleport(loc, PlayerTeleportEvent.TeleportCause.PLUGIN);
-                        entity.setVelocity(velocity);
                     }
-                }, 1L);
+                    entity.setVelocity(velocity);
+                };
+                
+                if (Main.isRunningFolia()) {
+                    Bukkit.getRegionScheduler().runDelayed(main, from, t -> task.run(), 1L);
+                } else {
+                    Bukkit.getScheduler().runTaskLater(main, task, 1L);
+                }
             }
         }
     }
@@ -165,11 +176,12 @@ public class PaperListeners implements Listener {
         if (main.getDay() < 40) return;
 
         if (main.getDay() < 50) {
-            if (e.getPlayer().getWorld().getName().equalsIgnoreCase(main.world.getName()) || e.getPlayer().getWorld().getName().equalsIgnoreCase(main.getBeginningManager().getBeginningWorld().getName())) {
+            String worldName = e.getPlayer().getWorld().getName();
+            if (worldName.equalsIgnoreCase(main.world.getName()) || worldName.endsWith("permadeath_beginning") || worldName.endsWith("permadeath/beginning")) {
                 e.getPlayer().setNoDamageTicks(e.getPlayer().getMaximumNoDamageTicks());
                 e.getPlayer().damage(e.getPlayer().getHealth() + 1.0D);
                 e.getPlayer().setNoDamageTicks(0);
-                Bukkit.broadcastMessage(TextUtils.format("&c&lEl jugador &4&l" + e.getPlayer().getName() + " &c&lentró a TheBeginning antes de tiempo."));
+                Bukkit.broadcastMessage(TextUtils.format("&c&lEl jugador &4&l" + e.getPlayer().getName() + " &c&lentró a The Beginning antes de tiempo."));
             }
             return;
         }
@@ -198,29 +210,42 @@ public class PaperListeners implements Listener {
 
             if (world.getName().equalsIgnoreCase(main.world.getName())) {
 
-                Bukkit.getScheduler().runTaskLater(main, new Runnable() {
-                    @Override
-                    public void run() {
-
-                        Location loc = main.getBeData().getBeginningPortal();
-                        loc.setDirection(direction);
+                Runnable task = () -> {
+                    Location loc = main.getBeData().getBeginningPortal();
+                    loc.setDirection(direction);
+                    if (Main.isRunningFolia()) {
+                        p.teleportAsync(loc, PlayerTeleportEvent.TeleportCause.PLUGIN);
+                    } else {
                         p.teleport(loc, PlayerTeleportEvent.TeleportCause.PLUGIN);
-                        p.setVelocity(velocity);
                     }
-                }, 1L);
+                    p.setVelocity(velocity);
+                };
+                
+                if (Main.isRunningFolia()) {
+                    Bukkit.getRegionScheduler().runDelayed(main, from, t -> task.run(), 1L);
+                } else {
+                    Bukkit.getScheduler().runTaskLater(main, task, 1L);
+                }
             }
 
-            if (world.getName().equalsIgnoreCase("pdc_the_beginning")) {
+            if (world.getName().endsWith("permadeath_beginning") || world.getName().endsWith("permadeath/beginning")) {
 
-                Bukkit.getScheduler().runTaskLater(main, new Runnable() {
-                    @Override
-                    public void run() {
-                        Location loc = main.world.getSpawnLocation();
-                        loc.setDirection(direction);
+                Runnable task = () -> {
+                    Location loc = main.world.getSpawnLocation();
+                    loc.setDirection(direction);
+                    if (Main.isRunningFolia()) {
+                        p.teleportAsync(loc, PlayerTeleportEvent.TeleportCause.PLUGIN);
+                    } else {
                         p.teleport(loc, PlayerTeleportEvent.TeleportCause.PLUGIN);
-                        p.setVelocity(velocity);
                     }
-                }, 1L);
+                    p.setVelocity(velocity);
+                };
+                
+                if (Main.isRunningFolia()) {
+                    Bukkit.getRegionScheduler().runDelayed(main, from, t -> task.run(), 1L);
+                } else {
+                    Bukkit.getScheduler().runTaskLater(main, task, 1L);
+                }
             }
         }
     }

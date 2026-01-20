@@ -590,7 +590,11 @@ public class PlayerListener implements Listener {
 
         if (Main.instance.getBeginningManager() != null && Main.instance.getBeginningManager().getBeginningWorld() != null) {
             if (Main.instance.getBeginningManager().isClosed() && e.getPlayer().getWorld().getName().equalsIgnoreCase(Main.instance.getBeginningManager().getBeginningWorld().getName())) {
-                e.getPlayer().teleport(Main.instance.world.getSpawnLocation());
+                if (Main.isRunningFolia()) {
+                    e.getPlayer().teleportAsync(Main.instance.world.getSpawnLocation());
+                } else {
+                    e.getPlayer().teleport(Main.instance.world.getSpawnLocation());
+                }
             }
 
             if (Main.worldEditFound) {
