@@ -122,7 +122,11 @@ public class SlotBlockListener implements Listener {
     public void onPickupPlayer(org.bukkit.event.entity.EntityPickupItemEvent e) {
         if (e.getEntity() instanceof Player p) {
             // Un pequeño delay para que el item llegue al inventario antes de bloquear
-            Bukkit.getScheduler().runTaskLater(main, () -> PermadeathItems.slotBlock(p), 1L);
+            if (Main.isRunningFolia()) {
+                p.getScheduler().runDelayed(main, t -> PermadeathItems.slotBlock(p), null, 1L);
+            } else {
+                Bukkit.getScheduler().runTaskLater(main, () -> PermadeathItems.slotBlock(p), 1L);
+            }
         }
     }
 
