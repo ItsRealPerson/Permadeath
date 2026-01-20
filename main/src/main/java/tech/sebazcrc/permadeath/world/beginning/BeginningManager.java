@@ -1,22 +1,19 @@
 package tech.sebazcrc.permadeath.world.beginning;
 
-import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.block.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerPortalEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.event.world.WorldLoadEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataType;
 import tech.sebazcrc.permadeath.Main;
 import tech.sebazcrc.permadeath.data.BeginningDataManager;
 import tech.sebazcrc.permadeath.util.TextUtils;
 import tech.sebazcrc.permadeath.world.WorldEditPortal;
 import tech.sebazcrc.permadeath.world.beginning.generator.BeginningLootTable;
-
-import java.util.Objects;
 
 public class BeginningManager implements Listener {
 
@@ -113,7 +110,53 @@ public class BeginningManager implements Listener {
         return beginningWorld;
     }
 
-    // --- MANEJO DE CHESTS Y ESTRUCTURAS ---
+    @EventHandler
+    public void onPortal(PlayerPortalEvent e) {
+        if (beginningWorld == null) return;
+        if (e.getCause() != PlayerTeleportEvent.TeleportCause.END_GATEWAY) return;
+
+        Player p = e.getPlayer();
+        e.setCancelled(true); // Cancelar teletransporte Vanilla de Gateway
+
+        if (isClosed()) {
+            p.sendMessage(ChatColor.RED + "The Beginning está cerrado actualmente.");
+            return;
+        }
+
+        if (main.getDay() < 50) {
+            if (p.getWorld().equals(main.world) || p.getWorld().equals(beginningWorld)) {
+                p.setNoDamageTicks(p.getMaximumNoDamageTicks());
+                p.damage(p.getHealth() + 1.0D);
+                Bukkit.broadcastMessage(TextUtils.format("&c&lEl jugador &4&l" + p.getName() + " &c&lentró a The Beginning antes de tiempo."));
+            }
+            return;
+        }
+
+        // Teleport al Beginning
+        if (p.getWorld().equals(main.world)) {
+            Location to = beginningWorld.getSpawnLocation();
+            if (Main.isRunningFolia()) {
+                p.teleportAsync(to).thenAccept(success -> {
+                    if (success) p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e."));
+                });
+            } else {
+                p.teleport(to);
+                p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e."));
+            }
+            return;
+        }
+
+        // Teleport de vuelta al Overworld
+        if (p.getWorld().equals(beginningWorld)) {
+            Location to = main.world.getSpawnLocation();
+            if (Main.isRunningFolia()) {
+                p.teleportAsync(to);
+            } else {
+                p.teleport(to);
+            }
+        }
+    }
+
     @EventHandler
     public void onInteract(org.bukkit.event.player.PlayerInteractEvent e) {
         if (beginningWorld == null || !e.getPlayer().getWorld().equals(beginningWorld)) return;
@@ -133,60 +176,5 @@ public class BeginningManager implements Listener {
 
     public void generatePortal(boolean overworld, Location location) {
         WorldEditPortal.generatePortal(overworld, location);
-    }
-
-    @EventHandler
-    public void onTeleport(org.bukkit.event.player.PlayerTeleportEvent e) {
-        Player p = e.getPlayer();
-        if (e.getCause() != org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.END_GATEWAY || beginningWorld == null) return;
-
-        if (isClosed()) {
-            e.setCancelled(true);
-            p.sendMessage(ChatColor.RED + "The Beginning está cerrado actualmente.");
-            return;
-        }
-
-        if (main.getDay() < 50) {
-            if (p.getWorld().equals(main.world) || p.getWorld().equals(beginningWorld)) {
-                p.setNoDamageTicks(p.getMaximumNoDamageTicks());
-                p.damage(p.getHealth() + 1.0D);
-                Bukkit.broadcastMessage(TextUtils.format("&c&lEl jugador &4&l" + p.getName() + " &c&lentró a The Beginning antes de tiempo."));
-            }
-            return;
-        }
-
-        // Teleport al Beginning
-        if (p.getWorld().equals(main.world)) {
-            e.setCancelled(true);
-            Location to = beginningWorld.getSpawnLocation();
-            if (Main.isRunningFolia()) {
-                p.teleportAsync(to).thenAccept(success -> {
-                    if (success) p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e."));
-                });
-            } else {
-                p.teleport(to);
-                p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e."));
-            }
-            return;
-        }
-
-        // Teleport de vuelta al Overworld (si entra en un gateway en el Beginning)
-        if (p.getWorld().equals(beginningWorld)) {
-            e.setCancelled(true);
-            Location to = main.world.getSpawnLocation();
-            if (Main.isRunningFolia()) {
-                p.teleportAsync(to);
-            } else {
-                p.teleport(to);
-            }
-        }
-    }
-
-    @EventHandler
-    public void onPlayerPortal(org.bukkit.event.player.PlayerPortalEvent e) {
-        if (beginningWorld == null) return;
-        if (e.getCause() == org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.END_GATEWAY) {
-            e.setCancelled(true); // Manejado por onTeleport
-        }
     }
 }
