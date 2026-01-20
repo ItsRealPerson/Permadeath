@@ -125,6 +125,8 @@ public class WorldEditPortal {
                     loc.setY(highestY + 15);
                     pasteSchematic(loc, new File(Main.getInstance().getDataFolder().getAbsolutePath() + "/schematics/beginning_portal.schem"));
                     Main.getInstance().getBeData().setOverWorldPortal(loc);
+                    
+                    Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&e¡Se ha generado un portal a &b&lThe Beginning &een &b" + TextUtils.formatPosition(loc) + "&e!"));
                 });
             } else {
                 int highestY = loc.getWorld().getHighestBlockYAt(loc);
@@ -132,6 +134,8 @@ public class WorldEditPortal {
                 loc.setY(highestY + 15);
                 pasteSchematic(loc, new File(Main.getInstance().getDataFolder().getAbsolutePath() + "/schematics/beginning_portal.schem"));
                 Main.getInstance().getBeData().setOverWorldPortal(loc);
+                
+                Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&e¡Se ha generado un portal a &b&lThe Beginning &een &b" + TextUtils.formatPosition(loc) + "&e!"));
             }
         }
 
@@ -140,11 +144,13 @@ public class WorldEditPortal {
                 Bukkit.getRegionScheduler().run(Main.instance, to, task -> {
                     pasteSchematic(to, new File(Main.getInstance().getDataFolder().getAbsolutePath() + "/schematics/beginning_portal.schem"));
                     Main.getInstance().getBeData().setBeginningPortal(to);
+                    Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&e¡Se ha generado un portal de salida en &b&lThe Beginning&e!"));
                 });
             } else {
                 to.getWorld().loadChunk(to.getChunk());
                 pasteSchematic(to, new File(Main.getInstance().getDataFolder().getAbsolutePath() + "/schematics/beginning_portal.schem"));
                 Main.getInstance().getBeData().setBeginningPortal(to);
+                Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&e¡Se ha generado un portal de salida en &b&lThe Beginning&e!"));
             }
         }
     }

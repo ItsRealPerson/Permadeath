@@ -76,85 +76,59 @@ public class BeginningDataManager {
     }
 
     public void addPopulatedChest(Location l) {
-
         ArrayList<String> chests = (ArrayList<String>) config.getStringList("PopulatedChests");
-
         chests.add(locationToString(l));
-
         config.set("PopulatedChests", chests);
         saveFile();
-        reloadFile();
     }
 
     public boolean generatedOverWorldBeginningPortal() {
-
         return config.getBoolean("GeneratedOverWorldBeginningPortal");
     }
 
     public boolean generatedBeginningPortal() {
-
         return config.getBoolean("GeneratedBeginningPortal");
     }
 
     public Location getBeginningPortal() {
-
         if (!generatedBeginningPortal()) {
-
             return null;
         }
-
         return buildLocation(config.getString("BeginningPortal"));
     }
 
     public void setBeginningPortal(Location loc) {
-
         if (generatedBeginningPortal()) {
-
             return;
         }
-
         config.set("GeneratedBeginningPortal", true);
         config.set("BeginningPortal", locationToString(loc));
-
         saveFile();
-        reloadFile();
     }
 
     public Location getOverWorldPortal() {
-
         if (!generatedOverWorldBeginningPortal()) {
-
             return null;
         }
-
         return buildLocation(config.getString("OverWorldPortal"));
     }
 
     public void setOverWorldPortal(Location loc) {
-
         if (generatedOverWorldBeginningPortal()) {
-
             return;
         }
-
         config.set("GeneratedOverWorldBeginningPortal", true);
         config.set("OverWorldPortal", locationToString(loc));
-
         saveFile();
-        reloadFile();
     }
 
     public boolean killedED() {
-
         return config.getBoolean("KilledED");
     }
 
     public void setKilledED() {
-
         config.set("KilledED", true);
-
         saveFile();
-        reloadFile();
     }
 
     public static Location buildLocation(String s) {
@@ -179,22 +153,32 @@ public class BeginningDataManager {
     }
 
     public void saveFile() {
+        final String data;
+        synchronized (this.config) {
+            data = this.config.saveToString();
+        }
+        
+        final File fileToSave = this.beginningFile;
+        Runnable task = () -> {
+            try {
+                java.nio.file.Files.writeString(fileToSave.toPath(), data);
+            } catch (java.io.IOException e) {
+                e.printStackTrace();
+            }
+        };
 
-        try {
-            config.save(beginningFile);
-        } catch (IOException e) {
-            System.out.println("[ERROR] Ha ocurrido un error al guardar el archivo 'players.yml'");
+        if (Main.isRunningFolia()) {
+            Bukkit.getAsyncScheduler().runNow(instance, t -> task.run());
+        } else {
+            Bukkit.getScheduler().runTaskAsynchronously(instance, task);
         }
     }
 
     public void reloadFile() {
-
         try {
             config.load(beginningFile);
-        } catch (IOException e) {
-            System.out.println("[ERROR] Ha ocurrido un error al guardar el archivo 'players.yml'");
-        } catch (InvalidConfigurationException e) {
-            System.out.println("[ERROR] Ha ocurrido un error al guardar el archivo 'players.yml'");
+        } catch (java.io.IOException | InvalidConfigurationException e) {
+            System.out.println("[ERROR] Ha ocurrido un error al cargar el archivo 'theBeginning.yml'");
         }
     }
 }
