@@ -112,31 +112,40 @@ public class WorldEditPortal {
             int ranX = new Random().nextInt(x);
             int ranZ = new Random().nextInt(z);
 
-            if (new Random().nextBoolean()) {
-                ranX = ranX * -1;
-            }
-            if (new Random().nextBoolean()) {
-
-                ranZ = ranZ * -1;
-            }
+            if (new Random().nextBoolean()) ranX *= -1;
+            if (new Random().nextBoolean()) ranZ *= -1;
+            
             Location loc = new Location(Main.getInstance().world, ranX, 0, ranZ);
 
-            int highestBlockAt = Main.getInstance().world.getHighestBlockAt(loc).getY();
-            if (highestBlockAt == -1) {
-                highestBlockAt = 50;
+            // En Folia debemos ejecutar esto en el hilo que posee las coordenadas del portal
+            if (Main.isRunningFolia()) {
+                Bukkit.getRegionScheduler().run(Main.instance, loc, task -> {
+                    int highestY = loc.getWorld().getHighestBlockYAt(loc);
+                    if (highestY <= 0) highestY = 50;
+                    loc.setY(highestY + 15);
+                    pasteSchematic(loc, new File(Main.getInstance().getDataFolder().getAbsolutePath() + "/schematics/beginning_portal.schem"));
+                    Main.getInstance().getBeData().setOverWorldPortal(loc);
+                });
+            } else {
+                int highestY = loc.getWorld().getHighestBlockYAt(loc);
+                if (highestY <= 0) highestY = 50;
+                loc.setY(highestY + 15);
+                pasteSchematic(loc, new File(Main.getInstance().getDataFolder().getAbsolutePath() + "/schematics/beginning_portal.schem"));
+                Main.getInstance().getBeData().setOverWorldPortal(loc);
             }
-
-            highestBlockAt = highestBlockAt + 15;
-            loc.setY(highestBlockAt);
-            pasteSchematic(loc, new File(Main.getInstance().getDataFolder().getAbsolutePath() + "/schematics/beginning_portal.schem"));
-            Main.getInstance().getBeData().setOverWorldPortal(loc);
         }
 
         if (!Main.getInstance().getBeData().generatedBeginningPortal() && !overworld) {
-            Bukkit.getWorld("pdc_the_beginning").loadChunk(to.getChunk());
-
-            pasteSchematic(to, new File(Main.getInstance().getDataFolder().getAbsolutePath() + "/schematics/beginning_portal.schem"));
-            Main.getInstance().getBeData().setBeginningPortal(to);
+            if (Main.isRunningFolia()) {
+                Bukkit.getRegionScheduler().run(Main.instance, to, task -> {
+                    pasteSchematic(to, new File(Main.getInstance().getDataFolder().getAbsolutePath() + "/schematics/beginning_portal.schem"));
+                    Main.getInstance().getBeData().setBeginningPortal(to);
+                });
+            } else {
+                to.getWorld().loadChunk(to.getChunk());
+                pasteSchematic(to, new File(Main.getInstance().getDataFolder().getAbsolutePath() + "/schematics/beginning_portal.schem"));
+                Main.getInstance().getBeData().setBeginningPortal(to);
+            }
         }
     }
 

@@ -171,6 +171,9 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     public void onDisable() {
 
         getConfig().set("DontTouch.PlayTime", this.playTime);
+        if (this.orbEvent != null) {
+            this.orbEvent.saveTime();
+        }
         saveConfig();
         reloadConfig();
 
@@ -299,7 +302,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
                         }
                         // if (DEBUG) Bukkit.getLogger().info("[Folia] Ticking player: " + p.getName());
                         tickPlayer(p);
-                    }, null, 1, 100L); // Reducido a cada 5 segundos (100 ticks)
+                    }, null, 1, 20L); // Ajustado a cada segundo (20 ticks)
                     
                     p.setMetadata("pdc_ticking", new FixedMetadataValue(this, true));
                     
@@ -308,9 +311,9 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
                         tech.sebazcrc.permadeath.util.AdvancementManager.grantAdvancement(p, tech.sebazcrc.permadeath.util.AdvancementManager.PDA.SURVIVOR_60);
                     }
                 }
-            }, 20L, 40L); // Revisar cada 2 segundos
+            }, 20L, 20L); // Revisar cada segundo
         } else {
-            Bukkit.getScheduler().runTaskTimer(this, task, 0, 100L); // Reducido a cada 5 segundos
+            Bukkit.getScheduler().runTaskTimer(this, task, 0, 20L); // Ajustado a cada segundo
         }
     }
 
@@ -504,13 +507,16 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
     private void tickEvents() {
 
-        if (this.orbEvent != null && this.orbEvent.isRunning()) {
-            if (this.orbEvent.getTimeLeft() > 0) {
-
-                this.orbEvent.reduceTime();
-
-                int res = this.orbEvent.getTimeLeft();
-
+                        if (this.orbEvent != null && this.orbEvent.isRunning()) {
+                            if (this.orbEvent.getTimeLeft() > 0) {
+                                this.orbEvent.reduceTime();
+                                
+                                // Guardar cada minuto
+                                if (this.orbEvent.getTimeLeft() % 60 == 0) {
+                                    this.orbEvent.saveTime();
+                                }
+        
+                                int res = this.orbEvent.getTimeLeft();
                 int hrs = res / 3600;
                 int minAndSec = res % 3600;
                 int min = minAndSec / 60;

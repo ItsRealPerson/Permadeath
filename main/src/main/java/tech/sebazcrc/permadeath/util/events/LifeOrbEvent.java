@@ -19,9 +19,14 @@ public class LifeOrbEvent {
 
     public LifeOrbEvent(Main instance) {
         this.instance = instance;
-        this.timeLeft = 60 * 60 * 8;
+        this.timeLeft = instance.getConfig().getInt("DontTouch.Event.LifeOrbTime", 60 * 60 * 8);
         this.title = TextUtils.format("&60:00 para obtener el Life Orb");
         this.bossBar = Bukkit.createBossBar(title, BarColor.RED, BarStyle.SOLID);
+    }
+
+    public void saveTime() {
+        instance.getConfig().set("DontTouch.Event.LifeOrbTime", timeLeft);
+        instance.saveConfig();
     }
 
     public BossBar getBossBar() {

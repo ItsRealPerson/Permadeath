@@ -34,15 +34,26 @@ public class AbyssManager implements Listener {
     }
 
     @EventHandler
+    public void onWorldInit(org.bukkit.event.world.WorldInitEvent event) {
+        if (event.getWorld().getName().endsWith("permadeath_abyss") || event.getWorld().getName().endsWith("permadeath/abyss")) {
+            if (event.getWorld().getPopulators().stream().noneMatch(p -> p instanceof AbyssPopulator)) {
+                event.getWorld().getPopulators().add(new AbyssPopulator());
+                Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] Poblador abisal inyectado durante la inicialización de " + event.getWorld().getName());
+            }
+        }
+    }
+
+    @EventHandler
     public void onWorldLoad(WorldLoadEvent event) {
-        if (event.getWorld().getName().equalsIgnoreCase(WORLD_NAME)) {
+        String name = event.getWorld().getName();
+        if (name.endsWith("permadeath_abyss") || name.endsWith("permadeath/abyss")) {
             this.abyssWorld = event.getWorld();
             
+            // Fallback por si WorldInit no se disparó
             if (this.abyssWorld.getPopulators().stream().noneMatch(p -> p instanceof AbyssPopulator)) {
                 this.abyssWorld.getPopulators().add(new AbyssPopulator());
             }
 
-            Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] Dimensión Abisal del Datapack vinculada.");
             hideDragonBar(this.abyssWorld);
         }
     }
@@ -77,12 +88,16 @@ public class AbyssManager implements Listener {
             try {
                 WorldCreator creator = new WorldCreator(WORLD_NAME);
                 creator.environment(World.Environment.NORMAL);
-                creator.generator(new tech.sebazcrc.permadeath.world.abyss.generator.EmptyGenerator());
                 creator.generateStructures(false);
                 this.abyssWorld = Bukkit.createWorld(creator);
                 
                 if (this.abyssWorld != null) {
-                    Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] Dimensión cargada exitosamente.");
+                    // Registrar el poblador inmediatamente si no está
+                    if (this.abyssWorld.getPopulators().stream().noneMatch(p -> p instanceof AbyssPopulator)) {
+                        this.abyssWorld.getPopulators().add(new AbyssPopulator());
+                    }
+                    
+                    Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] Dimensión Abisal cargada correctamente.");
                     hideDragonBar(this.abyssWorld);
                 }
             } catch (Exception e) {
