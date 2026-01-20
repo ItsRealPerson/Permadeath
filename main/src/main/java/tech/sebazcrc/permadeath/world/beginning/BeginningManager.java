@@ -24,9 +24,11 @@ public class BeginningManager implements Listener {
     private Main main;
     private World beginningWorld;
     private BeginningDataManager data;
-    
-    @Getter
     private boolean closed = false;
+
+    public boolean isClosed() {
+        return closed;
+    }
 
     public BeginningManager(Main main) {
         this.main = main;
