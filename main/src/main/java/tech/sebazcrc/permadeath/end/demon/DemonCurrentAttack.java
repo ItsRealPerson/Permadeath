@@ -1,23 +1,11 @@
 package tech.sebazcrc.permadeath.end.demon;
 
 public enum DemonCurrentAttack {
-
-    LIGHTING_RAIN, ENDERMAN_BUFF, BIG_DEBUFF, NIGHT_VISION, SUMMON_SK_AND_SPIDERS, NONE
+    NONE,
+    ENDERMAN_BUFF,
+    LIGHTING_RAIN,
+    NIGHT_VISION,
+    GRAVITY_WELL,
+    METEOR_SHOWER,
+    PHANTOM_SWARM
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

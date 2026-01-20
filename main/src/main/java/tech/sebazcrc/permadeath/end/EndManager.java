@@ -13,7 +13,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import tech.sebazcrc.permadeath.Main;
 import tech.sebazcrc.permadeath.util.TextUtils;
@@ -39,6 +38,10 @@ public class EndManager implements Listener {
     private ArrayList<Enderman> invulnerable = new ArrayList<>();
 
     private SplittableRandom random;
+    
+    // MEJORAS NUEVAS
+    private final List<EnderCrystal> shieldCrystals = new ArrayList<>();
+    private boolean shieldSpawned = false;
 
     public EndManager(Main main) {
         this.main = main;
@@ -83,13 +86,13 @@ public class EndManager implements Listener {
                     } else if (all.getType() == EntityType.ENDERMAN) {
                         final Enderman man = (Enderman) all;
                         invulnerable.add(man);
-                        Bukkit.getServer().getScheduler().runTaskLater(main, new Runnable() {
-                            @Override
-                            public void run() {
-                                if (man == null) return;
-                                invulnerable.remove(man);
-                            }
-                        }, 20 * 15);
+                        
+                        Runnable task = () -> invulnerable.remove(man);
+                        if (Main.isRunningFolia()) {
+                            Bukkit.getRegionScheduler().runDelayed(main, man.getLocation(), t -> task.run(), 20 * 15L);
+                        } else {
+                            Bukkit.getServer().getScheduler().runTaskLater(main, task, 20 * 15L);
+                        }
                         e.setCancelled(true);
                     }
                 }
@@ -130,6 +133,72 @@ public class EndManager implements Listener {
             if (invulnerable.contains(man)) {
                 e.setCancelled(true);
             }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onDragonDamageImprovements(EntityDamageEvent e) {
+        if (!(e.getEntity() instanceof EnderDragon dragon)) return;
+        if (main.getTask() == null) return;
+
+        // 1. Escudos de Cristales (Al 50% de vida)
+        double healthPercent = dragon.getHealth() / dragon.getAttribute(Attribute.MAX_HEALTH).getBaseValue();
+        if (healthPercent <= 0.50 && !shieldSpawned) {
+            spawnShieldCrystals(dragon.getWorld());
+            shieldSpawned = true;
+            Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&b&l¡EL DEMONIO HA GENERADO CRISTALES DE ESCUDO!"));
+        }
+
+        if (!shieldCrystals.isEmpty()) {
+            e.setCancelled(true);
+            dragon.setHealth(Math.min(dragon.getHealth() + e.getDamage(), dragon.getAttribute(Attribute.MAX_HEALTH).getValue()));
+            dragon.getWorld().spawnParticle(Particle.BLOCK_MARKER, dragon.getLocation().add(0, 2, 0), 10, Material.CRYING_OBSIDIAN.createBlockData());
+            return;
+        }
+
+        // 2. Vínculo Vital con Endermans
+        if (e instanceof EntityDamageByEntityEvent damageByEntity) {
+            int shared = 0;
+            for (Enderman enderman : dragon.getWorld().getEntitiesByClass(Enderman.class)) {
+                if (enderman.getLocation().distanceSquared(dragon.getLocation()) < 900 && shared < 10) {
+                    enderman.damage(e.getDamage() * 0.5);
+                    shared++;
+                }
+            }
+            if (shared > 0) {
+                e.setDamage(e.getDamage() * 0.5); 
+                dragon.getWorld().spawnParticle(Particle.CHERRY_LEAVES, dragon.getLocation(), 20, 2, 2, 2);
+            }
+        }
+    }
+
+    private void spawnShieldCrystals(World world) {
+        Location[] locs = { new Location(world, 25, 105, 25), new Location(world, -25, 105, -25), new Location(world, 25, 105, -25) };
+        for (Location l : locs) {
+            EnderCrystal crystal = (EnderCrystal) world.spawnEntity(l, EntityType.END_CRYSTAL);
+            crystal.setCustomName(ChatColor.AQUA + "Shield Crystal");
+            crystal.setCustomNameVisible(true);
+            crystal.setMetadata("ShieldCrystal", new FixedMetadataValue(main, true));
+            shieldCrystals.add(crystal);
+        }
+    }
+
+    @EventHandler
+    public void onCrystalBreak(EntityDamageByEntityEvent e) {
+        if (e.getEntity() instanceof EnderCrystal crystal && crystal.hasMetadata("ShieldCrystal")) {
+            shieldCrystals.remove(crystal);
+            if (shieldCrystals.isEmpty()) {
+                Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&a&l¡ESCUDO DESTRUIDO! El Demonio es vulnerable."));
+            }
+        }
+    }
+
+    @EventHandler
+    public void onMeteorLand(EntityChangeBlockEvent e) {
+        if (e.getEntity() instanceof FallingBlock fb && fb.hasMetadata("Meteor")) {
+            e.setCancelled(true);
+            fb.getWorld().createExplosion(fb.getLocation(), 4.0f, true, true);
+            fb.remove();
         }
     }
 
@@ -221,8 +290,8 @@ public class EndManager implements Listener {
                 final EnderCrystal c = (EnderCrystal) e.getEntity();
 
                 if (c.getLocation().getBlock().getRelative(BlockFace.DOWN).getType() == Material.BEDROCK) {
-                    int random = new Random().nextInt(main.getEndData().getTimeList().size());
-                    main.getTask().getRegenTime().put(c.getLocation(), main.getEndData().getTimeList().get(random));
+                    int randomVal = new Random().nextInt(main.getEndData().getTimeList().size());
+                    main.getTask().getRegenTime().put(c.getLocation(), main.getEndData().getTimeList().get(randomVal));
 
                     Location nL = e.getLocation().clone().add(0, 10, 0);
                     Entity g = instance.getNmsHandler().spawnCustomGhast(nL, CreatureSpawnEvent.SpawnReason.CUSTOM, true);
@@ -283,14 +352,14 @@ public class EndManager implements Listener {
                         fallingBlocks.add(fb);
                     }
                 }
-                
+
                 if (!fallingBlocks.isEmpty()) {
                     Runnable task = () -> {
                         for (Block b : blockList) {
                             b.getState().update();
                         }
                     };
-                    
+
                     if (Main.isRunningFolia()) {
                         Bukkit.getRegionScheduler().runDelayed(main, e.getLocation(), taskFolia -> task.run(), 2L);
                     } else {
@@ -321,17 +390,16 @@ public class EndManager implements Listener {
                 for (Entity n : e.getLocation().getWorld().getEntitiesByClass(EnderDragon.class)) {
                     if (n.isValid() && !n.isDead()) {
                         n.setCustomName(TextUtils.format(instance.getConfig().getString("Toggles.End.PermadeathDemon.DisplayName")));
-                        
+
                         double targetHealth = instance.getConfig().getDouble("Toggles.End.PermadeathDemon.Health");
                         org.bukkit.attribute.AttributeInstance healthAttr = ((LivingEntity) n).getAttribute(Attribute.MAX_HEALTH);
-                        
+
                         if (healthAttr != null) {
                             healthAttr.setBaseValue(targetHealth);
-                            // En Paper/Folia, getValue() nos dará el valor real tras aplicar los límites de spigot.yml
                             double effectiveMax = healthAttr.getValue();
                             ((LivingEntity) n).setHealth(Math.min(targetHealth, effectiveMax));
                         }
-                        
+
                         main.setTask(new EndTask(main, (EnderDragon) n));
                         main.getTask().start();
                     }
@@ -474,7 +542,8 @@ public class EndManager implements Listener {
 
                     Shulker s = (Shulker) b.getShooter();
 
-                    if (s.getLocation().getX() == e.getHitEntity().getLocation().getX() && s.getLocation().getY() == e.getHitEntity().getLocation().getY() && s.getLocation().getZ() == e.getHitEntity().getLocation().getZ()) {
+                    if (s.getLocation().getX() == e.getHitEntity().getLocation().getX() && s.getLocation().getY() == e.getHitEntity().getLocation().getY() && s.getLocation().getZ() == e.getHitEntity()
+.getLocation().getZ()) {
 
                         return;
                     }
@@ -512,20 +581,3 @@ public class EndManager implements Listener {
         return p.getWorld().getName().endsWith("_the_end");
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

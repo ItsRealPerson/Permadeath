@@ -1,23 +1,19 @@
 package tech.sebazcrc.permadeath.task;
 
-import org.bukkit.Color;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Particle;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
 import tech.sebazcrc.permadeath.Main;
 import tech.sebazcrc.permadeath.util.TextUtils;
 import tech.sebazcrc.permadeath.end.demon.DemonCurrentAttack;
 import tech.sebazcrc.permadeath.end.demon.DemonPhase;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.SplittableRandom;
+import java.util.*;
 
 public class EndTask extends BukkitRunnable {
 
@@ -47,6 +43,11 @@ public class EndTask extends BukkitRunnable {
 
     private SplittableRandom random = new SplittableRandom();
     
+    // MEJORAS
+    private int gravityWellDuration = 0;
+    private int meteorShowerDuration = 0;
+    private int platformDeleteTimer = 100;
+
     // Para Folia
     private Object foliaTask;
 
@@ -111,22 +112,30 @@ public class EndTask extends BukkitRunnable {
         tickRandomLighting();
         tickEnderCrystals();
         tickDragonAttacks();
+        
+        // Mejoras nuevas
+        tickGravityWell();
+        tickMeteorShower();
+        tickApocalypticWeather();
+        tickVanishingPlatforms();
     }
 
     private void tickEnderCrystals() {
         if (!regenTime.isEmpty()) {
-            for (org.bukkit.Location loc : regenTime.keySet()) {
-                int time = regenTime.get(loc);
+            Iterator<Map.Entry<Location, Integer>> it = regenTime.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<Location, Integer> entry = it.next();
+                int time = entry.getValue();
                 if (time >= 1) {
-                    regenTime.replace(loc, time, time - 1);
+                    entry.setValue(time - 1);
                 } else {
-                    loc.getWorld().spawnEntity(loc, EntityType.END_CRYSTAL);
-                    regenTime.remove(loc);
-                    if (loc.getWorld().getBlockAt(loc) != null) {
-                        if (loc.getWorld().getBlockAt(loc).getType() == Material.BEDROCK || loc.getWorld().getBlockAt(loc).getType() == Material.AIR) {
-                            return;
+                    entry.getKey().getWorld().spawnEntity(entry.getKey(), EntityType.END_CRYSTAL);
+                    it.remove();
+                    if (entry.getKey().getWorld().getBlockAt(entry.getKey()) != null) {
+                        Material type = entry.getKey().getWorld().getBlockAt(entry.getKey()).getType();
+                        if (type != Material.BEDROCK && type != Material.AIR) {
+                            entry.getKey().getWorld().getBlockAt(entry.getKey()).setType(Material.AIR);
                         }
-                        loc.getWorld().getBlockAt(loc).setType(Material.AIR);
                     }
                 }
             }
@@ -134,22 +143,6 @@ public class EndTask extends BukkitRunnable {
     }
 
     private void tickRandomLighting() {
-        /**
-         * Código previo poco optimizado
-         int eFound = 0;
-         ArrayList<Location> locations = new ArrayList<>();
-         for (Entity e : main.endWorld.getEntities()) {
-         if (e instanceof Enderman) {
-
-         if (eFound < 4) {
-
-         e.getWorld().strikeLightning(e.getLocation().add(5, 0, 0));
-         eFound = eFound + 1;
-         }
-         }
-         }
-         */
-
         int x = (random.nextBoolean() ? 1 : -1) * random.nextInt(21);
         int z = (random.nextBoolean() ? 1 : -1) * random.nextInt(21);
         int y = main.endWorld.getHighestBlockYAt(x, z);
@@ -161,12 +154,10 @@ public class EndTask extends BukkitRunnable {
 
     private void tickDemonPhase() {
         if (currentDemonPhase == DemonPhase.ENRAGED) {
-            EnderDragon dragon = (EnderDragon) enderDragon;
-            dragon.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 7));
-            dragon.setCustomName(TextUtils.format(main.getConfig().getString("Toggles.End.PermadeathDemon.DisplayNameEnraged")));
+            enderDragon.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 7));
+            enderDragon.setCustomName(TextUtils.format(main.getConfig().getString("Toggles.End.PermadeathDemon.DisplayNameEnraged")));
         } else {
-            EnderDragon dragon = (EnderDragon) enderDragon;
-            dragon.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 5));
+            enderDragon.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 5));
         }
     }
 
@@ -224,13 +215,7 @@ public class EndTask extends BukkitRunnable {
         if (nextDragonAttack >= 1) {
             nextDragonAttack = nextDragonAttack - 1;
         } else if (nextDragonAttack == 0) {
-            if (getCurrentDemonPhase() == DemonPhase.NORMAL) {
-
-                nextDragonAttack = 60;
-            } else {
-
-                nextDragonAttack = 40;
-            }
+            nextDragonAttack = (getCurrentDemonPhase() == DemonPhase.NORMAL) ? 60 : 40;
 
             if (canMakeAnAttack) {
                 chooseAnAttack();
@@ -259,7 +244,7 @@ public class EndTask extends BukkitRunnable {
                 }
                 if (!endermen.isEmpty()) {
                     for (Enderman mans : endermen) {
-                        AreaEffectCloud a = (AreaEffectCloud) main.endWorld.spawnEntity(main.endWorld.getHighestBlockAt(mans.getLocation()).getLocation().add(0, 1, 0), EntityType.AREA_EFFECT_CLOUD);
+                        AreaEffectCloud a = (AreaEffectCloud) main.endWorld.spawnEntity(main.endWorld.getHighestBlockAt(mans.getLocation()).getLocation().add(0, 1, 0), EntityType.AREA_EFFECT_CLOUD);  
                         a.setRadius(10.0F);
                         a.setParticle(Particle.HAPPY_VILLAGER);
                         a.setColor(Color.GREEN);
@@ -289,43 +274,14 @@ public class EndTask extends BukkitRunnable {
 
             if (enderDragon.getPhase() != EnderDragon.Phase.DYING && !attack360 && enderDragon.getLocation().distance(eggLocation) >= 15) {
 
-                TNTPrimed tnt1 = (TNTPrimed) enderDragon.getWorld().spawnEntity(enderDragon.getLocation().add(3, 0, -3), EntityType.TNT);
-                tnt1.setFuseTicks(60);
-                tnt1.setYield(tnt1.getYield() * 2);
-                tnt1.setCustomName("dragontnt");
-                tnt1.setCustomNameVisible(false);
-
-                TNTPrimed tnt2 = (TNTPrimed) enderDragon.getWorld().spawnEntity(enderDragon.getLocation().add(3, 0, 3), EntityType.TNT);
-                tnt2.setFuseTicks(60);
-                tnt2.setYield(tnt2.getYield() * 2);
-                tnt2.setCustomName("dragontnt");
-                tnt2.setCustomNameVisible(false);
-
-                TNTPrimed tnt3 = (TNTPrimed) enderDragon.getWorld().spawnEntity(enderDragon.getLocation().add(3, 0, 0), EntityType.TNT);
-                tnt3.setFuseTicks(60);
-                tnt3.setYield(tnt3.getYield() * 2);
-                tnt3.setCustomName("dragontnt");
-                tnt3.setCustomNameVisible(false);
-
-                //
-
-                TNTPrimed tnt4 = (TNTPrimed) enderDragon.getWorld().spawnEntity(enderDragon.getLocation().add(-3, 0, 3), EntityType.TNT);
-                tnt4.setFuseTicks(60);
-                tnt4.setYield(tnt4.getYield() * 2);
-                tnt4.setCustomName("dragontnt");
-                tnt4.setCustomNameVisible(false);
-
-                TNTPrimed tnt5 = (TNTPrimed) enderDragon.getWorld().spawnEntity(enderDragon.getLocation().add(-3, 0, -3), EntityType.TNT);
-                tnt5.setFuseTicks(60);
-                tnt5.setYield(tnt5.getYield() * 2);
-                tnt5.setCustomName("dragontnt");
-                tnt5.setCustomNameVisible(false);
-
-                TNTPrimed tnt6 = (TNTPrimed) enderDragon.getWorld().spawnEntity(enderDragon.getLocation().add(-3, 0, 0), EntityType.TNT);
-                tnt6.setFuseTicks(60);
-                tnt6.setYield(tnt6.getYield() * 2);
-                tnt6.setCustomName("dragontnt");
-                tnt6.setCustomNameVisible(false);
+                for (int i = 0; i < 6; i++) {
+                    Location l = enderDragon.getLocation().add(random.nextInt(7)-3, 0, random.nextInt(7)-3);
+                    TNTPrimed tnt = (TNTPrimed) enderDragon.getWorld().spawnEntity(l, EntityType.TNT);
+                    tnt.setFuseTicks(60);
+                    tnt.setYield(tnt.getYield() * 2);
+                    tnt.setCustomName("dragontnt");
+                    tnt.setCustomNameVisible(false);
+                }
             }
             timeForTnT = 30 + (random.nextInt(61));
         }
@@ -360,25 +316,11 @@ public class EndTask extends BukkitRunnable {
                 nightVisionDuration--;
             } else {
                 for (Player all : main.endWorld.getPlayers()) {
-                    if (currentDemonPhase == DemonPhase.NORMAL) {
-
-                        Location highest = main.endWorld.getHighestBlockAt(all.getLocation()).getLocation().add(0, 1, 0);
-
-                        AreaEffectCloud eff = (AreaEffectCloud) main.endWorld.spawnEntity(highest, EntityType.AREA_EFFECT_CLOUD);
-
-                        eff.setParticle(Particle.DAMAGE_INDICATOR);
-                        eff.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 20 * 5, 1), false);
-                        eff.setRadius(3.0F);
-                    } else {
-
-                        Location highest = main.endWorld.getHighestBlockAt(all.getLocation()).getLocation();
-
-                        AreaEffectCloud eff = (AreaEffectCloud) main.endWorld.spawnEntity(highest, EntityType.AREA_EFFECT_CLOUD);
-
-                        eff.setParticle(Particle.DAMAGE_INDICATOR);
-                        eff.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 20 * 5, 1), false);
-                        eff.setRadius(3.0F);
-                    }
+                    Location highest = main.endWorld.getHighestBlockAt(all.getLocation()).getLocation().add(0, 1, 0);
+                    AreaEffectCloud eff = (AreaEffectCloud) main.endWorld.spawnEntity(highest, EntityType.AREA_EFFECT_CLOUD);
+                    eff.setParticle(Particle.DAMAGE_INDICATOR);
+                    eff.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 20 * 5, 1), false);
+                    eff.setRadius(3.0F);
                 }
 
                 nightVision = false;
@@ -387,65 +329,110 @@ public class EndTask extends BukkitRunnable {
         }
     }
 
+    private void tickGravityWell() {
+        if (currentAttack == DemonCurrentAttack.GRAVITY_WELL && gravityWellDuration > 0) {
+            gravityWellDuration--;
+            eggLocation.getWorld().spawnParticle(Particle.PORTAL, eggLocation.clone().add(0, 1, 0), 100, 5, 2, 5, 0.1);
+            for (Player p : eggLocation.getWorld().getPlayers()) {
+                if (p.getLocation().distanceSquared(eggLocation) < 2500) {
+                    Vector direction = eggLocation.toVector().subtract(p.getLocation().toVector()).normalize();
+                    p.setVelocity(p.getVelocity().add(direction.multiply(0.15)));
+                    if (p.getLocation().distanceSquared(eggLocation) < 4) {
+                        p.damage(4.0);
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 40, 2));
+                    }
+                }
+            }
+        } else if (gravityWellDuration <= 0 && currentAttack == DemonCurrentAttack.GRAVITY_WELL) {
+            currentAttack = DemonCurrentAttack.NONE;
+            canMakeAnAttack = true;
+        }
+    }
+
+    private void tickMeteorShower() {
+        if (currentAttack == DemonCurrentAttack.METEOR_SHOWER && meteorShowerDuration > 0) {
+            meteorShowerDuration--;
+            if (random.nextInt(10) == 0) {
+                for (Player p : main.endWorld.getPlayers()) {
+                    Location spawnLoc = p.getLocation().clone().add(random.nextInt(20)-10, 40, random.nextInt(20)-10);
+                    FallingBlock meteor = main.endWorld.spawnFallingBlock(spawnLoc, Material.END_STONE.createBlockData());
+                    meteor.setDropItem(false);
+                    meteor.setHurtEntities(true);
+                    meteor.setVelocity(new Vector(0, -1.5, 0));
+                    meteor.setMetadata("Meteor", new org.bukkit.metadata.FixedMetadataValue(main, true));
+                }
+            }
+        } else if (meteorShowerDuration <= 0 && currentAttack == DemonCurrentAttack.METEOR_SHOWER) {
+            currentAttack = DemonCurrentAttack.NONE;
+            canMakeAnAttack = true;
+        }
+    }
+
+    private void tickApocalypticWeather() {
+        double healthPercent = enderDragon.getHealth() / enderDragon.getAttribute(Attribute.MAX_HEALTH).getBaseValue();
+        if (healthPercent < 0.25) {
+            main.endWorld.getWorldBorder().setWarningDistance(Integer.MAX_VALUE);
+            if (random.nextInt(20) == 0) {
+                for (Enderman e : main.endWorld.getEntitiesByClass(Enderman.class)) {
+                    if (e.getTarget() == null) {
+                        Player target = main.endWorld.getPlayers().stream().findAny().orElse(null);
+                        if (target != null) e.setTarget(target);
+                    }
+                }
+            }
+        } else {
+            main.endWorld.getWorldBorder().setWarningDistance(0);
+        }
+    }
+
+    private void tickVanishingPlatforms() {
+        if (currentDemonPhase == DemonPhase.ENRAGED) {
+            platformDeleteTimer--;
+            if (platformDeleteTimer <= 0) {
+                platformDeleteTimer = 40;
+                int rx = random.nextInt(40) - 20;
+                int rz = random.nextInt(40) - 20;
+                Location center = eggLocation.clone().add(rx, 0, rz);
+                for (int x = -2; x <= 2; x++) {
+                    for (int z = -2; z <= 2; z++) {
+                        for (int y = -5; y <= 5; y++) {
+                            Block b = center.clone().add(x, y, z).getBlock();
+                            if (b.getType() == Material.END_STONE || b.getType() == Material.END_STONE_BRICKS) {
+                                if (Main.isRunningFolia()) Bukkit.getRegionScheduler().run(main, b.getLocation(), t -> b.setType(Material.AIR));
+                                else b.setType(Material.AIR);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public void chooseAnAttack() {
-        int ran = random.nextInt(25);
-        if (ran <= 3) {
-            currentAttack = DemonCurrentAttack.LIGHTING_RAIN;
-        } else if (ran >= 4 && ran <= 15) {
+        int ran = random.nextInt(100);
+        if (ran < 15) {
+            currentAttack = DemonCurrentAttack.GRAVITY_WELL;
+            gravityWellDuration = 100;
+            Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&d&l¡EL VACÍO TE RECLAMA!"));
+        } else if (ran < 30 && currentDemonPhase == DemonPhase.ENRAGED) {
+            currentAttack = DemonCurrentAttack.METEOR_SHOWER;
+            meteorShowerDuration = 160;
+            Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&6&l¡LLUVIA ARDIENTE DEL FIN!"));
+        } else if (ran < 50) {
             currentAttack = DemonCurrentAttack.ENDERMAN_BUFF;
-        } else if (ran >= 15 && ran <= 25) {
+        } else if (ran < 75) {
+            currentAttack = DemonCurrentAttack.LIGHTING_RAIN;
+        } else {
             currentAttack = DemonCurrentAttack.NIGHT_VISION;
         }
     }
 
-
-    public Map<Location, Integer> getRegenTime() {
-        return regenTime;
-    }
-
-    public void setDied(boolean died) {
-        isDied = died;
-    }
-
-    public Entity getEnderDragon() {
-        return enderDragon;
-    }
-
-    public boolean isDied() {
-        return isDied;
-    }
-
-    public Main getMain() {
-        return main;
-    }
-
-    public void start360attack() {
-
-        this.attack360 = true;
-    }
-
-    public DemonPhase getCurrentDemonPhase() {
-        return currentDemonPhase;
-    }
-
-    public void setCurrentDemonPhase(DemonPhase currentDemonPhase) {
-        this.currentDemonPhase = currentDemonPhase;
-    }
+    public Map<Location, Integer> getRegenTime() { return regenTime; }
+    public void setDied(boolean died) { isDied = died; }
+    public Entity getEnderDragon() { return enderDragon; }
+    public boolean isDied() { return isDied; }
+    public Main getMain() { return main; }
+    public void start360attack() { this.attack360 = true; }
+    public DemonPhase getCurrentDemonPhase() { return currentDemonPhase; }
+    public void setCurrentDemonPhase(DemonPhase currentDemonPhase) { this.currentDemonPhase = currentDemonPhase; }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
