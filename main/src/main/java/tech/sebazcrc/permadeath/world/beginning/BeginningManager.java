@@ -1,9 +1,11 @@
 package tech.sebazcrc.permadeath.world.beginning;
 
+import com.destroystokyo.paper.event.player.PlayerTeleportEndGatewayEvent;
 import org.bukkit.*;
 import org.bukkit.block.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
@@ -114,21 +116,25 @@ public class BeginningManager implements Listener {
         return beginningWorld;
     }
 
-    @EventHandler
+    // EVENTOS DE TELETRANSPORTE UNIFICADOS
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onGatewayTeleport(PlayerTeleportEndGatewayEvent e) {
+        handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onPortal(PlayerPortalEvent e) {
-        if (beginningWorld == null) return;
-        if (e.getCause() != PlayerTeleportEvent.TeleportCause.END_GATEWAY) return;
-
-        Player p = e.getPlayer();
-        e.setCancelled(true); // Cancelar teletransporte Vanilla de Gateway
-
-        if (isClosed()) {
-            p.sendMessage(ChatColor.RED + "The Beginning está cerrado actualmente.");
-            return;
+        if (e.getCause() == PlayerTeleportEvent.TeleportCause.END_GATEWAY) {
+            handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
         }
+    }
 
+    private void handlePortalTeleport(Player p, World fromWorld, org.bukkit.event.Cancellable event) {
+        if (beginningWorld == null) return;
+
+        // 1. Verificación de Día
         if (main.getDay() < 50) {
-            if (p.getWorld().equals(main.world) || p.getWorld().equals(beginningWorld)) {
+            if (fromWorld.equals(main.world) || fromWorld.equals(beginningWorld)) {
                 p.setNoDamageTicks(p.getMaximumNoDamageTicks());
                 p.damage(p.getHealth() + 1.0D);
                 Bukkit.broadcastMessage(TextUtils.format("&c&lEl jugador &4&l" + p.getName() + " &c&lentró a The Beginning antes de tiempo."));
@@ -136,8 +142,16 @@ public class BeginningManager implements Listener {
             return;
         }
 
-        // Teleport al Beginning
-        if (p.getWorld().equals(main.world)) {
+        // 2. Verificación de Estado (Cerrado)
+        if (isClosed()) {
+            event.setCancelled(true);
+            p.sendMessage(ChatColor.RED + "The Beginning está cerrado actualmente.");
+            return;
+        }
+
+        // 3. Teletransporte al Beginning
+        if (fromWorld.equals(main.world)) {
+            event.setCancelled(true);
             Location to = beginningWorld.getSpawnLocation();
             if (Main.isRunningFolia()) {
                 p.teleportAsync(to).thenAccept(success -> {
@@ -147,11 +161,11 @@ public class BeginningManager implements Listener {
                 p.teleport(to);
                 p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e."));
             }
-            return;
         }
 
-        // Teleport de vuelta al Overworld
-        if (p.getWorld().equals(beginningWorld)) {
+        // 4. Teletransporte de vuelta al Overworld
+        if (fromWorld.equals(beginningWorld)) {
+            event.setCancelled(true);
             Location to = main.world.getSpawnLocation();
             if (Main.isRunningFolia()) {
                 p.teleportAsync(to);
