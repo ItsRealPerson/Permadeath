@@ -13,6 +13,8 @@ public class AbyssPopulator extends BlockPopulator {
 
     @Override
     public void populate(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull LimitedRegion limitedRegion) {
+        if (!worldInfo.getName().endsWith("permadeath_abyss") && !worldInfo.getName().endsWith("permadeath/abyss")) return;
+
         long seed = worldInfo.getSeed();
         SimplexOctaveGenerator noiseGen = new SimplexOctaveGenerator(seed, 8);
         noiseGen.setScale(0.02D);

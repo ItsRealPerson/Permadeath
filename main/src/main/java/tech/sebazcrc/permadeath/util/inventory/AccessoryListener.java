@@ -68,7 +68,13 @@ public class AccessoryListener implements Listener {
                             e.setCancelled(true);
                             e.getInventory().setItem(slot, cursor.clone());
                             e.setCursor(new ItemStack(Material.AIR));
-                            Bukkit.getScheduler().runTaskLater(tech.sebazcrc.permadeath.Main.getInstance(), () -> ((Player)e.getWhoClicked()).updateInventory(), 1L);
+                            
+                            Player player = (Player) e.getWhoClicked();
+                            if (tech.sebazcrc.permadeath.Main.isRunningFolia()) {
+                                player.getScheduler().runDelayed(tech.sebazcrc.permadeath.Main.getInstance(), t -> player.updateInventory(), null, 1L);
+                            } else {
+                                Bukkit.getScheduler().runTaskLater(tech.sebazcrc.permadeath.Main.getInstance(), player::updateInventory, 1L);
+                            }
                             return;
                         }
                     }

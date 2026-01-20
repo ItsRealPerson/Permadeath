@@ -62,10 +62,19 @@ public class AbyssManager implements Listener {
     public void loadWorld() {
         this.abyssWorld = Bukkit.getWorld(WORLD_NAME);
         
+        // Si no se encuentra por el nombre estándar, buscar en la lista de mundos cargados
         if (this.abyssWorld == null) {
-            Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[Permadeath] La dimensión " + WORLD_NAME + " no está activa. Intentando cargar...");
+            for (World w : Bukkit.getWorlds()) {
+                if (w.getName().endsWith("permadeath_abyss") || w.getName().endsWith("permadeath/abyss")) {
+                    this.abyssWorld = w;
+                    break;
+                }
+            }
+        }
+        
+        if (this.abyssWorld == null) {
+            Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[Permadeath] La dimensión abisal no está activa. Intentando cargar " + WORLD_NAME + "...");
             try {
-                // Forzamos el generador vacío para que no aparezcan bloques de Overworld
                 WorldCreator creator = new WorldCreator(WORLD_NAME);
                 creator.environment(World.Environment.NORMAL);
                 creator.generator(new tech.sebazcrc.permadeath.world.abyss.generator.EmptyGenerator());
@@ -73,12 +82,13 @@ public class AbyssManager implements Listener {
                 this.abyssWorld = Bukkit.createWorld(creator);
                 
                 if (this.abyssWorld != null) {
-                    Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] Dimensión " + WORLD_NAME + " cargada exitosamente.");
+                    Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] Dimensión cargada exitosamente.");
                     hideDragonBar(this.abyssWorld);
                 }
             } catch (Exception e) {
-                Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[Permadeath] ERROR crítico al cargar el Abismo: " + e.getMessage());
-                Bukkit.getConsoleSender().sendMessage(ChatColor.GRAY + "Mundos disponibles: " + 
+                String error = e.getMessage() != null ? e.getMessage() : e.toString();
+                Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[Permadeath] ERROR al cargar el Abismo: " + error);
+                Bukkit.getConsoleSender().sendMessage(ChatColor.GRAY + "Mundos detectados: " + 
                     Bukkit.getWorlds().stream().map(World::getName).collect(java.util.stream.Collectors.joining(", ")));
             }
         }
