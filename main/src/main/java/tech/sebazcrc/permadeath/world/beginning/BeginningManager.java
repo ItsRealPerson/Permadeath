@@ -116,14 +116,22 @@ public class BeginningManager implements Listener {
         return beginningWorld;
     }
 
-    // EVENTOS DE TELETRANSPORTE UNIFICADOS
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onGatewayTeleport(PlayerTeleportEndGatewayEvent e) {
+    // --- SISTEMA DE TELETRANSPORTE REFORZADO ---
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onPaperGateway(PlayerTeleportEndGatewayEvent e) {
         handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onPortal(PlayerPortalEvent e) {
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onVanillaTeleport(PlayerTeleportEvent e) {
+        if (e.getCause() == PlayerTeleportEvent.TeleportCause.END_GATEWAY) {
+            handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onPortalEvent(PlayerPortalEvent e) {
         if (e.getCause() == PlayerTeleportEvent.TeleportCause.END_GATEWAY) {
             handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
         }
@@ -132,13 +140,17 @@ public class BeginningManager implements Listener {
     private void handlePortalTeleport(Player p, World fromWorld, org.bukkit.event.Cancellable event) {
         if (beginningWorld == null) return;
 
+        boolean isOverworld = fromWorld.getEnvironment() == World.Environment.NORMAL;
+        boolean isBeginning = fromWorld.getName().endsWith("permadeath_beginning") || fromWorld.getName().endsWith("permadeath/beginning");
+
+        if (!isOverworld && !isBeginning) return;
+
         // 1. Verificación de Día
         if (main.getDay() < 50) {
-            if (fromWorld.equals(main.world) || fromWorld.equals(beginningWorld)) {
-                p.setNoDamageTicks(p.getMaximumNoDamageTicks());
-                p.damage(p.getHealth() + 1.0D);
-                Bukkit.broadcastMessage(TextUtils.format("&c&lEl jugador &4&l" + p.getName() + " &c&lentró a The Beginning antes de tiempo."));
-            }
+            event.setCancelled(true);
+            p.setNoDamageTicks(p.getMaximumNoDamageTicks());
+            p.damage(p.getHealth() + 1.0D);
+            Bukkit.broadcastMessage(TextUtils.format("&c&lEl jugador &4&l" + p.getName() + " &c&lentró a The Beginning antes de tiempo."));
             return;
         }
 
@@ -150,7 +162,7 @@ public class BeginningManager implements Listener {
         }
 
         // 3. Teletransporte al Beginning
-        if (fromWorld.equals(main.world)) {
+        if (isOverworld) {
             event.setCancelled(true);
             Location to = beginningWorld.getSpawnLocation();
             if (Main.isRunningFolia()) {
@@ -164,7 +176,7 @@ public class BeginningManager implements Listener {
         }
 
         // 4. Teletransporte de vuelta al Overworld
-        if (fromWorld.equals(beginningWorld)) {
+        if (isBeginning) {
             event.setCancelled(true);
             Location to = main.world.getSpawnLocation();
             if (Main.isRunningFolia()) {
