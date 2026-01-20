@@ -418,13 +418,30 @@ public class EndTask extends BukkitRunnable {
             currentAttack = DemonCurrentAttack.METEOR_SHOWER;
             meteorShowerDuration = 160;
             Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&6&l¡LLUVIA ARDIENTE DEL FIN!"));
-        } else if (ran < 50) {
+        } else if (ran < 45) {
+            currentAttack = DemonCurrentAttack.PHANTOM_SWARM;
+            spawnPhantomSwarm();
+        } else if (ran < 60) {
             currentAttack = DemonCurrentAttack.ENDERMAN_BUFF;
-        } else if (ran < 75) {
+        } else if (ran < 80) {
             currentAttack = DemonCurrentAttack.LIGHTING_RAIN;
         } else {
             currentAttack = DemonCurrentAttack.NIGHT_VISION;
         }
+    }
+
+    private void spawnPhantomSwarm() {
+        for (Player p : main.endWorld.getPlayers()) {
+            for (int i = 0; i < 3; i++) {
+                Phantom ph = (Phantom) main.endWorld.spawnEntity(p.getLocation().add(0, 15, 0), EntityType.PHANTOM);
+                ph.setCustomName(ChatColor.DARK_PURPLE + "Abyssal Phantom");
+                ph.getAttribute(Attribute.MAX_HEALTH).setBaseValue(40.0);
+                ph.setHealth(40.0);
+                ph.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 2));
+            }
+        }
+        currentAttack = DemonCurrentAttack.NONE;
+        canMakeAnAttack = true;
     }
 
     public Map<Location, Integer> getRegenTime() { return regenTime; }
