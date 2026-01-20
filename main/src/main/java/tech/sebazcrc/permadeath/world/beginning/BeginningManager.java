@@ -120,12 +120,14 @@ public class BeginningManager implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPaperGateway(PlayerTeleportEndGatewayEvent e) {
+        Bukkit.getConsoleSender().sendMessage(ChatColor.LIGHT_PURPLE + "[Permadeath-Debug] PaperGateway detectado para " + e.getPlayer().getName());
         handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onVanillaTeleport(PlayerTeleportEvent e) {
         if (e.getCause() == PlayerTeleportEvent.TeleportCause.END_GATEWAY) {
+            Bukkit.getConsoleSender().sendMessage(ChatColor.LIGHT_PURPLE + "[Permadeath-Debug] VanillaTeleport detectado para " + e.getPlayer().getName());
             handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
         }
     }
@@ -133,20 +135,27 @@ public class BeginningManager implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPortalEvent(PlayerPortalEvent e) {
         if (e.getCause() == PlayerTeleportEvent.TeleportCause.END_GATEWAY) {
+            Bukkit.getConsoleSender().sendMessage(ChatColor.LIGHT_PURPLE + "[Permadeath-Debug] PortalEvent detectado para " + e.getPlayer().getName());
             handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
         }
     }
 
     private void handlePortalTeleport(Player p, World fromWorld, org.bukkit.event.Cancellable event) {
-        if (beginningWorld == null) return;
+        if (beginningWorld == null) {
+            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[Permadeath-Debug] Abortado: beginningWorld es NULL");
+            return;
+        }
 
         boolean isOverworld = fromWorld.getEnvironment() == World.Environment.NORMAL;
         boolean isBeginning = fromWorld.getName().endsWith("permadeath_beginning") || fromWorld.getName().endsWith("permadeath/beginning");
+
+        Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[Permadeath-Debug] Procesando TP: Mundo=" + fromWorld.getName() + " Env=" + fromWorld.getEnvironment() + " isOverworld=" + isOverworld + " isBeginning=" + isBeginning);
 
         if (!isOverworld && !isBeginning) return;
 
         // 1. Verificación de Día
         if (main.getDay() < 50) {
+            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[Permadeath-Debug] Bloqueado: Día < 50 (" + main.getDay() + ")");
             event.setCancelled(true);
             p.setNoDamageTicks(p.getMaximumNoDamageTicks());
             p.damage(p.getHealth() + 1.0D);
@@ -156,6 +165,7 @@ public class BeginningManager implements Listener {
 
         // 2. Verificación de Estado (Cerrado)
         if (isClosed()) {
+            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[Permadeath-Debug] Bloqueado: El Beginning está CERRADO");
             event.setCancelled(true);
             p.sendMessage(ChatColor.RED + "The Beginning está cerrado actualmente.");
             return;
@@ -163,6 +173,7 @@ public class BeginningManager implements Listener {
 
         // 3. Teletransporte al Beginning
         if (isOverworld) {
+            Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath-Debug] Enviando a " + p.getName() + " a THE BEGINNING");
             event.setCancelled(true);
             Location to = beginningWorld.getSpawnLocation();
             if (Main.isRunningFolia()) {
@@ -177,6 +188,7 @@ public class BeginningManager implements Listener {
 
         // 4. Teletransporte de vuelta al Overworld
         if (isBeginning) {
+            Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath-Debug] Enviando a " + p.getName() + " al OVERWORLD");
             event.setCancelled(true);
             Location to = main.world.getSpawnLocation();
             if (Main.isRunningFolia()) {
