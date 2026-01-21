@@ -25,7 +25,7 @@ public class CustomGiant {
         EffectUtils.setMaxHealth(giant, 720.0);
         EffectUtils.setAttackDamage(giant, 2000.0);
 
-        // Listener para sonidos de Zombie (Ambiente, Daño, Muerte)
+        // Listener para sonidos de Zombie (Ambiente, DaÃ±o, Muerte)
         plugin.getServer().getPluginManager().registerEvents(new org.bukkit.event.Listener() {
             @org.bukkit.event.EventHandler
             public void onDamage(org.bukkit.event.entity.EntityDamageEvent e) {
@@ -92,4 +92,5 @@ public class CustomGiant {
         return giant;
     }
 }
+
 

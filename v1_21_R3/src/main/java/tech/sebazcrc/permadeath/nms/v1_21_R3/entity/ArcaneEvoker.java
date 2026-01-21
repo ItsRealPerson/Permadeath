@@ -18,7 +18,7 @@ import tech.sebazcrc.permadeath.nms.v1_21_R3.utils.MobUtils;
 public class ArcaneEvoker {
     public static Evoker spawn(Location loc, Plugin plugin) {
         Evoker evoker = (Evoker) loc.getWorld().spawnEntity(loc, EntityType.EVOKER, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        evoker.setCustomName("§5§lGrand Arcane Evoker");
+        evoker.setCustomName("§5Grand Arcane Evoker");
         EffectUtils.setMaxHealth(evoker, 150.0);
 
         Runnable evokerTask = new Runnable() {
@@ -45,7 +45,7 @@ public class ArcaneEvoker {
             }
 
             private void teleportAway(Evoker e, Player p) {
-                Location newLoc = e.getLocation().add(p.getLocation().getDirection().multiply(-8)); // 8 bloques atrás
+                Location newLoc = e.getLocation().add(p.getLocation().getDirection().multiply(-8)); // 8 bloques atrÃ¡s
                 newLoc.setY(e.getWorld().getHighestBlockYAt(newLoc) + 1);
                 e.teleport(newLoc);
                 e.getWorld().spawnParticle(Particle.PORTAL, e.getLocation(), 20);
@@ -75,5 +75,6 @@ public class ArcaneEvoker {
         return evoker;
     }
 }
+
 
 

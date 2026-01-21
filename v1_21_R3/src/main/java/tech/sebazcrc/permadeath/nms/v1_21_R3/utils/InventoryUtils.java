@@ -31,7 +31,7 @@ public class InventoryUtils {
     public static void setMainHand(LivingEntity entity, Material material) {
         EntityEquipment equipment = entity.getEquipment();
         if (equipment != null) {
-            equipment.setItemInMainHand(new ItemStack(material));
+            equipment.setItemInMainHand(material == null ? null : new ItemStack(material));
         }
     }
 
@@ -41,7 +41,7 @@ public class InventoryUtils {
     public static void setOffHand(LivingEntity entity, Material material) {
         EntityEquipment equipment = entity.getEquipment();
         if (equipment != null) {
-            equipment.setItemInOffHand(new ItemStack(material));
+            equipment.setItemInOffHand(material == null ? null : new ItemStack(material));
         }
     }
 

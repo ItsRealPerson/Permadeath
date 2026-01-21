@@ -20,16 +20,17 @@ public class SilentSeeker {
 
     public static Creeper spawn(Location loc, Plugin plugin) {
         Creeper creeper = (Creeper) loc.getWorld().spawnEntity(loc, EntityType.CREEPER, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        creeper.setCustomName("§1§lBuscador Silencioso");
-        creeper.setMaxFuseTicks(15); // Explosión rápida
+        creeper.setCustomName("§1Buscador Silencioso");
+        creeper.setMaxFuseTicks(15); // ExplosiÃ³n rÃ¡pida
         creeper.setExplosionRadius(0); // No rompe bloques, pero...
 
         // Hacemos que sea "Casi" invisible (transparente) y silencioso
         EffectUtils.addPotionEffect(creeper, new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0));
         creeper.setSilent(true); // Sin sonido de pasos vanilla
 
-        // Más salud para aguantar hasta llegar
-        EffectUtils.setMaxHealth(creeper, 150.0);
+        // MÃ¡s salud para aguantar hasta llegar
+        EffectUtils.setMaxHealth(creeper, 400.0);
+        EffectUtils.addPotionEffect(creeper, new PotionEffect(PotionEffectType.RESISTANCE, Integer.MAX_VALUE, 2));
 
         Runnable seekerTask = new Runnable() {
             int ticks = 0;
@@ -38,31 +39,35 @@ public class SilentSeeker {
                 if (!creeper.isValid()) { return; }
                 ticks++;
 
-                // Solo partículas para verlo
+                // Solo partÃ­culas para verlo
                 creeper.getWorld().spawnParticle(Particle.SCULK_SOUL, creeper.getLocation().add(0, 0.5, 0), 1, 0.1, 0.1, 0.1, 0.01);
 
-                Player target = MobUtils.getNearestPlayer(creeper, 15);
+                // 1. DetecciÃ³n tipo Warden (Rango ampliado, ignora paredes si estÃ¡s cerca)
+                Player target = MobUtils.getNearestPlayer(creeper, 30);
 
-                // Mecánica de "Latido" al acercarse
                 if (target != null) {
                     creeper.setTarget(target);
                     double distSq = creeper.getLocation().distanceSquared(target.getLocation());
+                    
+                    // Seguimiento constante
+                    TeleportUtils.lookAt(creeper, target.getLocation());
+                    TeleportUtils.moveTowards(creeper, target.getLocation(), 0.55, 0.2);
 
-                    if (distSq < 100) { // < 10 bloques
-                        if (ticks % 20 == 0) { // Latido cada segundo
-                            creeper.getWorld().playSound(creeper.getLocation(), Sound.ENTITY_WARDEN_HEARTBEAT, 1.0f, 1.5f);
-                            // Efecto visual de latido
-                            creeper.getWorld().spawnParticle(Particle.SONIC_BOOM, creeper.getLocation(), 1, 0, 0, 0, 0);
+                    if (distSq < 144) { // < 12 bloques (Te "oye")
+                        if (ticks % 15 == 0) {
+                            creeper.getWorld().playSound(creeper.getLocation(), Sound.ENTITY_WARDEN_HEARTBEAT, 1.2f, 1.8f);
+                            creeper.getWorld().spawnParticle(Particle.SONIC_BOOM, creeper.getLocation().add(0, 1, 0), 1, 0, 0, 0, 0);
                         }
                     }
 
-                    // Explosión sónica personalizada
+                    // ExplosiÃ³n sÃ³nica personalizada (Letal)
                     if (distSq < 4) {
-                        // Detonación manual para efecto sónico
+                        // DetonaciÃ³n manual para efecto sÃ³nico
                         creeper.getWorld().playSound(creeper.getLocation(), Sound.ENTITY_WARDEN_SONIC_BOOM, 2.0f, 1.5f);
                         creeper.getWorld().spawnParticle(Particle.SONIC_BOOM, creeper.getLocation(), 5);
-                        target.damage(18.0, creeper); // Daño directo alto
-                        target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 100, 0));
+                        target.damage(45.0, creeper); // 22.5 corazones
+                        target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 200, 0));
+                        target.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 100, 4));
                         creeper.remove();
                     }
                 } else if (ticks % 60 == 0) {
@@ -87,5 +92,6 @@ public class SilentSeeker {
         return creeper;
     }
 }
+
 
 

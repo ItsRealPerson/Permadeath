@@ -21,11 +21,14 @@ public class SculkParasite {
 
     public static Silverfish spawn(Location loc, Plugin plugin) {
         Silverfish fish = (Silverfish) loc.getWorld().spawnEntity(loc, EntityType.SILVERFISH, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        fish.setCustomName("§3§lParásito de Sculk");
+        fish.setCustomName("§3ParÃ¡sito de Sculk");
+        fish.setRemoveWhenFarAway(false);
+        fish.setPersistent(true);
 
-        EffectUtils.setMaxHealth(fish, 100.0);
-        EffectUtils.setMovementSpeed(fish, 0.5);
-        EffectUtils.addPotionEffect(fish, new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 2));
+        EffectUtils.setMaxHealth(fish, 300.0);
+        EffectUtils.setMovementSpeed(fish, 0.6);
+        EffectUtils.addPotionEffect(fish, new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 8)); // Fuerza IX
+        EffectUtils.addPotionEffect(fish, new PotionEffect(PotionEffectType.RESISTANCE, Integer.MAX_VALUE, 3)); // Resistencia IV
 
         Runnable fishTask = new Runnable() {
             int ticks = 0;
@@ -34,17 +37,27 @@ public class SculkParasite {
                 if (!fish.isValid()) { return; }
                 ticks++;
 
-                if (ticks % 60 == 0) {
-                    Player target = MobUtils.getNearestPlayer(fish, 15);
+                if (ticks % 30 == 0) {
+                    Player target = MobUtils.getNearestPlayer(fish, 25);
                     if (target != null) {
                         fish.getWorld().playSound(fish.getLocation(), Sound.ENTITY_WARDEN_SNIFF, 1.0f, 2.0f);
-                        ParticleUtils.drawLine(fish.getLocation(), target.getEyeLocation(), Particle.SCULK_SOUL, 1);
                         fish.setTarget(target);
                     }
                 }
 
                 if (fish.getTarget() != null) {
-                    TeleportUtils.moveTowards(fish, fish.getTarget().getLocation(), 0.5, 0.2);
+                    Player target = (Player) fish.getTarget();
+                    TeleportUtils.lookAt(fish, target.getLocation());
+                    TeleportUtils.moveTowards(fish, target.getLocation(), 0.6, 0.3);
+                    
+                    if (fish.getLocation().distanceSquared(target.getLocation()) < 2.0) {
+                        target.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 100, 3));
+                        target.damage(10.0, fish); // DaÃ±o extra por contacto
+                    }
+
+                    if (ticks % 10 == 0) {
+                        fish.getWorld().spawnParticle(Particle.SCULK_CHARGE_POP, fish.getLocation(), 1, 0.1, 0.1, 0.1, 0.05);
+                    }
                 }
             }
         };
@@ -64,5 +77,6 @@ public class SculkParasite {
         return fish;
     }
 }
+
 
 

@@ -17,7 +17,7 @@ public class CustomCod {
     public static Cod spawn(Location loc, Plugin plugin) {
         Cod cod = (Cod) loc.getWorld().spawnEntity(loc, EntityType.COD, CreatureSpawnEvent.SpawnReason.CUSTOM);
 
-        cod.setCustomName("§b§lDeath Cod");
+        cod.setCustomName("§bDeath Cod");
         cod.setCustomNameVisible(true);
 
         EffectUtils.setMaxHealth(cod, 30.0);
@@ -32,7 +32,7 @@ public class CustomCod {
 
                 Player target = MobUtils.getNearestPlayer(cod, 10.0);
                 if (target != null) {
-                    // Si está en el agua, salta hacia el jugador
+                    // Si estÃ¡ en el agua, salta hacia el jugador
                     if (cod.getLocation().getBlock().getType() == org.bukkit.Material.WATER) {
                         TeleportUtils.moveTowards(cod, target.getLocation().add(0, 1, 0), 0.8, 0.6);
                         cod.getWorld().playSound(cod.getLocation(), Sound.ENTITY_FISH_SWIM, 1.0f, 1.0f);
@@ -56,4 +56,5 @@ public class CustomCod {
         return cod;
     }
 }
+
 

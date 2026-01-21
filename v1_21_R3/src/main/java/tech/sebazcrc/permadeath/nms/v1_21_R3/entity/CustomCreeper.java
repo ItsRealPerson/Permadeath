@@ -37,23 +37,23 @@ public class CustomCreeper implements Listener {
     public static Creeper spawn(Location loc, Plugin plugin, CreeperType type) {
         if (typeKey == null) init(plugin);
 
-        // En Folia, spawnEntity es seguro si estamos en el hilo de la región, 
+        // En Folia, spawnEntity es seguro si estamos en el hilo de la regiÃ³n, 
         // lo cual es cierto para el Region Scheduler Thread #0 del log.
         Creeper creeper = (Creeper) loc.getWorld().spawnEntity(loc, EntityType.CREEPER, CreatureSpawnEvent.SpawnReason.CUSTOM);
 
         creeper.getPersistentDataContainer().set(typeKey, PersistentDataType.STRING, type.name());
 
         if (type == CreeperType.ENDER_QUANTUM) {
-            creeper.setCustomName("§6§lEnder Quantum Creeper");
+            creeper.setCustomName("§6Ender Quantum Creeper");
             creeper.setExplosionRadius(8);
             EffectUtils.setMaxHealth(creeper, 100.0);
             creeper.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0));
         } else if (type == CreeperType.QUANTUM) {
-            creeper.setCustomName("§6§lQuantum Creeper");
+            creeper.setCustomName("§6Quantum Creeper");
             creeper.setExplosionRadius(8);
             EffectUtils.setMaxHealth(creeper, 100.0);
         } else {
-            creeper.setCustomName("§d§lEnder Creeper");
+            creeper.setCustomName("§dEnder Creeper");
             creeper.setExplosionRadius(6);
             EffectUtils.setMaxHealth(creeper, 50.0);
         }
@@ -138,3 +138,4 @@ public class CustomCreeper implements Listener {
         }
     }
 }
+

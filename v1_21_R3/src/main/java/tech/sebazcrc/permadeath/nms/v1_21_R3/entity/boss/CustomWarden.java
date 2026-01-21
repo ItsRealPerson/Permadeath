@@ -42,19 +42,19 @@ public class CustomWarden implements Listener {
         init(plugin);
         Warden warden = (Warden) loc.getWorld().spawnEntity(loc, EntityType.WARDEN, CreatureSpawnEvent.SpawnReason.CUSTOM);
 
-        // --- Configuración Visual y Base ---
-        warden.setCustomName("§3§lWarden Retorcido");
+        // --- ConfiguraciÃ³n Visual y Base ---
+        warden.setCustomName("§3Warden Retorcido");
         warden.setCustomNameVisible(true);
         SpawnUtils.playSpawnEffects(loc);
 
         // --- Atributos Mejorados ---
         // Vida de jefe real (1200 de vida = 600 corazones)
         EffectUtils.setMaxHealth(warden, 1200.0);
-        // Daño físico absurdo (60 = 30 corazones)
+        // DaÃ±o fÃ­sico absurdo (60 = 30 corazones)
         EffectUtils.setAttackDamage(warden, 60.0);
         // Resistencia al empuje total
         EffectUtils.setKnockbackResistance(warden, 1.0);
-        // Un poco más rápido que el Warden normal (que ya es rápido)
+        // Un poco mÃ¡s rÃ¡pido que el Warden normal (que ya es rÃ¡pido)
         EffectUtils.setMovementSpeed(warden, 0.35);
 
         EffectUtils.addPotionEffect(warden, new PotionEffect(PotionEffectType.RESISTANCE, Integer.MAX_VALUE, 2));
@@ -68,7 +68,7 @@ public class CustomWarden implements Listener {
             @Override
             public void run() {
                 if (warden.isDead() || !warden.isValid()) {
-                    // Efecto al morir: Sonido grave y partículas
+                    // Efecto al morir: Sonido grave y partÃ­culas
                     warden.getWorld().playSound(warden.getLocation(), Sound.ENTITY_WARDEN_DEATH, 1.0f, 0.5f);
                     warden.getWorld().spawnParticle(Particle.SOUL, warden.getLocation(), 50, 1, 2, 1, 0.1);
                     return;
@@ -76,12 +76,12 @@ public class CustomWarden implements Listener {
 
                 tickCounter++;
 
-                // 1. Detección de Jugadores (Rango amplio de 50 bloques)
+                // 1. DetecciÃ³n de Jugadores (Rango amplio de 50 bloques)
                 Player target = MobUtils.getNearestPlayer(warden, 50.0);
 
-                if (target != null) {
-                    // Forzar ira hacia el jugador (mecánica nativa del Warden)
-                    warden.setAnger(target, 150); // Máxima ira
+                if (target != null && MobUtils.isValidTarget(target)) {
+                    // Forzar ira hacia el jugador (mecÃ¡nica nativa del Warden)
+                    warden.setAnger(target, 150); // MÃ¡xima ira
                     warden.setTarget(target);
 
                     // 2. Efecto Pasivo: Oscuridad Eterna y Debilidad
@@ -91,7 +91,7 @@ public class CustomWarden implements Listener {
                     }
 
                     // 3. Habilidad Especial: Sonic Boom Manual (Rango medio)
-                    // Si el jugador está lejos (> 10 bloques) y el Warden tiene línea de visión
+                    // Si el jugador estÃ¡ lejos (> 10 bloques) y el Warden tiene lÃ­nea de visiÃ³n
                     double distanceSq = warden.getLocation().distanceSquared(target.getLocation());
                     if (distanceSq > 100.0 && distanceSq < 900.0 && tickCounter % 100 == 0) { // Cada 5 segundos
                         performSonicBoom(warden, target);
@@ -103,7 +103,7 @@ public class CustomWarden implements Listener {
                         summonCustomMinions(warden);
                     }
 
-                    // Ayuda de movimiento si el jugador está muy lejos
+                    // Ayuda de movimiento si el jugador estÃ¡ muy lejos
                     if (distanceSq > 400.0) { // > 20 bloques
                         TeleportUtils.moveTowards(warden, target.getLocation(), 0.5, 0.3);
                     }
@@ -111,14 +111,14 @@ public class CustomWarden implements Listener {
             }
 
             private void performSonicBoom(Warden source, Player target) {
-                // Simulación visual y daño del Sonic Boom (ya que la API para forzarlo es limitada)
+                // SimulaciÃ³n visual y daÃ±o del Sonic Boom (ya que la API para forzarlo es limitada)
                 source.getWorld().playSound(source.getLocation(), Sound.ENTITY_WARDEN_SONIC_BOOM, 3.0f, 1.0f);
                 source.getWorld().spawnParticle(Particle.SONIC_BOOM, source.getEyeLocation(), 1, 0, 0, 0, 0);
 
-                // Daño mágico que atraviesa armadura
+                // DaÃ±o mÃ¡gico que atraviesa armadura
                 target.damage(25.0, source); // 12.5 corazones
                 target.setVelocity(target.getLocation().toVector().subtract(source.getLocation().toVector()).normalize().multiply(2.5));
-                target.sendMessage("§3§l" + source.getCustomName() + " §bte ha golpeado con su rugido sónico!");
+                target.sendMessage("§3" + source.getCustomName() + " §bte ha golpeado con su rugido sÃ³nico!");
             }
 
             private void summonCustomMinions(Warden source) {
@@ -141,10 +141,10 @@ public class CustomWarden implements Listener {
                     }
                 }
                 
-                // También invocamos almas (Vexes) siempre como apoyo
+                // TambiÃ©n invocamos almas (Vexes) siempre como apoyo
                 for (int i = 0; i < 2; i++) {
                     Vex soul = (Vex) source.getWorld().spawnEntity(source.getLocation().add(0, 2, 0), EntityType.VEX);
-                    soul.setCustomName("§b§lAlma Tormentada");
+                    soul.setCustomName("§bAlma Tormentada");
                     soul.setLifeTicks(20 * 30);
                     EffectUtils.setAttackDamage(soul, 8.0);
                 }
@@ -197,5 +197,6 @@ public class CustomWarden implements Listener {
         return name.contains("Twisted Warden");
     }
 }
+
 
 

@@ -21,7 +21,7 @@ public class SpecialPig {
     public static Pig spawn(Location loc, Plugin plugin) {
         Pig pig = (Pig) loc.getWorld().spawnEntity(loc, EntityType.PIG, CreatureSpawnEvent.SpawnReason.CUSTOM);
 
-        pig.setCustomName("§d§lSpecial Pig");
+        pig.setCustomName("§dSpecial Pig");
         pig.setCustomNameVisible(true);
         pig.setRemoveWhenFarAway(true);
 
@@ -59,7 +59,7 @@ public class SpecialPig {
 
                 Player target = MobUtils.getNearestPlayer(pig, 20.0);
 
-                if (target != null) {
+                if (target != null && MobUtils.isValidTarget(target)) {
                     TeleportUtils.lookAt(pig, target.getLocation());
                     TeleportUtils.moveTowards(pig, target.getLocation(), 0.4, 0.2);
 
@@ -85,5 +85,6 @@ public class SpecialPig {
         return pig;
     }
 }
+
 
 

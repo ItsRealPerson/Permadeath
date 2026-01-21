@@ -32,7 +32,7 @@ public final class NetheriteArmor implements Listener {
 
     public static ItemStack craftAncestralFragment() {
         return new ItemBuilder(Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE)
-                .setDisplayName(TextUtils.format("&6&lFragmento de Herrería Ancestral"))
+                .setDisplayName(TextUtils.format("&6Fragmento de Herrería Ancestral"))
                 .setLore(java.util.Arrays.asList(
                         TextUtils.format("&7Se utiliza en la mesa de herrería"),
                         TextUtils.format("&7para forjar armaduras especiales.")

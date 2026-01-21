@@ -57,6 +57,18 @@ public class LootManager {
         // Ítems fijos de Permadeath
         items.add(NetheriteArmor.craftAncestralFragment());
         if (random.nextInt(100) < 40) items.add(PermadeathItems.createVoidShard());
+
+        // Raro: Libro de Respiración Abisal (5% de probabilidad)
+        if (random.nextInt(100) < 5) {
+            ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
+            org.bukkit.inventory.meta.EnchantmentStorageMeta meta = (org.bukkit.inventory.meta.EnchantmentStorageMeta) book.getItemMeta();
+            org.bukkit.enchantments.Enchantment ench = org.bukkit.Registry.ENCHANTMENT.get(new org.bukkit.NamespacedKey("permadeath", "abyssal_breathing"));
+            if (ench != null) {
+                meta.addStoredEnchant(ench, random.nextInt(3) + 1, true);
+                book.setItemMeta(meta);
+                items.add(book);
+            }
+        }
         
         // Ítems configurables
         List<String> lootList = config.getStringList("AbyssCapsule");

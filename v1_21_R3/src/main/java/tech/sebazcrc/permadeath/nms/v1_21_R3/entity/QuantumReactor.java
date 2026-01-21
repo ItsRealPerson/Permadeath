@@ -22,8 +22,8 @@ public class QuantumReactor {
     public static ArmorStand spawn(Location loc, Plugin plugin) {
         ArmorStand reactor = (ArmorStand) loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND, CreatureSpawnEvent.SpawnReason.CUSTOM);
 
-        // Configuración Visual
-        reactor.setCustomName("§b§l⚡ QUANTUM REACTOR ⚡");
+        // ConfiguraciÃ³n Visual
+        reactor.setCustomName("§bš¡ QUANTUM REACTOR š¡");
         reactor.setCustomNameVisible(true);
         reactor.setGravity(false);
         reactor.setVisible(false); // Cuerpo invisible, solo se ve la cabeza
@@ -34,22 +34,22 @@ public class QuantumReactor {
         SpawnUtils.playSpawnEffects(loc);
 
         // Simular vida alta (aunque los ArmorStands mueren de un golpe en creativo, en survival aguantan)
-        // Nota: ArmorStands no tienen atributos de vida genéricos como LivingEntity, pero podemos simular
-        // su resistencia cancelando eventos de daño en un Listener si no es daño explosivo/mágico.
+        // Nota: ArmorStands no tienen atributos de vida genÃ©ricos como LivingEntity, pero podemos simular
+        // su resistencia cancelando eventos de daÃ±o en un Listener si no es daÃ±o explosivo/mÃ¡gico.
 
-        // Animación y Lógica de Torreta
+        // AnimaciÃ³n y LÃ³gica de Torreta
         Runnable reactorTask = new Runnable() {
             double angle = 0;
 
             @Override
             public void run() {
                 if (reactor.isDead() || !reactor.isValid()) {
-                    // Efecto de explosión al morir
+                    // Efecto de explosiÃ³n al morir
                     reactor.getWorld().createExplosion(reactor.getLocation(), 2.0f, false, false);
                     return;
                 }
 
-                // Animación: Rotar la cabeza y flotar suavemente
+                // AnimaciÃ³n: Rotar la cabeza y flotar suavemente
                 angle += 0.1;
                 double yOffset = Math.sin(angle) * 0.2;
                 Location newLoc = loc.clone().add(0, yOffset, 0);
@@ -59,13 +59,13 @@ public class QuantumReactor {
                 // Efecto de campo de fuerza
                 reactor.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, reactor.getLocation().add(0, 1.5, 0), 5, 0.5, 0.5, 0.5, 0.1);
 
-                // Lógica de Torreta
+                // LÃ³gica de Torreta
                 Player target = MobUtils.getNearestPlayer(reactor, 12.0);
                 if (target != null) {
-                    // Rayo Láser (Partículas)
+                    // Rayo LÃ¡ser (PartÃ­culas)
                     drawLaser(reactor.getLocation().add(0, 1.5, 0), target.getEyeLocation());
 
-                    // Daño progresivo
+                    // DaÃ±o progresivo
                     if (angle % 2.0 < 0.2) { // Ataca cada cierto tiempo
                         target.damage(4.0, reactor);
                         target.getWorld().strikeLightningEffect(target.getLocation());
@@ -98,4 +98,5 @@ public class QuantumReactor {
         return reactor;
     }
 }
+
 

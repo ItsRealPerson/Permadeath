@@ -7,7 +7,7 @@ import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Husk; // Husk porque no se quema al sol (útil si salen de la cueva)
+import org.bukkit.entity.Husk; // Husk porque no se quema al sol (Ãºtil si salen de la cueva)
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.inventory.ItemStack;
@@ -25,7 +25,7 @@ public class HollowGuard {
 
     public static Husk spawn(Location loc, Plugin plugin) {
         Husk guard = (Husk) loc.getWorld().spawnEntity(loc, EntityType.HUSK, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        guard.setCustomName("§3§lGuardián del Vacío");
+        guard.setCustomName("§3GuardiÃ¡n del VacÃ­o");
         guard.setCustomNameVisible(true);
 
         // Armadura Oscura (Netherite)
@@ -35,13 +35,13 @@ public class HollowGuard {
                 null, null);
         InventoryUtils.clearDropChances(guard);
 
-        EffectUtils.setMaxHealth(guard, 350.0);
-        EffectUtils.setAttackDamage(guard, 25.0);
+        EffectUtils.setMaxHealth(guard, 1000.0);
+        EffectUtils.setAttackDamage(guard, 60.0);
         EffectUtils.setKnockbackResistance(guard, 1.0);
-        EffectUtils.setMovementSpeed(guard, 0.2); // Lento por defecto
+        EffectUtils.setMovementSpeed(guard, 0.25);
 
-        EffectUtils.addPotionEffect(guard, new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 4));
-        EffectUtils.addPotionEffect(guard, new PotionEffect(PotionEffectType.RESISTANCE, Integer.MAX_VALUE, 2));
+        EffectUtils.addPotionEffect(guard, new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 10)); // Fuerza XI
+        EffectUtils.addPotionEffect(guard, new PotionEffect(PotionEffectType.RESISTANCE, Integer.MAX_VALUE, 3)); // Resistencia IV
 
         Runnable guardTask = new Runnable() {
             int ticks = 0;
@@ -52,29 +52,34 @@ public class HollowGuard {
                 if (!guard.isValid()) { return; }
                 ticks++;
 
-                Player target = MobUtils.getNearestPlayer(guard, 20);
+                Player target = MobUtils.getNearestPlayer(guard, 35);
 
-                // Mecánica de Olfateo (Cada 5 segundos)
-                if (ticks % 100 == 0) {
+                // MecÃ¡nica de Olfateo (Cada 4 segundos)
+                if (ticks % 80 == 0) {
                     sniffing = true;
                     // Se detiene para oler
                     guard.setVelocity(new org.bukkit.util.Vector(0, 0, 0));
-                    guard.getWorld().playSound(guard.getLocation(), Sound.ENTITY_WARDEN_SNIFF, 1.0f, 0.8f);
+                    guard.getWorld().playSound(guard.getLocation(), Sound.ENTITY_WARDEN_SNIFF, 1.2f, 0.7f);
 
                     if (target != null) {
                         TeleportUtils.lookAt(guard, target.getEyeLocation());
-                        ParticleUtils.drawLine(guard.getEyeLocation(), target.getEyeLocation(), Particle.SCULK_CHARGE_POP, 1);
-
-                        // Si te huele, se enfada y corre
-                        guard.getWorld().playSound(guard.getLocation(), Sound.ENTITY_WARDEN_AGITATED, 1.0f, 1.0f);
-                        EffectUtils.addPotionEffect(guard, new PotionEffect(PotionEffectType.SPEED, 60, 2)); // Speed III por 3s
+                        
+                        // Si te huele, se enfada mucho
+                        guard.getWorld().playSound(guard.getLocation(), Sound.ENTITY_WARDEN_AGITATED, 1.2f, 0.8f);
+                        EffectUtils.addPotionEffect(guard, new PotionEffect(PotionEffectType.SPEED, 100, 3)); // Speed IV por 5s
                     }
                     sniffing = false;
                 }
 
                 if (!sniffing && target != null) {
                     guard.setTarget(target);
-                    // Efecto de oscuridad al golpear (debe implementarse en Listener, aquí es visual)
+                    TeleportUtils.moveTowards(guard, target.getLocation(), 0.45, 0.2);
+                    
+                    if (guard.getLocation().distanceSquared(target.getLocation()) < 4.0) {
+                        target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 100, 0));
+                        target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 100, 2));
+                    }
+                    
                     ParticleUtils.trailEntity(guard, Particle.ASH);
                 }
             }
@@ -95,5 +100,6 @@ public class HollowGuard {
         return guard;
     }
 }
+
 
 

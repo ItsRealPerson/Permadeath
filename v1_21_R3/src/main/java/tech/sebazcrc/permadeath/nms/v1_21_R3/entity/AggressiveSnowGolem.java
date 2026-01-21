@@ -16,18 +16,18 @@ import tech.sebazcrc.permadeath.nms.v1_21_R3.utils.TeleportUtils;
 public class AggressiveSnowGolem {
     public static Snowman spawn(Location loc, Plugin plugin) {
         Snowman snowman = (Snowman) loc.getWorld().spawnEntity(loc, EntityType.SNOW_GOLEM, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        snowman.setCustomName("§b§lFrost Turret");
+        snowman.setCustomName("§bFrost Turret");
         snowman.setDerp(true); // Sin calabaza, cara graciosa
 
         EffectUtils.setMaxHealth(snowman, 50.0);
 
-        // Listener para que las bolas de nieve hagan daño
+        // Listener para que las bolas de nieve hagan daÃ±o
         plugin.getServer().getPluginManager().registerEvents(new org.bukkit.event.Listener() {
             @org.bukkit.event.EventHandler
             public void onHit(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
                 if (e.getDamager() instanceof org.bukkit.entity.Snowball ball) {
                     if (ball.getShooter() != null && ball.getShooter().equals(snowman)) {
-                        e.setDamage(8.0); // 4 corazones de daño por bola
+                        e.setDamage(8.0); // 4 corazones de daÃ±o por bola
                     }
                 }
             }
@@ -63,5 +63,6 @@ public class AggressiveSnowGolem {
         return snowman;
     }
 }
+
 
 

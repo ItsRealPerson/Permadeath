@@ -89,16 +89,37 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
-        if (e.getAction().name().contains("RIGHT_CLICK") && e.getItem() != null) {
-            ItemStack item = e.getItem();
+        if (e.getHand() == org.bukkit.inventory.EquipmentSlot.OFF_HAND) return;
+        
+        ItemStack item = e.getItem();
+        if (e.getAction().name().contains("RIGHT_CLICK") && item != null) {
             
+            // Restricción de Máscara: No equipar en slot de casco
+            if (PermadeathItems.isAbyssalMask(item)) {
+                e.setCancelled(true);
+                e.getPlayer().sendMessage(ChatColor.RED + "Esta máscara solo se puede equipar en el menú de accesorios (/pdc accesorios).");
+                return;
+            }
+
             // Placement of Infernal Netherite Block
             if (e.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK && e.getClickedBlock() != null) {
-                if (item.isSimilar(PermadeathItems.createInfernalNetheriteBlock()) || (item.hasItemMeta() && item.getItemMeta().getDisplayName().contains("Infernal Netherite Block"))) {
+                if (item.isSimilar(PermadeathItems.createInfernalNetheriteBlock()) || (item.hasItemMeta() && (item.getItemMeta().getDisplayName().contains("Infernal Netherite Block") || item.getItemMeta().getDisplayName().contains("Bloque de Netherite Infernal")))) {
+                    
+                    Player p = e.getPlayer();
+                    // Debounce check: No colocar más de una vez cada 100ms
+                    if (p.hasMetadata("pdc_block_place_cooldown")) {
+                        long lastPlace = p.getMetadata("pdc_block_place_cooldown").get(0).asLong();
+                        if (System.currentTimeMillis() - lastPlace < 100) {
+                            e.setCancelled(true);
+                            return;
+                        }
+                    }
+                    p.setMetadata("pdc_block_place_cooldown", new org.bukkit.metadata.FixedMetadataValue(Main.getInstance(), System.currentTimeMillis()));
+
                     Block target = e.getClickedBlock().getRelative(e.getBlockFace());
                     if (target.getType().isAir() || target.isLiquid()) {
                         Main.getInstance().getNetheriteBlock().placeCustomBlock(target.getLocation());
-                        if (e.getPlayer().getGameMode() != GameMode.CREATIVE) {
+                        if (p.getGameMode() != GameMode.CREATIVE) {
                             item.setAmount(item.getAmount() - 1);
                         }
                         e.setCancelled(true);
@@ -139,6 +160,30 @@ public class PlayerListener implements Listener {
                     tech.sebazcrc.permadeath.util.AdvancementManager.grantAdvancement(all, tech.sebazcrc.permadeath.util.AdvancementManager.PDA.ABYSS_HEART);
                 });
             }
+        }
+    }
+
+    @EventHandler
+    public void onInventoryClick(org.bukkit.event.inventory.InventoryClickEvent e) {
+        if (e.getClickedInventory() == null) return;
+        
+        ItemStack item = null;
+        boolean isArmorSlot = (e.getSlotType() == org.bukkit.event.inventory.InventoryType.SlotType.ARMOR && e.getRawSlot() == 5);
+
+        if (e.getAction().name().contains("PICKUP") || e.getAction().name().contains("PLACE")) {
+            item = (e.getCursor() != null && e.getCursor().getType() != Material.AIR) ? e.getCursor() : e.getCurrentItem();
+        } else if (e.getAction() == org.bukkit.event.inventory.InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+            item = e.getCurrentItem();
+            // Si es shift click, verificamos si terminaría en el casco (esto es una aproximación, Bukkit no da el slot destino fácilmente)
+            // pero para cascos, si el slot 5 está vacío, terminará ahí.
+            if (PermadeathItems.isAbyssalMask(item) && e.getWhoClicked().getInventory().getHelmet() == null) {
+                isArmorSlot = true;
+            }
+        }
+
+        if (item != null && PermadeathItems.isAbyssalMask(item) && isArmorSlot) {
+            e.setCancelled(true);
+            e.getWhoClicked().sendMessage(ChatColor.RED + "No puedes equipar esta máscara aquí. Usa el menú de accesorios.");
         }
     }
 
@@ -696,45 +741,32 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onAirChange(EntityAirChangeEvent e) {
-        if (!(e.getEntity() instanceof Player)) return;
-
-        Player p = (Player) e.getEntity();
+        if (!(e.getEntity() instanceof Player p)) return;
 
         // Lógica de la Medalla de Agua (Día 30+)
+        // La medalla ya no otorga aire infinito aquí, solo protege del contacto en tickPlayer
         if (Main.instance.getDay() >= 30) {
-            boolean hasMedal = false;
-            for (ItemStack item : p.getInventory().getContents()) {
-                if (item != null && item.hasItemMeta()) {
-                    if (item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(Main.getInstance(), "water_medal"), PersistentDataType.BYTE)) {
-                        hasMedal = true;
-                        break;
-                    }
-                }
-            }
-            if (hasMedal) {
-                e.setAmount(p.getMaximumAir());
-                return;
-            }
+            // Eliminamos e.setAmount(p.getMaximumAir())
         }
 
         if (Main.instance.getDay() < 50) return;
 
-        if (p.getRemainingAir() < e.getAmount()) return;
+        // Si el aire está subiendo (jugador salió a superficie), no hacer nada
+        if (p.getRemainingAir() <= e.getAmount()) return;
 
         int speed = (Main.instance.getDay() < 60 ? 5 : 10);
         Double damage = (Main.instance.getDay() < 60 ? 5.0D : 10.0D);
 
-        if (e.getAmount() < 20) return;
-        int seconds = e.getAmount() / 20;
-        int remain = seconds / speed;
-        int newAmount = remain * 20;
-
-        if (remain <= 0) {
-            newAmount = 0;
-            e.setAmount(newAmount);
+        // Si ya no queda aire o estamos a punto de llegar a 0
+        if (e.getAmount() <= 10) {
+            e.setAmount(0);
             Main.instance.getNmsAccessor().drown(p, damage);
             return;
         }
+
+        int seconds = e.getAmount() / 20;
+        int remain = seconds / speed;
+        int newAmount = remain * 20;
 
         e.setAmount(newAmount);
     }

@@ -22,10 +22,11 @@ public class GloomBat {
 
     public static Bat spawn(Location loc, Plugin plugin) {
         Bat bat = (Bat) loc.getWorld().spawnEntity(loc, EntityType.BAT, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        bat.setCustomName("§8§lExplorador Sombrío");
+        bat.setCustomName("§8Explorador SombrÃ­o");
         bat.setCustomNameVisible(true);
 
-        EffectUtils.setMaxHealth(bat, 100.0); // Difícil de matar para un murciélago
+        EffectUtils.setMaxHealth(bat, 250.0); // Extremadamente difÃ­cil de matar para un murciÃ©lago
+        EffectUtils.addPotionEffect(bat, new PotionEffect(PotionEffectType.RESISTANCE, Integer.MAX_VALUE, 2));
 
         Runnable batTask = new Runnable() {
             int ticks = 0;
@@ -34,28 +35,33 @@ public class GloomBat {
                 if (!bat.isValid()) { return; }
                 ticks++;
 
-                // Vuelo errático con partículas
+                // Vuelo errÃ¡tico con partÃ­culas
                 bat.getWorld().spawnParticle(Particle.SCULK_CHARGE_POP, bat.getLocation(), 1, 0.1, 0.1, 0.1, 0.01);
 
-                Player target = MobUtils.getNearestPlayer(bat, 15);
+                Player target = MobUtils.getNearestPlayer(bat, 30);
 
                 if (target != null) {
                     // Si encuentra jugador:
-                    if (ticks % 40 == 0) {
+                    if (ticks % 30 == 0) { // MÃ¡s frecuente
                         // 1. Olfateo audible
-                        bat.getWorld().playSound(bat.getLocation(), Sound.ENTITY_WARDEN_SNIFF, 0.8f, 2.0f);
+                        bat.getWorld().playSound(bat.getLocation(), Sound.ENTITY_WARDEN_SNIFF, 1.0f, 2.0f);
                         // 2. Chillar (Sonar)
-                        bat.getWorld().playSound(bat.getLocation(), Sound.ENTITY_WARDEN_LISTENING_ANGRY, 1.0f, 1.8f);
+                        bat.getWorld().playSound(bat.getLocation(), Sound.ENTITY_WARDEN_LISTENING_ANGRY, 1.2f, 1.8f);
 
-                        // 3. Aplicar Darkness
-                        EffectUtils.addPotionEffect(target, new PotionEffect(PotionEffectType.DARKNESS, 100, 0));
+                        // 3. Aplicar Efectos Debilitantes
+                        EffectUtils.addPotionEffect(target, new PotionEffect(PotionEffectType.DARKNESS, 140, 0));
+                        EffectUtils.addPotionEffect(target, new PotionEffect(PotionEffectType.MINING_FATIGUE, 200, 2));
+                        
+                        // Drenar comida
+                        target.setFoodLevel(Math.max(0, target.getFoodLevel() - 1));
 
-                        // 4. Señalar visualmente
-                        ParticleUtils.drawLine(bat.getLocation(), target.getEyeLocation(), Particle.SCULK_SOUL, 1);
+                        // 4. SeÃ±alar visualmente
+                        bat.getWorld().spawnParticle(Particle.SONIC_BOOM, bat.getLocation(), 1, 0, 0, 0, 0);
                     }
 
-                    // Intentar seguir al jugador (los murciélagos tienen IA caótica, forzamos un poco)
-                    TeleportUtils.moveTowards(bat, target.getEyeLocation().add(0, 2, 0), 0.3, 0);
+                    // PersecuciÃ³n aÃ©rea forzada
+                    TeleportUtils.lookAt(bat, target.getEyeLocation());
+                    TeleportUtils.moveTowards(bat, target.getEyeLocation().add(0, 3, 0), 0.5, 0);
                 }
             }
         };
@@ -75,5 +81,6 @@ public class GloomBat {
         return bat;
     }
 }
+
 
 

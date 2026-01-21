@@ -15,7 +15,7 @@ import tech.sebazcrc.permadeath.nms.v1_21_R3.utils.TeleportUtils;
 public class ExplosivePufferfish {
     public static PufferFish spawn(Location loc, Plugin plugin) {
         PufferFish fish = (PufferFish) loc.getWorld().spawnEntity(loc, EntityType.PUFFERFISH, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        fish.setCustomName("§c§lSea Mine");
+        fish.setCustomName("§cSea Mine");
         fish.setPuffState(2); // Siempre inflado
 
         Runnable fishTask = new Runnable() {
@@ -49,5 +49,6 @@ public class ExplosivePufferfish {
         return fish;
     }
 }
+
 
 

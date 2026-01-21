@@ -13,7 +13,7 @@ public class VoidSkeleton {
 
     public static Skeleton spawn(Location loc, Plugin plugin) {
         Skeleton skeleton = (Skeleton) loc.getWorld().spawnEntity(loc, EntityType.SKELETON);
-        skeleton.setCustomName("§5§lVoid Skeleton");
+        skeleton.setCustomName("§5Void Skeleton");
         skeleton.setCustomNameVisible(true);
         
         EffectUtils.setMaxHealth(skeleton, 80.0);
@@ -34,3 +34,4 @@ public class VoidSkeleton {
         return skeleton;
     }
 }
+

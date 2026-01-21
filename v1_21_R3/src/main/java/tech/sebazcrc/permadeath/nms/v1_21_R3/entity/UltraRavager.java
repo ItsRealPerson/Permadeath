@@ -18,7 +18,7 @@ public class UltraRavager {
         Ravager ravager = (Ravager) loc.getWorld().spawnEntity(loc, EntityType.RAVAGER, CreatureSpawnEvent.SpawnReason.CUSTOM);
 
         ravager.setRemoveWhenFarAway(true);
-        ravager.setCustomName("§4§lUltra Ravager");
+        ravager.setCustomName("§4Ultra Ravager");
         ravager.setCustomNameVisible(true);
 
         // Atributos masivos
@@ -68,4 +68,5 @@ public class UltraRavager {
         return ravager;
     }
 }
+
 

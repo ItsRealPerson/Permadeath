@@ -27,22 +27,28 @@ public class InfernalNetheriteBlockImpl implements InfernalNetheriteBlock {
         o.setType(Material.SPAWNER);
 
         if (o.getState() instanceof CreatureSpawner spawner) {
+            // El bloque personalizado en Permadeath suele ser un Spawner que "contiene" 
+            // un Armor Stand con el ítem en la cabeza para que el RP lo renderice.
             spawner.setSpawnedType(EntityType.ARMOR_STAND);
+            
+            // Configurar datos del Spawner para que no spawnee nada y sea silencioso
+            spawner.setSpawnRange(0);
+            spawner.setSpawnCount(0);
+            spawner.setRequiredPlayerRange(0);
+            spawner.setMaxNearbyEntities(0);
             
             NamespacedKey key = getKey();
             if (key != null) {
                 spawner.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, true);
             }
             
-            spawner.setSpawnRange(0);
-            spawner.setSpawnCount(0);
-            spawner.setRequiredPlayerRange(0);
-            spawner.setMaxNearbyEntities(0);
-            
+            // Intentar establecer el equipo del Armor Stand interno (esto activa la textura en el RP)
+            // Nota: En Bukkit API el control sobre el ítem visual del spawner es limitado,
+            // pero establecer el tipo y el PDC suele ser suficiente para la mayoría de RPs de Permadeath.
             spawner.update();
         }
 
-        pos.getWorld().playSound(pos, Sound.BLOCK_STONE_BREAK, 1, 1);
+        pos.getWorld().playSound(pos, Sound.BLOCK_STONE_PLACE, 1, 0.8f);
     }
 
     @Override

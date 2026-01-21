@@ -45,18 +45,22 @@ public class PermadeathItems {
     }
 
     public static ItemStack createWaterMedal() {
-        return new ItemBuilder(Material.HEART_OF_THE_SEA)
-                .setDisplayName(TextUtils.format("&b&lMedalla de Agua"))
+        ItemStack s = new ItemBuilder(Material.HEART_OF_THE_SEA)
+                .setDisplayName(TextUtils.format("&bMedalla de Agua"))
                 .setLore(Arrays.asList(TextUtils.format("&7Otorga respiración infinita"), TextUtils.format("&7mientras esté en el inventario.")))
                 .setUnbrekeable(true)
                 .addEnchant(Enchantment.INFINITY, 1)
                 .addItemFlag(org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS)
                 .build();
+        ItemMeta meta = s.getItemMeta();
+        meta.getPersistentDataContainer().set(new NamespacedKey("permadeath", "water_medal"), PersistentDataType.BYTE, (byte) 1);
+        s.setItemMeta(meta);
+        return s;
     }
 
     public static ItemStack createAbyssalHeart() {
         return new ItemBuilder(Material.RECOVERY_COMPASS)
-                .setDisplayName(TextUtils.format("&3&lCorazón del Abismo"))
+                .setDisplayName(TextUtils.format("&3Corazón del Abismo"))
                 .setLore(Arrays.asList(
                         TextUtils.format("&7Un núcleo de energía oscura extraído"),
                         TextUtils.format("&7de las profundidades del Abismo."),
@@ -72,7 +76,7 @@ public class PermadeathItems {
     public static ItemStack createAbyssalMask() {
         ItemStack s = new tech.sebazcrc.permadeath.util.lib.LeatherArmorBuilder(Material.LEATHER_HELMET, 1)
                 .setColor(org.bukkit.Color.fromRGB(0x1A1A1A))
-                .setDisplayName(TextUtils.format("&b&lMáscara del Abismo"))
+                .setDisplayName(TextUtils.format("&bMáscara del Abismo"))
                 .setLore(Arrays.asList(
                         TextUtils.format("&7Protege contra la presión del Abismo."),
                         TextUtils.format("&7Se desgasta mientras estás en la dimensión."),
@@ -85,7 +89,7 @@ public class PermadeathItems {
 
     public static ItemStack createAbyssalFilter() {
         return new ItemBuilder(Material.NETHER_WART)
-                .setDisplayName(TextUtils.format("&b&lFiltro Abisal"))
+                .setDisplayName(TextUtils.format("&bFiltro Abisal"))
                 .setLore(Arrays.asList(
                         TextUtils.format("&7Un purificador de aire diseñado"),
                         TextUtils.format("&7para entornos de vacío."),
@@ -99,7 +103,7 @@ public class PermadeathItems {
 
     public static ItemStack createVoidShard() {
         return new ItemBuilder(Material.AMETHYST_SHARD)
-                .setDisplayName(TextUtils.format("&3&lFragmento de Vacío"))
+                .setDisplayName(TextUtils.format("&3Fragmento de Vacío"))
                 .setLore(Arrays.asList(TextUtils.format("&7Materia cristalizada del Abismo.")))
                 .setCustomModelData(102)
                 .build();
@@ -107,7 +111,7 @@ public class PermadeathItems {
 
     public static ItemStack createAbyssalOre() {
         return new ItemBuilder(Material.DEEPSLATE_EMERALD_ORE)
-                .setDisplayName(TextUtils.format("&b&lMineral Abisal"))
+                .setDisplayName(TextUtils.format("&bMineral Abisal"))
                 .setLore(Arrays.asList(
                         TextUtils.format("&7Un mineral imbuido con"),
                         TextUtils.format("&7la energía del vacío."),
@@ -122,7 +126,7 @@ public class PermadeathItems {
     public static ItemStack createAbyssalPotion() {
         ItemStack potion = new ItemStack(Material.POTION);
         org.bukkit.inventory.meta.PotionMeta meta = (org.bukkit.inventory.meta.PotionMeta) potion.getItemMeta();
-        meta.setDisplayName(TextUtils.format("&b&lPoción de Respiración Abisal"));
+        meta.setDisplayName(TextUtils.format("&bPoción de Respiración Abisal"));
         meta.setLore(Arrays.asList(
                 TextUtils.format("&7Proporciona inmunidad a la"),
                 TextUtils.format("&7presión del Abismo."),
@@ -220,7 +224,7 @@ public class PermadeathItems {
         ItemStack s = new ItemStack(Material.DIAMOND);
         ItemMeta meta = s.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName("§6Infernal Netherite Block");
+            meta.setDisplayName("§6Bloque de Netherite Infernal");
             meta.setUnbreakable(true);
             s.setItemMeta(meta);
         }
@@ -238,7 +242,7 @@ public class PermadeathItems {
     }
 
     public static ItemStack craftInfernalNetheriteIngot() {
-        ItemStack s = new ItemBuilder(Material.DIAMOND).setCustomModelData(1, !PermadeathAPI.optifineItemsEnabled()).setDisplayName(TextUtils.format("&6Infernal Netherite Block")).build();
+        ItemStack s = new ItemBuilder(Material.DIAMOND).setCustomModelData(1, !PermadeathAPI.optifineItemsEnabled()).setDisplayName(TextUtils.format("&6Lingote de Netherite Infernal")).build();
         ItemMeta meta = s.getItemMeta();
         meta.setUnbreakable(true);
         meta.setLore(Arrays.asList(HiddenStringUtils.encodeString("{" + UUID.randomUUID() + ": 0}")));
@@ -248,7 +252,7 @@ public class PermadeathItems {
 
     public static ItemStack createAccessoryTrigger() {
         return new ItemBuilder(Material.NETHER_STAR)
-                .setDisplayName(TextUtils.format("&6&lMenú de Accesorios &7(Click Derecho)"))
+                .setDisplayName(TextUtils.format("&6Menú de Accesorios &7(Click Derecho)"))
                 .setLore(java.util.Arrays.asList(
                         TextUtils.format("&7Usa este ítem para gestionar"),
                         TextUtils.format("&7tus accesorios especiales."),
@@ -355,7 +359,7 @@ public class PermadeathItems {
         
         // Bloquear el slot
         ItemStack lock = new ItemBuilder(Material.STRUCTURE_VOID)
-                .setDisplayName(TextUtils.format("&c&lSLOT BLOQUEADO"))
+                .setDisplayName(TextUtils.format("&cSLOT BLOQUEADO"))
                 .setLore(Arrays.asList(TextUtils.format("&7Necesitas una reliquia"), TextUtils.format("&7para usar este espacio.")))
                 .setCustomModelData(666)
                 .build();
@@ -402,9 +406,9 @@ public class PermadeathItems {
     }
 
     public static boolean isWaterMedal(ItemStack stack) {
-        if (stack == null) return false;
+        if (stack == null || stack.getType() == Material.AIR) return false;
         if (!stack.hasItemMeta()) return false;
-        return stack.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(Bukkit.getPluginManager().getPlugin("Permadeath"), "water_medal"), PersistentDataType.BYTE);
+        return stack.getItemMeta().getPersistentDataContainer().has(new NamespacedKey("permadeath", "water_medal"), PersistentDataType.BYTE);
     }
 
     public static boolean isSurvivorMedal(ItemStack stack) {

@@ -208,7 +208,7 @@ public class PlayerDataManager {
     public ItemStack craftHead(ItemStack s) {
         ItemMeta meta = s.getItemMeta();
         meta.setDisplayName(TextUtils.format("&c&l" + name));
-        meta.setLore(Arrays.asList(TextUtils.format("&c&lHA SIDO PERMABANEADO"), TextUtils.format(" "), TextUtils.format("&7Fecha del Baneo: &c" + banDay), TextUtils.format("&7Hora del Baneo: &c" + banTime), TextUtils.format("&7Causa del Baneo: " + banCause)));
+        meta.setLore(Arrays.asList(TextUtils.format("&cHA SIDO PERMABANEADO"), TextUtils.format(" "), TextUtils.format("&7Fecha del Baneo: &c" + banDay), TextUtils.format("&7Hora del Baneo: &c" + banTime), TextUtils.format("&7Causa del Baneo: " + banCause)));
         s.setItemMeta(meta);
         return s;
     }

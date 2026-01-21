@@ -1,6 +1,7 @@
 package tech.sebazcrc.permadeath.nms.v1_21_R3.entity;
 
 import org.bukkit.Location;
+import org.bukkit.GameMode;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Bee;
 import org.bukkit.entity.EntityType;
@@ -17,7 +18,7 @@ public class SpecialBee {
     public static Bee spawn(Location loc, Plugin plugin) {
         Bee bee = (Bee) loc.getWorld().spawnEntity(loc, EntityType.BEE, CreatureSpawnEvent.SpawnReason.CUSTOM);
 
-        bee.setCustomName("§e§lAngry Bee");
+        bee.setCustomName("§eAngry Bee");
         bee.setCustomNameVisible(true);
 
         // Stats
@@ -41,7 +42,8 @@ public class SpecialBee {
                 double minDistance = 25.0;
 
                 for (Player p : bee.getWorld().getPlayers()) {
-                    if (p.getGameMode().name().equals("SPECTATOR") || p.getGameMode().name().equals("CREATIVE")) continue;
+                    GameMode gm = p.getGameMode();
+                    if (gm != GameMode.SURVIVAL && gm != GameMode.ADVENTURE) continue;
                     double dist = p.getLocation().distance(bee.getLocation());
                     if (dist < minDistance) {
                         target = p;
@@ -77,4 +79,5 @@ public class SpecialBee {
         return bee;
     }
 }
+
 

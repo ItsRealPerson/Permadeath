@@ -24,11 +24,11 @@ public class ArcaneBreeze {
     public static Breeze spawn(Location loc, Plugin plugin) {
         Breeze breeze = (Breeze) loc.getWorld().spawnEntity(loc, EntityType.BREEZE, CreatureSpawnEvent.SpawnReason.CUSTOM);
 
-        breeze.setCustomName("§5§lArcane Breeze");
+        breeze.setCustomName("§5Arcane Breeze");
         breeze.setCustomNameVisible(true);
 
         EffectUtils.setMaxHealth(breeze, 80.0);
-        EffectUtils.setAttackDamage(breeze, 15.0); // Daño de contacto
+        EffectUtils.setAttackDamage(breeze, 15.0); // DaÃ±o de contacto
         EffectUtils.setFollowRange(breeze, 40.0);
 
         // IA Manual
@@ -39,14 +39,14 @@ public class ArcaneBreeze {
                 if (!breeze.isValid()) { return; }
                 ticks++;
 
-                // Partículas constantes
+                // PartÃ­culas constantes
                 breeze.getWorld().spawnParticle(Particle.TRIAL_SPAWNER_DETECTION, breeze.getLocation().add(0, 1, 0), 5, 0.5, 0.5, 0.5, 0.05);
 
                 Player target = MobUtils.getNearestPlayer(breeze, 30);
                 if (target != null) {
                     breeze.setTarget(target);
                     
-                    // Efecto de empuje sónico si está muy cerca
+                    // Efecto de empuje sÃ³nico si estÃ¡ muy cerca
                     if (breeze.getLocation().distanceSquared(target.getLocation()) < 9) {
                         if (ticks % 20 == 0) {
                             target.setVelocity(target.getLocation().toVector().subtract(breeze.getLocation().toVector()).normalize().multiply(2.0).setY(0.5));
@@ -73,5 +73,6 @@ public class ArcaneBreeze {
         return breeze;
     }
 }
+
 
 

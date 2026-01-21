@@ -7,6 +7,8 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.boss.BarColor;
+import org.bukkit.World;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -136,8 +138,31 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     }
 
     @Override
+    public void onLoad() {
+        instance = this;
+        this.abyssManager = new AbyssManager(this);
+        
+        // Inicializar PacketEvents 2.11.1
+        com.github.retrooper.packetevents.PacketEvents.setAPI(io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder.build(this));
+        com.github.retrooper.packetevents.PacketEvents.getAPI().getSettings()
+                .checkForUpdates(false);
+        com.github.retrooper.packetevents.PacketEvents.getAPI().load();
+
+        try {
+            NMS.loadInfernalNetheriteBlock();
+            NMS.loadNMSAccessor();
+            NMS.loadNMSHandler(this);
+
+            getNmsAccessor().registerHostileMobs();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @Override
     public void onEnable() {
         instance = this;
+        com.github.retrooper.packetevents.PacketEvents.getAPI().init();
         this.backupManager = new tech.sebazcrc.permadeath.util.BackupManager(this);
         runningFolia = isRunningFolia();
         this.lootManager = new tech.sebazcrc.permadeath.util.LootManager(this);
@@ -148,33 +173,19 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         this.saveDefaultConfig();
         setupConsoleFilter();
 
-        prefix = TextUtils.format((getConfig().contains("Prefix") ? getConfig().getString("Prefix") : "&cPermadeath &7➤ &f"));
+        prefix = TextUtils.format((getConfig().contains("Prefix") ? getConfig().getString("Prefix") : "&c&lPERMADEATH&4&l &7➤ &f"));
 
         tickAll();
 
         this.playTime = getConfig().getInt("DontTouch.PlayTime");
         this.abyssManager.startSpawnerTask();
-    }
-
-    @Override
-    public void onLoad() {
-        instance = this;
-        this.abyssManager = new AbyssManager(this);
-        try {
-            NMS.loadInfernalNetheriteBlock();
-            NMS.loadNMSAccessor();
-            NMS.loadNMSHandler(this);
-
-            getNmsAccessor().registerHostileMobs();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            Bukkit.getServer().getPluginManager().disablePlugin(this);
-        }
+        
+        setupListeners();
     }
 
     @Override
     public void onDisable() {
-
+        com.github.retrooper.packetevents.PacketEvents.getAPI().terminate();
         getConfig().set("DontTouch.PlayTime", this.playTime);
         if (this.orbEvent != null) {
             this.orbEvent.saveTime();
@@ -408,7 +419,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         }
 
         // Efecto Darkness aleatorio en el Abismo
-        if (player.getWorld().getName().equalsIgnoreCase("pdc_the_abyss")) {
+        if (player.getWorld().getName().endsWith("permadeath_abyss") || player.getWorld().getName().endsWith("permadeath/abyss")) {
             if (instance.getAbyssManager() != null) {
                 instance.getAbyssManager().tickAbyssEffects(player);
             }
@@ -517,6 +528,46 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
                         player.sendMessage(ChatColor.RED + "¡Un Phantom ha soltado algo sobre ti!");
                         instance.getNmsHandler().spawnNMSCustomEntity("SculkParasite", null, p.getLocation(), CreatureSpawnEvent.SpawnReason.CUSTOM);
                     });
+            }
+        }
+
+        // --- Lógica de Agua Ácida (Día 30+) ---
+        if (getDay() >= 30 && player.getGameMode() == GameMode.SURVIVAL) {
+            Material eye = player.getEyeLocation().getBlock().getType();
+            Material foot = player.getLocation().getBlock().getType();
+
+            if (eye == Material.WATER || foot == Material.WATER) {
+                boolean hasMedal = false;
+                for (ItemStack item : player.getInventory().getContents()) {
+                    if (tech.sebazcrc.permadeath.util.item.PermadeathItems.isWaterMedal(item)) {
+                        hasMedal = true;
+                        break;
+                    }
+                }
+                if (!hasMedal && tech.sebazcrc.permadeath.util.item.PermadeathItems.isWaterMedal(player.getInventory().getItemInOffHand())) {
+                    hasMedal = true;
+                }
+                
+                // Revisar también en Accesorios
+                if (!hasMedal) {
+                    ItemStack[] acc = tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.load(player);
+                    if (acc != null) {
+                        for (ItemStack item : acc) {
+                            if (tech.sebazcrc.permadeath.util.item.PermadeathItems.isWaterMedal(item)) {
+                                hasMedal = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (!hasMedal) {
+                    player.damage(2.0); // 1 corazón de daño por segundo (tickPlayer corre cada 20 ticks)
+                    player.spawnParticle(Particle.BUBBLE_POP, player.getLocation().add(0, 1, 0), 5, 0.3, 0.3, 0.3, 0.05);
+                    if (random.nextInt(5) == 0) {
+                        player.sendMessage(ChatColor.RED + "¡El agua está altamente contaminada! Necesitas la Medalla de Agua.");
+                    }
+                }
             }
         }
     }
@@ -876,7 +927,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
         sender.sendMessage(TextUtils.format("&aSe ha recargado el archivo de configuración y los mensajes."));
         sender.sendMessage(TextUtils.format("&eAlgunos cambios pueden requerir un reinicio para funcionar correctamente."));
-        sender.sendMessage(TextUtils.format("&c&lNota importante: &7Algunos cambios pueden requerir un reinicio y la fecha puede no ser exacta."));
+        sender.sendMessage(TextUtils.format("&cNota importante: &7Algunos cambios pueden requerir un reinicio y la fecha puede no ser exacta."));
         prefix = TextUtils.format((getConfig().contains("Prefix") ? getConfig().getString("Prefix") : "&c&lPERMADEATH&4&l &7➤ &f"));
 
         PDCLog.getInstance().log("Se ha recargado el plugin");
@@ -902,6 +953,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         getServer().getPluginManager().registerEvents(new TotemListener(), instance);
         getServer().getPluginManager().registerEvents(new RaidEvents(), instance);
         getServer().getPluginManager().registerEvents(new WorldEvents(), instance);
+        getServer().getPluginManager().registerEvents(new tech.sebazcrc.permadeath.event.player.CustomEnchantmentListener(), instance);
         registeredDays.put(1, false);
         registeredDays.put(20, false);
         registeredDays.put(30, false);

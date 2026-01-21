@@ -1,6 +1,7 @@
 package tech.sebazcrc.permadeath.nms.v1_21_R3.entity;
 
 import org.bukkit.Location;
+import org.bukkit.GameMode;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Ghast;
@@ -17,7 +18,7 @@ public class CustomGhast {
     public static Ghast spawn(Location loc, Plugin plugin) {
         Ghast ghast = (Ghast) loc.getWorld().spawnEntity(loc, EntityType.GHAST, CreatureSpawnEvent.SpawnReason.CUSTOM);
 
-        ghast.setCustomName("§6Ender Ghast");
+        ghast.setCustomName("§6Ghast del Fin");
         ghast.setCustomNameVisible(false);
 
         if (ghast.getAttribute(Attribute.MAX_HEALTH) != null) {
@@ -37,7 +38,8 @@ public class CustomGhast {
                 double minDistance = 64.0;
 
                 for (Player p : ghast.getWorld().getPlayers()) {
-                    if (p.getGameMode().name().equals("SPECTATOR") || p.getGameMode().name().equals("CREATIVE")) continue;
+                    GameMode gm = p.getGameMode();
+                    if (gm != GameMode.SURVIVAL && gm != GameMode.ADVENTURE) continue;
                     double dist = p.getLocation().distance(ghast.getLocation());
                     if (dist < minDistance) {
                         target = p;
@@ -73,4 +75,5 @@ public class CustomGhast {
         return ghast;
     }
 }
+
 

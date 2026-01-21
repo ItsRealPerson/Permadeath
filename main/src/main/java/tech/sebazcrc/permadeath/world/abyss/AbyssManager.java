@@ -39,42 +39,56 @@ public class AbyssManager implements Listener {
             if (abyssWorld == null) return;
             
             for (Player p : abyssWorld.getPlayers()) {
-                if (p.getGameMode() == GameMode.SPECTATOR) continue;
+                if (p.getGameMode() == GameMode.SPECTATOR || !p.isOnline()) continue;
                 
-                // Cap local de mobs cerca del jugador
-                long nearbyMobs = p.getNearbyEntities(48, 48, 48).stream()
-                        .filter(e -> e instanceof Monster)
-                        .count();
-                
-                if (nearbyMobs < 15) {
-                    int toSpawn = 2 + new java.util.Random().nextInt(3);
-                    for (int i = 0; i < toSpawn; i++) {
-                        Location loc = findAbyssSpawnLocation(p.getLocation());
-                        if (loc != null) {
-                            spawnAbyssMob(loc);
-                        }
-                    }
+                // En Folia, debemos ejecutar el chequeo en el hilo de la región del jugador
+                if (Main.isRunningFolia()) {
+                    p.getScheduler().run(plugin, t -> {
+                        checkAndSpawnAbyssMobs(p);
+                    }, null);
+                } else {
+                    checkAndSpawnAbyssMobs(p);
                 }
             }
         };
 
         if (Main.isRunningFolia()) {
-            Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, t -> task.run(), 100L, 100L); // Cada 5s
+            Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, t -> task.run(), 60L, 60L); // Cada 3s
         } else {
-            Bukkit.getScheduler().runTaskTimer(plugin, task, 100L, 100L);
+            Bukkit.getScheduler().runTaskTimer(plugin, task, 60L, 60L);
+        }
+    }
+
+    private void checkAndSpawnAbyssMobs(Player p) {
+        // Cap local de mobs cerca del jugador aumentado a 70
+        long nearbyMobs = p.getNearbyEntities(64, 64, 64).stream()
+                .filter(e -> e instanceof org.bukkit.entity.Monster || e instanceof org.bukkit.entity.Bat)
+                .count();
+        
+        if (nearbyMobs < 70) {
+            int toSpawn = 4 + new java.util.Random().nextInt(5);
+            for (int i = 0; i < toSpawn; i++) {
+                Location loc = findAbyssSpawnLocation(p.getLocation());
+                if (loc != null) {
+                    spawnAbyssMob(loc);
+                }
+            }
         }
     }
 
     private Location findAbyssSpawnLocation(Location base) {
         java.util.Random random = new java.util.Random();
-        for (int i = 0; i < 10; i++) {
-            int x = base.getBlockX() + random.nextInt(31) - 15;
-            int z = base.getBlockZ() + random.nextInt(31) - 15;
-            int y = base.getBlockY() + random.nextInt(11) - 5;
+        // Aumentar intentos y rango vertical para encontrar islas
+        for (int i = 0; i < 30; i++) {
+            int x = base.getBlockX() + random.nextInt(41) - 20;
+            int z = base.getBlockZ() + random.nextInt(41) - 20;
+            int y = base.getBlockY() + random.nextInt(31) - 15;
             
+            if (y < -60 || y > 120) continue;
+
             Location loc = new Location(base.getWorld(), x + 0.5, y, z + 0.5);
             if (loc.getBlock().getType().isAir() && loc.clone().add(0, 1, 0).getBlock().getType().isAir() && loc.clone().add(0, -1, 0).getBlock().getType().isSolid()) {
-                if (loc.distanceSquared(base) > 10 * 10) return loc;
+                if (loc.distanceSquared(base) > 8 * 8) return loc;
             }
         }
         return null;
@@ -205,48 +219,69 @@ public class AbyssManager implements Listener {
         }
     }
 
+    @EventHandler
+    public void onPlayerChangedWorld(org.bukkit.event.player.PlayerChangedWorldEvent e) {
+        String worldName = e.getPlayer().getWorld().getName();
+        if (!(worldName.endsWith("permadeath_abyss") || worldName.endsWith("permadeath/abyss"))) {
+            removePressureBar(e.getPlayer());
+        }
+    }
+
+    @EventHandler
+    public void onTeleport(org.bukkit.event.player.PlayerTeleportEvent e) {
+        if (e.getTo() == null) return;
+        String toWorld = e.getTo().getWorld().getName();
+        if (!(toWorld.endsWith("permadeath_abyss") || toWorld.endsWith("permadeath/abyss"))) {
+            removePressureBar(e.getPlayer());
+        }
+    }
+
     public void tickAbyssEffects(Player player) {
-        if (abyssWorld == null || !player.getWorld().equals(abyssWorld)) {
+        String worldName = player.getWorld().getName();
+        if (!(worldName.endsWith("permadeath_abyss") || worldName.endsWith("permadeath/abyss"))) {
             removePressureBar(player);
             return;
         }
 
+        if (this.abyssWorld == null) this.abyssWorld = player.getWorld();
+
         BossBar bar = pressureBars.computeIfAbsent(player.getUniqueId(), id -> 
             Bukkit.createBossBar(ChatColor.DARK_AQUA + "Presión del Abismo", BarColor.BLUE, BarStyle.SEGMENTED_10));
         
-        if (!bar.getPlayers().contains(player)) bar.addPlayer(player);
+        if (!bar.getPlayers().contains(player)) {
+            bar.addPlayer(player);
+            bar.setVisible(true);
+        }
 
         // --- Chequeo de Poción ---
+        long now = System.currentTimeMillis();
         long expiry = player.getPersistentDataContainer().getOrDefault(new NamespacedKey(plugin, "abyss_potion_expiry"), PersistentDataType.LONG, 0L);
-        boolean hasPotionEffect = System.currentTimeMillis() < expiry;
+        boolean hasPotionEffect = now < expiry;
 
         if (hasPotionEffect) {
-            bar.setTitle(ChatColor.LIGHT_PURPLE + "Respiración Abisal (Activa)");
+            long remaining = expiry - now;
+            double progress = (double) remaining / (120 * 1000);
+            
+            bar.setTitle(ChatColor.LIGHT_PURPLE + "Respiración Abisal (" + (remaining / 1000) + "s)");
             bar.setColor(BarColor.PURPLE);
-            bar.setProgress(1.0);
-            return; // Inmunidad total, no desgasta máscara ni baja presión
+            bar.setProgress(Math.max(0.0, Math.min(1.0, progress)));
+            
+            // Limpiar borde si tiene poción
+            if (player.getWorldBorder() != null) player.setWorldBorder(null);
+            return;
         }
 
         // --- Lógica de la Máscara en Accesorios ---
-        org.bukkit.inventory.Inventory openInv = player.getOpenInventory().getTopInventory();
-        boolean isMenuOpen = player.getOpenInventory().getTitle().equals(TextUtils.format("&8Inventario de Accesorios"));
-        
         ItemStack mask = null;
         int maskIndex = -1;
-        ItemStack[] acc = null;
+        ItemStack[] acc = tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.load(player);
 
-        if (isMenuOpen) {
-            mask = openInv.getItem(tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.MASK_SLOT);
-            if (!PermadeathItems.isAbyssalMask(mask)) mask = null;
-        } else {
-            acc = tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.load(player);
-            if (acc != null) {
-                for (int i = 0; i < acc.length; i++) {
-                    if (PermadeathItems.isAbyssalMask(acc[i])) {
-                        mask = acc[i];
-                        maskIndex = i;
-                        break;
-                    }
+        if (acc != null) {
+            for (int i = 0; i < acc.length; i++) {
+                if (PermadeathItems.isAbyssalMask(acc[i])) {
+                    mask = acc[i];
+                    maskIndex = i;
+                    break;
                 }
             }
         }
@@ -254,6 +289,8 @@ public class AbyssManager implements Listener {
         double currentPressure = player.getPersistentDataContainer().getOrDefault(new NamespacedKey(plugin, "abyss_pressure"), PersistentDataType.DOUBLE, 1.0);
 
         if (mask != null && mask.getItemMeta() instanceof org.bukkit.inventory.meta.Damageable damageable) {
+            player.getPersistentDataContainer().remove(new NamespacedKey(plugin, "abyss_grace_ticks"));
+            
             short maxDurability = mask.getType().getMaxDurability();
             int currentDamage = damageable.getDamage();
             
@@ -261,29 +298,45 @@ public class AbyssManager implements Listener {
             double durabilityPercent = 1.0 - ((double) currentDamage / maxDurability);
             currentPressure = durabilityPercent;
 
-            // Desgastarla mientras está en el abismo
-            if (new java.util.Random().nextInt(5) == 0) { 
+            int enchantLevel = 0;
+            try {
+                NamespacedKey key = new NamespacedKey("permadeath", "abyssal_breathing");
+                enchantLevel = mask.getEnchantmentLevel(org.bukkit.Registry.ENCHANTMENT.get(key));
+            } catch (Exception ignored) {}
+
+            int chance = 5 + (enchantLevel * 5);
+
+            if (new java.util.Random().nextInt(chance) == 0) { 
                 damageable.setDamage(currentDamage + 1);
                 mask.setItemMeta(damageable);
                 
-                if (isMenuOpen) {
-                    // Actualizar el slot directamente en la interfaz
-                    openInv.setItem(tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.MASK_SLOT, mask);
-                } else {
-                    // Guardar el cambio en el array de accesorios y persistirlo
+                if (acc != null && maskIndex != -1) {
                     acc[maskIndex] = mask;
                     tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.saveFromItems(player, acc);
                 }
-                
-                // Actualizar presión tras el daño
                 currentPressure = 1.0 - ((double) (currentDamage + 1) / maxDurability);
             }
             
             bar.setTitle(ChatColor.AQUA + "Oxígeno de la Máscara");
+            bar.setColor(currentPressure > 0.3 ? BarColor.BLUE : BarColor.YELLOW);
         } else {
-            // Sin máscara: La presión baja mucho más rápido
+            // Sin máscara: Tiempo de Gracia
+            int grace = player.getPersistentDataContainer().getOrDefault(new NamespacedKey(plugin, "abyss_grace_ticks"), PersistentDataType.INTEGER, 30);
+            
+            if (grace > 0) {
+                grace--;
+                player.getPersistentDataContainer().set(new NamespacedKey(plugin, "abyss_grace_ticks"), PersistentDataType.INTEGER, grace);
+                bar.setTitle(ChatColor.DARK_AQUA + "Presión del Abismo (" + grace + "s)");
+                bar.setProgress((double) grace / 30.0);
+                bar.setColor(BarColor.YELLOW);
+                
+                if (player.getWorldBorder() != null) player.setWorldBorder(null);
+                return;
+            }
+
             currentPressure -= 0.005;
             bar.setTitle(ChatColor.DARK_AQUA + "Presión del Abismo");
+            bar.setColor(BarColor.BLUE);
         }
 
         if (currentPressure <= 0) {
@@ -292,146 +345,48 @@ public class AbyssManager implements Listener {
             player.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.WITHER, 40, 1));
             bar.setColor(BarColor.RED);
             bar.setTitle(ChatColor.RED + "¡OXÍGENO AGOTADO!");
-        } else {
-            bar.setColor(currentPressure > 0.3 ? BarColor.BLUE : BarColor.YELLOW);
-            bar.setProgress(Math.min(1.0, currentPressure));
-            
-            // --- INMERSIÓN SONORA Y VISUAL ---
-            if (currentPressure < 0.5) {
-                // Latido del corazón: más rápido cuanto menos presión
-                int heartbeatFreq = currentPressure < 0.2 ? 10 : 20; 
-                if (new java.util.Random().nextInt(heartbeatFreq) == 0) {
-                    player.playSound(player.getLocation(), Sound.ENTITY_WARDEN_HEARTBEAT, 0.8f, 0.8f);
-                }
-            }
-            
-            if (currentPressure < 0.3 && new java.util.Random().nextInt(60) == 0) {
-                player.playSound(player.getLocation(), Sound.ENTITY_WARDEN_LISTENING, 0.5f, 0.5f);
-            }
-
-            // Efecto visual de borde rojo (WorldBorder individual)
-            if (currentPressure < 0.2) {
-                if (player.getWorldBorder() == null || player.getWorldBorder().getSize() > 1000) {
-                    WorldBorder wb = Bukkit.createWorldBorder();
-                    wb.setCenter(player.getLocation());
-                    wb.setSize(1.0); // Tamaño minúsculo para forzar el tinte rojo de advertencia
-                    wb.setWarningDistance(100);
-                    player.setWorldBorder(wb);
-                }
-            } else if (player.getWorldBorder() != null) {
-                player.setWorldBorder(null); // Restaurar al normal
-            }
         }
+        
+        bar.setProgress(Math.max(0.0, Math.min(1.0, currentPressure)));
         player.getPersistentDataContainer().set(new NamespacedKey(plugin, "abyss_pressure"), PersistentDataType.DOUBLE, currentPressure);
+
+        // Efecto visual de borde rojo
+        if (currentPressure < 0.2 && currentPressure > 0) {
+            WorldBorder wb = player.getWorldBorder();
+            if (wb == null || wb.getSize() > 50000) {
+                wb = Bukkit.createWorldBorder();
+                wb.setCenter(player.getLocation());
+                wb.setSize(10000);
+                wb.setWarningDistance(10000);
+                player.setWorldBorder(wb);
+            } else {
+                wb.setCenter(player.getLocation());
+            }
+        } else if (player.getWorldBorder() != null) {
+            player.setWorldBorder(null);
+        }
 
         Location loc = player.getLocation();
         player.spawnParticle(Particle.ASH, loc, 50, 8, 4, 8, 0.02);
-        player.spawnParticle(Particle.SQUID_INK, loc, 10, 5, 3, 5, 0.01);
-
+        
         if (new java.util.Random().nextInt(40) == 0) {
             Sound[] abyssSounds = {Sound.BLOCK_SCULK_SHRIEKER_SHRIEK, Sound.ENTITY_WARDEN_HEARTBEAT, Sound.AMBIENT_CAVE, Sound.BLOCK_SCULK_CATALYST_BLOOM};
             player.playSound(loc, abyssSounds[new java.util.Random().nextInt(abyssSounds.length)], 0.4f, 0.5f);
         }
     }
 
-    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onBlockBreak(org.bukkit.event.block.BlockBreakEvent e) {
-        if (abyssWorld == null || !e.getBlock().getWorld().equals(abyssWorld)) return;
-        
-        org.bukkit.block.Block b = e.getBlock();
-        if (b.getType() == Material.DEEPSLATE_EMERALD_ORE) {
-            e.setDropItems(false); // Cancelar drop vanilla
-            
-            Player p = e.getPlayer();
-            ItemStack tool = p.getInventory().getItemInMainHand();
-            
-            // Solo soltar si usa al menos un pico de hierro
-            if (tool.getType().name().contains("PICKAXE") && !tool.getType().name().contains("WOODEN") && !tool.getType().name().contains("STONE")) {
-                int amount = 1;
-                
-                // Soporte para Fortuna
-                if (tool.containsEnchantment(org.bukkit.enchantments.Enchantment.FORTUNE)) {
-                    int level = tool.getEnchantmentLevel(org.bukkit.enchantments.Enchantment.FORTUNE);
-                    amount += new java.util.Random().nextInt(level + 1);
-                }
-                
-                ItemStack drop = PermadeathItems.createAbyssalOre();
-                drop.setAmount(amount);
-                
-                b.getWorld().dropItemNaturally(b.getLocation(), drop);
-                e.setExpToDrop(new java.util.Random().nextInt(5) + 3);
-            }
-        }
-    }
-
-    @EventHandler
-    public void onAbyssInteract(org.bukkit.event.player.PlayerInteractEvent e) {
-        if (e.getClickedBlock() == null || abyssWorld == null || !e.getClickedBlock().getWorld().equals(abyssWorld)) return;
-        if (e.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) return;
-
-        Player p = e.getPlayer();
-        ItemStack item = e.getItem();
-        org.bukkit.block.Block b = e.getClickedBlock();
-
-        // 1. Procesamiento de Ores con Bloque de Netherite Infernal
-        if (plugin.getNetheriteBlock() != null && plugin.getNetheriteBlock().isInfernalNetherite(b.getLocation())) {
-            if (item != null && item.getType().name().startsWith("RAW_")) {
-                e.setCancelled(true);
-                
-                // Transmutar mineral en bruto a Mineral Abisal
-                item.setAmount(item.getAmount() - 1);
-                p.getWorld().dropItemNaturally(b.getLocation().add(0, 1, 0), PermadeathItems.createAbyssalOre());
-                
-                p.playSound(b.getLocation(), Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 1.0f, 0.5f);
-                p.spawnParticle(Particle.WITCH, b.getLocation().add(0.5, 1.1, 0.5), 20, 0.2, 0.2, 0.2, 0.1);
-                p.sendMessage(ChatColor.DARK_PURPLE + "La energía del abismo ha transmutado el mineral.");
-            }
-        }
-    }
-
-    @EventHandler
-    public void onUseFilter(org.bukkit.event.player.PlayerInteractEvent e) {
-        Player p = e.getPlayer();
-        ItemStack item = e.getItem();
-        if (item == null || !item.isSimilar(PermadeathItems.createAbyssalFilter())) return;
-        if (!e.getAction().name().contains("RIGHT_CLICK")) return;
-
-        ItemStack[] acc = tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.load(p);
-        if (acc != null) {
-            for (int i = 0; i < acc.length; i++) {
-                if (PermadeathItems.isAbyssalMask(acc[i]) && acc[i].getItemMeta() instanceof org.bukkit.inventory.meta.Damageable damageable) {
-                    e.setCancelled(true);
-                    if (damageable.getDamage() == 0) {
-                        p.sendMessage(ChatColor.YELLOW + "Tu máscara ya está a plena capacidad.");
-                        return;
-                    }
-
-                    damageable.setDamage(0);
-                    acc[i].setItemMeta(damageable);
-                    item.setAmount(item.getAmount() - 1);
-                    
-                    tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.saveFromItems(p, acc);
-                    
-                    p.playSound(p.getLocation(), Sound.BLOCK_IRON_DOOR_OPEN, 1.0f, 2.0f);
-                    p.spawnParticle(Particle.CLOUD, p.getLocation().add(0, 1.5, 0), 15, 0.2, 0.2, 0.2, 0.05);
-                    p.sendMessage(ChatColor.AQUA + "¡Filtro aplicado! Oxígeno restaurado.");
-                    
-                    p.getPersistentDataContainer().set(new NamespacedKey(plugin, "abyss_pressure"), PersistentDataType.DOUBLE, 1.0);
-                    return;
-                }
-            }
-        }
-    }
-
-
     private void removePressureBar(Player player) {
         BossBar bar = pressureBars.remove(player.getUniqueId());
-        if (bar != null) bar.removeAll();
-        
-        double p = player.getPersistentDataContainer().getOrDefault(new NamespacedKey(plugin, "abyss_pressure"), PersistentDataType.DOUBLE, 1.0);
-        if (p < 1.0) {
-            player.getPersistentDataContainer().set(new NamespacedKey(plugin, "abyss_pressure"), PersistentDataType.DOUBLE, Math.min(1.0, p + 0.01));
+        if (bar != null) {
+            bar.setVisible(false);
+            bar.removeAll();
         }
+        
+        if (player.getWorldBorder() != null) {
+            player.setWorldBorder(null);
+        }
+        
+        player.getPersistentDataContainer().remove(new NamespacedKey(plugin, "abyss_grace_ticks"));
     }
 
     private void playAbyssSound(Player player) {

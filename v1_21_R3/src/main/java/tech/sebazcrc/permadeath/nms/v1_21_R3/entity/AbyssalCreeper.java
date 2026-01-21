@@ -16,7 +16,7 @@ public class AbyssalCreeper {
     public static Creeper spawn(Location loc, Plugin plugin) {
         Creeper creeper = (Creeper) loc.getWorld().spawnEntity(loc, EntityType.CREEPER);
         creeper.setPowered(true);
-        creeper.setCustomName("§3§lAbyssal Creeper");
+        creeper.setCustomName("§3Abyssal Creeper");
         creeper.setCustomNameVisible(true);
         
         EffectUtils.setMaxHealth(creeper, 60.0);
@@ -34,5 +34,6 @@ public class AbyssalCreeper {
         return creeper;
     }
 
-    // Nota: La explosión especial se manejará en el listener de explosiones general
+    // Nota: La explosiÃ³n especial se manejarÃ¡ en el listener de explosiones general
 }
+

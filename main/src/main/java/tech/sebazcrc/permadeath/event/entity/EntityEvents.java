@@ -51,6 +51,25 @@ public class EntityEvents implements Listener {
                 e.setCancelled(true);
             }
         }
+
+        // Prevención de aggro para mobs del Abismo
+        World w = e.getEntity().getWorld();
+        if (w.getName().endsWith("permadeath_abyss") || w.getName().endsWith("permadeath/abyss")) {
+            if (e.getTarget() != null && !(e.getTarget() instanceof Player)) {
+                e.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onAbyssDamage(EntityDamageByEntityEvent e) {
+        World w = e.getEntity().getWorld();
+        if (w.getName().endsWith("permadeath_abyss") || w.getName().endsWith("permadeath/abyss")) {
+            // Si un mob daña a otro mob (que no sea jugador), cancelar
+            if (!(e.getEntity() instanceof Player) && !(e.getDamager() instanceof Player) && !(e.getDamager() instanceof Projectile p && p.getShooter() instanceof Player)) {
+                e.setCancelled(true);
+            }
+        }
     }
 
     @EventHandler

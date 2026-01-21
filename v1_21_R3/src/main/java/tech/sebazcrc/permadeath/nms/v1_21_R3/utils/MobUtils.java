@@ -33,7 +33,14 @@ public class MobUtils {
                 .filter(e -> e instanceof Player)
                 .map(e -> (Player) e)
                 .filter(MobUtils::isValidTarget)
-                .filter(p -> hasLineOfSight(source, p)) // Opcional: Solo si los ve (más realista)
+                .filter(p -> {
+                    // MECÁNICA DE SIGILO: Si el jugador se agacha, el rango de detección baja a 8 bloques
+                    if (p.isSneaking()) {
+                        return p.getLocation().distanceSquared(source.getLocation()) <= 8 * 8;
+                    }
+                    // Si no está agachado, se detecta por vibración/sonido en el rango total
+                    return true;
+                })
                 .min(Comparator.comparingDouble(p -> p.getLocation().distanceSquared(source.getLocation())))
                 .orElse(null);
     }
