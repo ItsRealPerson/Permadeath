@@ -32,10 +32,9 @@ public class AbyssManager implements Listener {
     public AbyssManager(Main plugin) {
         this.plugin = plugin;
         this.abyssWorld = Bukkit.getWorld(WORLD_NAME);
-        startSpawnerTask();
     }
 
-    private void startSpawnerTask() {
+    public void startSpawnerTask() {
         Runnable task = () -> {
             if (abyssWorld == null) return;
             

@@ -9,6 +9,9 @@ import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import org.bukkit.util.Vector;
+import tech.sebazcrc.permadeath.nms.v1_21_R3.utils.TeleportUtils;
+
 public class SpecialBee {
 
     public static Bee spawn(Location loc, Plugin plugin) {
@@ -34,21 +37,26 @@ public class SpecialBee {
                 // Siempre furiosa
                 bee.setAnger(Integer.MAX_VALUE);
 
-                if (bee.getTarget() == null) {
-                    Player target = null;
-                    double minDistance = 20.0;
+                Player target = null;
+                double minDistance = 25.0;
 
-                    for (Player p : bee.getWorld().getPlayers()) {
-                        if (p.getGameMode().getValue() == 1 || p.getGameMode().getValue() == 3) continue;
-                        double dist = p.getLocation().distance(bee.getLocation());
-                        if (dist < minDistance) {
-                            target = p;
-                            minDistance = dist;
-                        }
+                for (Player p : bee.getWorld().getPlayers()) {
+                    if (p.getGameMode().name().equals("SPECTATOR") || p.getGameMode().name().equals("CREATIVE")) continue;
+                    double dist = p.getLocation().distance(bee.getLocation());
+                    if (dist < minDistance) {
+                        target = p;
+                        minDistance = dist;
                     }
+                }
 
-                    if (target != null) {
-                        bee.setTarget(target);
+                if (target != null) {
+                    bee.setTarget(target);
+
+                    // Forzar movimiento si tiene pasajeros o la IA nativa falla (las abejas son lentas con peso)
+                    if (!bee.getPassengers().isEmpty() || bee.getLocation().distanceSquared(target.getLocation()) > 10 * 10) {
+                        TeleportUtils.lookAt(bee, target.getLocation());
+                        Vector dir = target.getLocation().toVector().subtract(bee.getLocation().toVector()).normalize();
+                        bee.setVelocity(dir.multiply(0.4));
                     }
                 }
             }

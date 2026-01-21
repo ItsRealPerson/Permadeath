@@ -153,6 +153,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         tickAll();
 
         this.playTime = getConfig().getInt("DontTouch.PlayTime");
+        this.abyssManager.startSpawnerTask();
     }
 
     @Override
@@ -689,7 +690,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
                 Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefix + "&bVersión del plugin: &aVersión más reciente instalada."));
             } else {
                 Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefix + "&eNueva versión detectada."));
-                Bukkit.getConsoleSender().sendMessage(TextUtils.format("&7> &aDescarga: &7" + Utils.SPIGOT_LINK));
+                Bukkit.getConsoleSender().sendMessage(TextUtils.format("&7> &aDescarga: &7" + Utils.GITHUB_LINK));
             }
         });
 
@@ -742,7 +743,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
             if (Bukkit.getPluginManager().getPlugin("WorldEdit") == null && Bukkit.getPluginManager().getPlugin("FastAsyncWorldEdit") == null) {
                 Bukkit.broadcastMessage(TextUtils.format(prefixStr + "&4&lNo se pudo registrar TheBeginning ya que no se ha encontrado el plugin &7WorldEdit"));
                 Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&c[DEBUG] Permadeath requiere WorldEdit o FastAsyncWorldEdit para The Beginning."));
-                Bukkit.broadcastMessage(TextUtils.format(prefixStr + "&7Si necesitas soporte entra a este discord: &e" + Utils.SPIGOT_LINK));
+                Bukkit.broadcastMessage(TextUtils.format(prefixStr + "&7Si necesitas soporte repórtalo en GitHub: &e" + Utils.GITHUB_LINK));
                 return;
             }
             this.beData = new BeginningDataManager(this);

@@ -9,6 +9,9 @@ import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import org.bukkit.util.Vector;
+import tech.sebazcrc.permadeath.nms.v1_21_R3.utils.TeleportUtils;
+
 public class CustomGhast {
 
     public static Ghast spawn(Location loc, Plugin plugin) {
@@ -22,7 +25,7 @@ public class CustomGhast {
             ghast.setHealth(100.0);
         }
 
-        // IA: Mantener al Ghast enfocado
+        // IA: Mantener al Ghast enfocado y en movimiento
         Runnable ghastTask = new Runnable() {
             @Override
             public void run() {
@@ -30,28 +33,33 @@ public class CustomGhast {
                     return;
                 }
 
-                if (ghast.getTarget() == null) {
-                    double minDistance = 64.0;
-                    Player target = null;
+                Player target = null;
+                double minDistance = 64.0;
 
-                    for (Player p : ghast.getWorld().getPlayers()) {
-                        if (p.getGameMode().getValue() == 1 || p.getGameMode().getValue() == 3) continue;
-                        double dist = p.getLocation().distance(ghast.getLocation());
-                        if (dist < minDistance) {
-                            target = p;
-                            minDistance = dist;
-                        }
+                for (Player p : ghast.getWorld().getPlayers()) {
+                    if (p.getGameMode().name().equals("SPECTATOR") || p.getGameMode().name().equals("CREATIVE")) continue;
+                    double dist = p.getLocation().distance(ghast.getLocation());
+                    if (dist < minDistance) {
+                        target = p;
+                        minDistance = dist;
                     }
+                }
 
-                    if (target != null) {
-                        ghast.setTarget(target);
+                if (target != null) {
+                    ghast.setTarget(target);
+                    
+                    // Forzar movimiento si tiene pasajeros o la IA nativa falla
+                    if (!ghast.getPassengers().isEmpty() || ghast.getLocation().distanceSquared(target.getLocation()) > 20 * 20) {
+                        TeleportUtils.lookAt(ghast, target.getLocation());
+                        Vector dir = target.getLocation().toVector().subtract(ghast.getLocation().toVector()).normalize();
+                        ghast.setVelocity(dir.multiply(0.35));
                     }
                 }
             }
         };
 
         try {
-            ghast.getScheduler().runAtFixedRate(plugin, t -> ghastTask.run(), null, 20L, 40L);
+            ghast.getScheduler().runAtFixedRate(plugin, t -> ghastTask.run(), null, 20L, 20L);
         } catch (NoSuchMethodError e) {
             new BukkitRunnable() {
                 @Override

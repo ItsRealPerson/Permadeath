@@ -551,29 +551,21 @@ public class PlayerListener implements Listener {
             player.sendMessage(TextUtils.format("&e&m-------------------------------------------"));
             player.sendMessage(TextUtils.format("        &c&lPERMA&7&lDEATH"));
             player.sendMessage(TextUtils.format(" "));
-            player.sendMessage(TextUtils.format("&b&l - Servidor de Discord con soporte del Desarrollador: -"));
-            player.sendMessage(TextUtils.format("&7Se ofrece soporte en caso de problemas"));
+            player.sendMessage(TextUtils.format("&b&l - Repositorio Oficial en GitHub: -"));
+            player.sendMessage(TextUtils.format("&7Reporta errores o descarga versiones en el repositorio"));
             player.sendMessage(TextUtils.format(" "));
-            player.sendMessage(TextUtils.format("&e&nInvitación a Discord&r&7 (soporte, noticias y proyectos):"));
-            player.sendMessage(TextUtils.format("&9" + Utils.DISCORD_LINK));
+            player.sendMessage(TextUtils.format("&e&nGitHub Link&r&7 (código fuente y descargas):"));
+            player.sendMessage(TextUtils.format("&9" + Utils.GITHUB_LINK));
             player.sendMessage(TextUtils.format("&e&m-------------------------------------------"));
             if (!PermadeathAPI.optifineItemsEnabled())
                 player.sendMessage(TextUtils.format("&cRecuerda aceptar los paquetes de Recursos para ver los ítems y texturas personalizadas."));
             player.sendMessage(Main.prefix + TextUtils.format("&eEjecuta el comando &f&l/pdc &r&epara más información."));
 
-            if (!player.hasPlayedBefore()) {
-                player.sendTitle(TextUtils.format("&c&lPERMA&7&lDEATH"), TextUtils.format("&7Desarrollador: &b@SebazCRC"), 1, 20 * 5, 1);
-                player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 100.0F, 100.0F);
-            }
         }, 20 * 15);
 
         runTaskLaterEntity(player, () -> {
             if (player == null) return;
             if (!player.isOnline()) return;
-            if (!player.hasPlayedBefore()) {
-                player.sendTitle(TextUtils.format("&c&lPERMA&7&lDEATH"), TextUtils.format("&7Discord: &9https://discord.gg/8evPbuxPke"), 1, 20 * 5, 1);
-                player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 100.0F, 100.0F);
-            }
 
             if (player.isOp()) {
                 new UpdateChecker(Main.getInstance()).getVersion(version -> {
@@ -581,7 +573,7 @@ public class PlayerListener implements Listener {
                         player.sendMessage(TextUtils.format(Main.prefix + "&3Estás utilizando la versión más reciente del Plugin."));
                     } else {
                         player.sendMessage(TextUtils.format(Main.prefix + "&3Se ha encontrado una nueva versión del Plugin"));
-                        player.sendMessage(TextUtils.format(Main.prefix + "&eDescarga en: &7" + Utils.SPIGOT_LINK));
+                        player.sendMessage(TextUtils.format(Main.prefix + "&eDescarga en: &7" + Utils.GITHUB_LINK));
                     }
                 });
             }

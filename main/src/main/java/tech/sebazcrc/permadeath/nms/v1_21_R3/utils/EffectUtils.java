@@ -42,7 +42,7 @@ public class EffectUtils {
 
     public static void setFollowRange(LivingEntity entity, double range) {
         if (entity == null) return;
-        AttributeInstance attr = entity.getAttribute(Attribute.MOVEMENT_SPEED);
+        AttributeInstance attr = entity.getAttribute(Attribute.FOLLOW_RANGE);
         if (attr != null) {
             attr.setBaseValue(range);
         }
