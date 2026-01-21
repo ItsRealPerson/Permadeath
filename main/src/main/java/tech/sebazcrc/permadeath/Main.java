@@ -68,6 +68,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     public static boolean DEBUG = false;
     public static boolean DISABLED_LINGERING = false;
     public static boolean SPEED_RUN_MODE = false;
+    public static boolean OPTIMIZE_SPAWNS = false;
     public static Main instance;
     public static String prefix = "";
     public static boolean runningPaperSpigot = false;
@@ -87,6 +88,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     public BeginningDataManager beData;
     public EndDataManager endData;
     public AbyssManager abyssManager;
+    public tech.sebazcrc.permadeath.util.BackupManager backupManager;
     private Map<Integer, Boolean> registeredDays = new HashMap<>();
     private ArrayList<Player> doneEffectPlayers = new ArrayList<>();
     private boolean loaded = false;
@@ -136,6 +138,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     @Override
     public void onEnable() {
         instance = this;
+        this.backupManager = new tech.sebazcrc.permadeath.util.BackupManager(this);
         runningFolia = isRunningFolia();
         this.lootManager = new tech.sebazcrc.permadeath.util.LootManager(this);
         
@@ -503,6 +506,17 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
                     }
                 }
             }
+            
+            // Día 70: Phantoms bombardean con parásitos
+            if (getDay() >= 70 && random.nextInt(200) == 0) { // Cada ~10 segundos de media
+                player.getWorld().getNearbyEntities(player.getLocation(), 40, 40, 40).stream()
+                    .filter(e -> e instanceof Phantom)
+                    .findFirst()
+                    .ifPresent(p -> {
+                        player.sendMessage(ChatColor.RED + "¡Un Phantom ha soltado algo sobre ti!");
+                        instance.getNmsHandler().spawnNMSCustomEntity("SculkParasite", null, p.getLocation(), CreatureSpawnEvent.SpawnReason.CUSTOM);
+                    });
+            }
         }
     }
 
@@ -725,8 +739,9 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
             getServer().getPluginManager().registerEvents(new SlotBlockListener(instance), instance);
             Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado cambios para el día &b40"));
 
-            if (Bukkit.getPluginManager().getPlugin("WorldEdit") == null) {
+            if (Bukkit.getPluginManager().getPlugin("WorldEdit") == null && Bukkit.getPluginManager().getPlugin("FastAsyncWorldEdit") == null) {
                 Bukkit.broadcastMessage(TextUtils.format(prefixStr + "&4&lNo se pudo registrar TheBeginning ya que no se ha encontrado el plugin &7WorldEdit"));
+                Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&c[DEBUG] Permadeath requiere WorldEdit o FastAsyncWorldEdit para The Beginning."));
                 Bukkit.broadcastMessage(TextUtils.format(prefixStr + "&7Si necesitas soporte entra a este discord: &e" + Utils.SPIGOT_LINK));
                 return;
             }
@@ -821,7 +836,11 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
         for (World w : Bukkit.getWorlds()) {
             if (dobleCap) {
-                w.setMonsterSpawnLimit(140);
+                if (runningFolia) {
+                    Bukkit.getGlobalRegionScheduler().execute(this, () -> w.setMonsterSpawnLimit(140));
+                } else {
+                    w.setMonsterSpawnLimit(140);
+                }
             }
 
             if (isRunningPaperSpigot()) {
@@ -966,6 +985,8 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
         c.save();
         c.load();
+        
+        OPTIMIZE_SPAWNS = instance.getConfig().getBoolean("Toggles.Optimizar-Mob-Spawns");
     }
 
     public void checkSpigotConfig() {
@@ -1011,6 +1032,11 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
                 if (health != null) health.setBaseValue(health.getBaseValue() * multiplier);
                 if (damage != null) damage.setBaseValue(damage.getBaseValue() * multiplier);
                 entity.setHealth(entity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue());
+
+                // Día 90+ Buffs Especiales
+                if (getDay() >= 90) {
+                    entity.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1));
+                }
             }
         }
     }

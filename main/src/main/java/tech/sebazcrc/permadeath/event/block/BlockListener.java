@@ -107,6 +107,11 @@ public class BlockListener implements Listener {
     @EventHandler
     public void onBreak(BlockBreakEvent e) {
 
+        if (Main.getInstance().getNetheriteBlock().isInfernalNetherite(e.getBlock().getLocation())) {
+            Main.getInstance().getNetheriteBlock().onBlockBreak(e);
+            return;
+        }
+
         if (Main.getInstance().getEndData() != null && Main.getInstance().getDay() >= 30) {
 
             EndDataManager ma = Main.getInstance().getEndData();

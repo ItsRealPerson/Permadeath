@@ -4,6 +4,7 @@ import org.bukkit.*;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
+import org.bukkit.entity.Monster;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -31,6 +32,64 @@ public class AbyssManager implements Listener {
     public AbyssManager(Main plugin) {
         this.plugin = plugin;
         this.abyssWorld = Bukkit.getWorld(WORLD_NAME);
+        startSpawnerTask();
+    }
+
+    private void startSpawnerTask() {
+        Runnable task = () -> {
+            if (abyssWorld == null) return;
+            
+            for (Player p : abyssWorld.getPlayers()) {
+                if (p.getGameMode() == GameMode.SPECTATOR) continue;
+                
+                // Cap local de mobs cerca del jugador
+                long nearbyMobs = p.getNearbyEntities(48, 48, 48).stream()
+                        .filter(e -> e instanceof Monster)
+                        .count();
+                
+                if (nearbyMobs < 15) {
+                    int toSpawn = 2 + new java.util.Random().nextInt(3);
+                    for (int i = 0; i < toSpawn; i++) {
+                        Location loc = findAbyssSpawnLocation(p.getLocation());
+                        if (loc != null) {
+                            spawnAbyssMob(loc);
+                        }
+                    }
+                }
+            }
+        };
+
+        if (Main.isRunningFolia()) {
+            Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, t -> task.run(), 100L, 100L); // Cada 5s
+        } else {
+            Bukkit.getScheduler().runTaskTimer(plugin, task, 100L, 100L);
+        }
+    }
+
+    private Location findAbyssSpawnLocation(Location base) {
+        java.util.Random random = new java.util.Random();
+        for (int i = 0; i < 10; i++) {
+            int x = base.getBlockX() + random.nextInt(31) - 15;
+            int z = base.getBlockZ() + random.nextInt(31) - 15;
+            int y = base.getBlockY() + random.nextInt(11) - 5;
+            
+            Location loc = new Location(base.getWorld(), x + 0.5, y, z + 0.5);
+            if (loc.getBlock().getType().isAir() && loc.clone().add(0, 1, 0).getBlock().getType().isAir() && loc.clone().add(0, -1, 0).getBlock().getType().isSolid()) {
+                if (loc.distanceSquared(base) > 10 * 10) return loc;
+            }
+        }
+        return null;
+    }
+
+    private void spawnAbyssMob(Location loc) {
+        String[] deepDarkMobs = {"SilentSeeker", "SculkParasite", "EchoArcher", "HollowGuard"};
+        String selected = deepDarkMobs[new java.util.Random().nextInt(deepDarkMobs.length)];
+        
+        org.bukkit.entity.Entity e = plugin.getNmsHandler().spawnNMSCustomEntity(selected, null, loc, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM);
+        if (e instanceof org.bukkit.entity.LivingEntity liv) {
+            liv.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.STRENGTH, Integer.MAX_VALUE, 2));
+            liv.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.RESISTANCE, Integer.MAX_VALUE, 1));
+        }
     }
 
     @EventHandler
@@ -237,6 +296,32 @@ public class AbyssManager implements Listener {
         } else {
             bar.setColor(currentPressure > 0.3 ? BarColor.BLUE : BarColor.YELLOW);
             bar.setProgress(Math.min(1.0, currentPressure));
+            
+            // --- INMERSIÓN SONORA Y VISUAL ---
+            if (currentPressure < 0.5) {
+                // Latido del corazón: más rápido cuanto menos presión
+                int heartbeatFreq = currentPressure < 0.2 ? 10 : 20; 
+                if (new java.util.Random().nextInt(heartbeatFreq) == 0) {
+                    player.playSound(player.getLocation(), Sound.ENTITY_WARDEN_HEARTBEAT, 0.8f, 0.8f);
+                }
+            }
+            
+            if (currentPressure < 0.3 && new java.util.Random().nextInt(60) == 0) {
+                player.playSound(player.getLocation(), Sound.ENTITY_WARDEN_LISTENING, 0.5f, 0.5f);
+            }
+
+            // Efecto visual de borde rojo (WorldBorder individual)
+            if (currentPressure < 0.2) {
+                if (player.getWorldBorder() == null || player.getWorldBorder().getSize() > 1000) {
+                    WorldBorder wb = Bukkit.createWorldBorder();
+                    wb.setCenter(player.getLocation());
+                    wb.setSize(1.0); // Tamaño minúsculo para forzar el tinte rojo de advertencia
+                    wb.setWarningDistance(100);
+                    player.setWorldBorder(wb);
+                }
+            } else if (player.getWorldBorder() != null) {
+                player.setWorldBorder(null); // Restaurar al normal
+            }
         }
         player.getPersistentDataContainer().set(new NamespacedKey(plugin, "abyss_pressure"), PersistentDataType.DOUBLE, currentPressure);
 
@@ -390,7 +475,7 @@ public class AbyssManager implements Listener {
             Location loc = event.getLocation();
             java.util.Random random = new java.util.Random();
             
-            if (random.nextInt(100) < 15) {
+            if (random.nextInt(100) < 35) {
                 String[] deepDarkMobs = {"SilentSeeker", "SculkParasite", "EchoArcher", "HollowGuard", "TwistedWarden"};
                 String selected = deepDarkMobs[random.nextInt(deepDarkMobs.length)];
                 
@@ -398,7 +483,11 @@ public class AbyssManager implements Listener {
                     selected = "SilentSeeker";
                 }
                 
-                plugin.getNmsHandler().spawnNMSCustomEntity(selected, null, loc, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM);
+                org.bukkit.entity.Entity e = plugin.getNmsHandler().spawnNMSCustomEntity(selected, null, loc, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM);
+                if (e instanceof org.bukkit.entity.LivingEntity liv) {
+                    liv.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.STRENGTH, Integer.MAX_VALUE, 2));
+                    liv.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.RESISTANCE, Integer.MAX_VALUE, 1));
+                }
             }
         }
     }

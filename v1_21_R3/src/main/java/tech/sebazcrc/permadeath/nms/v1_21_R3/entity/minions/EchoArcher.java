@@ -23,11 +23,11 @@ public class EchoArcher {
 
     public static Stray spawn(Location loc, Plugin plugin) {
         Stray stray = (Stray) loc.getWorld().spawnEntity(loc, EntityType.STRAY, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        stray.setCustomName("§b§lEcho Archer");
+        stray.setCustomName("§b§lArquero del Eco");
 
         InventoryUtils.setMainHand(stray, Material.BOW);
         InventoryUtils.clearDropChances(stray);
-        EffectUtils.setMaxHealth(stray, 40.0);
+        EffectUtils.setMaxHealth(stray, 180.0);
 
         Runnable archerTask = new Runnable() {
             int ticks = 0;
@@ -74,7 +74,7 @@ public class EchoArcher {
                     // Dañar entidades cercanas al punto (EXCLUYENDO AL ARQUERO)
                     point.getWorld().getNearbyEntities(point, 1.5, 1.5, 1.5).forEach(entity -> {
                         if (entity instanceof LivingEntity liv && !entity.equals(source)) {
-                            liv.damage(12.0, source); // 6 corazones
+                            liv.damage(20.0, source); // 10 corazones
                             liv.setVelocity(direction.clone().multiply(1.2).setY(0.5));
                         }
                     });

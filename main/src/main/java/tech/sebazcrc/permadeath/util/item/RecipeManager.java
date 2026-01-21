@@ -4,19 +4,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.ShapedRecipe;
-import org.bukkit.inventory.ShapelessRecipe;
+import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.RecipeChoice;
-import org.bukkit.inventory.SmithingTransformRecipe;
 import tech.sebazcrc.permadeath.Main;
-import tech.sebazcrc.permadeath.util.item.InfernalNetherite;
-import tech.sebazcrc.permadeath.util.item.PermadeathItems;
-import tech.sebazcrc.permadeath.util.item.NetheriteArmor;
-import tech.sebazcrc.permadeath.util.lib.ItemBuilder;
 import tech.sebazcrc.permadeath.util.TextUtils;
+import tech.sebazcrc.permadeath.util.lib.ItemBuilder;
 
 public class RecipeManager {
 
@@ -99,6 +91,9 @@ public class RecipeManager {
     }
 
     public void registerD60Recipes() {
+        registerBeginningRelic();
+        registerLifeOrb();
+
         if (!Main.instance.getConfig().getBoolean("Toggles.ExtendToDay90")) return;
 
         ShapedRecipe heart = new ShapedRecipe(new NamespacedKey(Main.instance, "abyssal_heart"), PermadeathItems.createAbyssalHeart());
@@ -127,7 +122,7 @@ public class RecipeManager {
     }
 
     private void registerBeginningRelic() {
-
+        Bukkit.getConsoleSender().sendMessage("[Permadeath-Debug] Registrando receta de Reliquia del Comienzo...");
         ItemStack s = PermadeathItems.createBeginningRelic();
 
         NamespacedKey key = new NamespacedKey(instance, "beginning_relic");

@@ -119,11 +119,30 @@ public class EntityEvents implements Listener {
     }
 
     @EventHandler
+    public void onRegen(EntityRegainHealthEvent e) {
+        if (!(e.getEntity() instanceof Player)) return;
+        if (Main.instance.getDay() < 80) return;
+
+        if (e.getRegainReason() == EntityRegainHealthEvent.RegainReason.SATIATED || e.getRegainReason() == EntityRegainHealthEvent.RegainReason.REGEN) {
+            e.setAmount(e.getAmount() / 2.0);
+        }
+    }
+
+    @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
         if (e.getEntity().getPersistentDataContainer().has(new NamespacedKey(Main.getInstance(), "pale_paragon"), PersistentDataType.BYTE)) {
             if (!(e.getDamager() instanceof Player) && !(e.getDamager() instanceof Projectile projectile && projectile.getShooter() instanceof Player)) {
                 e.setCancelled(true);
                 return;
+            }
+        }
+
+        // Día 90+ efectos al golpear
+        if (Main.instance.getDay() >= 90 && e.getDamager() instanceof Monster && e.getEntity() instanceof Player p) {
+            if (ThreadLocalRandom.current().nextInt(100) < 10) {
+                p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 20 * 10, 0));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 20 * 10, 0));
+                p.sendMessage(ChatColor.DARK_RED + "¡El ataque del monstruo te ha debilitado!");
             }
         }
 

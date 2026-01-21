@@ -72,10 +72,19 @@ public class PDCCommand implements CommandExecutor {
             case "accesorios" -> handleAccesorios(sender);
             case "abyss" -> handleAbyss(sender, args);
             case "recipes" -> handleRecipes(sender);
+            case "backup" -> handleBackup(sender);
             default -> sendHelp(sender);
         }
 
         return true;
+    }
+
+    private void handleBackup(CommandSender sender) {
+        if (!sender.hasPermission("permadeathcore.admin")) {
+            sender.sendMessage(ChatColor.RED + "No tienes permiso.");
+            return;
+        }
+        instance.backupManager.createBackup(sender);
     }
 
     private void handleRecipes(CommandSender sender) {
@@ -170,6 +179,12 @@ public class PDCCommand implements CommandExecutor {
                 p.sendMessage(TextUtils.format("&fMundos: &a" + instance.world.getName() + " / " + instance.endWorld.getName()));
             }
             case "toggle" -> { Main.DEBUG = !Main.DEBUG; p.sendMessage("Debug: " + Main.DEBUG); }
+            case "optimize_spawns" -> {
+                Main.OPTIMIZE_SPAWNS = !Main.OPTIMIZE_SPAWNS;
+                instance.getConfig().set("Toggles.Optimizar-Mob-Spawns", Main.OPTIMIZE_SPAWNS);
+                instance.saveConfig();
+                p.sendMessage(TextUtils.format(instance.prefix + "&eOptimizar spawns: " + (Main.OPTIMIZE_SPAWNS ? "&aActivado" : "&cDesactivado")));
+            }
             case "health" -> p.sendMessage("Vida máxima: " + NetheriteArmor.getAvailableMaxHealth(p));
             case "module" -> NMS.spawnDeathModule(p.getLocation());
             case "removegaps" -> {
@@ -231,26 +246,71 @@ public class PDCCommand implements CommandExecutor {
 
     private void handleStorm(CommandSender sender, String[] args) {
         if (!sender.hasPermission("permadeathcore.admin")) return;
-        if (args.length < 3) { sender.sendMessage(TextUtils.format("&c/pdc storm <addHours/removeHours> <cantidad>")); return; }
+        if (args.length < 4) { 
+            sender.sendMessage(TextUtils.format("&cUso: /pdc storm <add/remove> <cantidad> <h/m>")); 
+            return; 
+        }
+        
         try {
-            int hours = Math.max(1, Integer.parseInt(args[2]));
-            String op = args[1];
+            String op = args[1].toLowerCase();
+            int amount = Integer.parseInt(args[2]);
+            String unit = args[3].toLowerCase();
+            
+            int seconds;
+            String unitName;
+            
+            if (unit.startsWith("h")) {
+                seconds = amount * 3600;
+                unitName = "horas";
+            } else if (unit.startsWith("m")) {
+                seconds = amount * 60;
+                unitName = "minutos";
+            } else {
+                sender.sendMessage(TextUtils.format("&cUnidad inválida. Usa 'h' (horas) o 'm' (minutos)."));
+                return;
+            }
+
             for (World w : Bukkit.getWorlds().stream().filter(world -> world.getEnvironment() == World.Environment.NORMAL).toList()) {
-                int current = w.getWeatherDuration() / 20;
-                int newValue = op.equalsIgnoreCase("addHours") ? current + (hours * 3600) : Math.max(1, current - (hours * 3600));
+                int currentTicks = w.getWeatherDuration(); // Ticks
+                int ticksToAdd = seconds * 20;
                 
-                if (Main.isRunningFolia()) {
-                    Bukkit.getGlobalRegionScheduler().execute(instance, () -> {
-                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "weather thunder");
-                        w.setWeatherDuration(newValue * 20);
-                    });
+                int newTicks;
+                if (op.equals("add")) {
+                    newTicks = currentTicks + ticksToAdd;
+                } else if (op.equals("remove")) {
+                    newTicks = Math.max(0, currentTicks - ticksToAdd);
                 } else {
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "weather thunder");
-                    w.setWeatherDuration(newValue * 20);
+                    sender.sendMessage(TextUtils.format("&cOperación inválida. Usa 'add' o 'remove'."));
+                    return;
+                }
+                
+                Runnable updateWeather = () -> {
+                    if (newTicks > 0) {
+                        w.setStorm(true);
+                        w.setThundering(true);
+                        w.setWeatherDuration(newTicks);
+                        w.setThunderDuration(newTicks);
+                    } else {
+                        w.setStorm(false);
+                        w.setThundering(false);
+                        w.setWeatherDuration(0);
+                        w.setThunderDuration(0);
+                    }
+                };
+
+                if (Main.isRunningFolia()) {
+                    Bukkit.getGlobalRegionScheduler().execute(instance, updateWeather);
+                } else {
+                    updateWeather.run();
                 }
             }
-            sender.sendMessage(TextUtils.format("&aTormenta actualizada."));
-        } catch (Exception e) { sender.sendMessage(TextUtils.format("&cError: Cantidad inválida.")); }
+            
+            String action = op.equals("add") ? "añadido" : "removido";
+            sender.sendMessage(TextUtils.format("&aSe han " + action + " " + amount + " " + unitName + " a la tormenta."));
+            
+        } catch (NumberFormatException e) { 
+            sender.sendMessage(TextUtils.format("&cError: La cantidad debe ser un número entero.")); 
+        }
     }
 
     private void handleDias(CommandSender sender) {
@@ -372,6 +432,7 @@ public class PDCCommand implements CommandExecutor {
             sender.sendMessage(ChatColor.YELLOW + "/pdc spawn <mob> " + ChatColor.GRAY + "(Spawnear mobs custom)");
             sender.sendMessage(ChatColor.YELLOW + "/pdc storm <add/remove> <h> " + ChatColor.GRAY + "(Gestionar tormentas)");
             sender.sendMessage(ChatColor.YELLOW + "/pdc cambiarDia <d> " + ChatColor.GRAY + "(Cambiar el día)");
+            sender.sendMessage(ChatColor.YELLOW + "/pdc backup " + ChatColor.GRAY + "(Crear respaldo del mundo)");
             sender.sendMessage(ChatColor.YELLOW + "/pdc reload/debug/afk/boss/event/speedrun/beginning/setupBeginning");
         }
     }

@@ -8,7 +8,6 @@ import org.bukkit.block.banner.PatternType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -19,7 +18,6 @@ import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
@@ -28,6 +26,7 @@ import tech.sebazcrc.permadeath.task.GatoGalacticoTask;
 import tech.sebazcrc.permadeath.util.NMS;
 import tech.sebazcrc.permadeath.util.TextUtils;
 import tech.sebazcrc.permadeath.util.VersionManager;
+import tech.sebazcrc.permadeath.util.item.InfernalNetherite;
 import tech.sebazcrc.permadeath.util.item.NetheriteArmor;
 import tech.sebazcrc.permadeath.util.item.PermadeathItems;
 import tech.sebazcrc.permadeath.util.lib.ItemBuilder;
@@ -53,15 +52,11 @@ public class SpawnListener implements Listener {
     private EntityType PIGMAN;
     private Class pigmanClass;
 
-    // Spawns
-    private boolean optimizeSpawns;
-
     public SpawnListener(Main instance) {
 
         this.plugin = instance;
         this.random = new SplittableRandom();
         this.gatosSupernova = new ArrayList<>();
-        this.optimizeSpawns = instance.getConfig().getBoolean("Toggles.Optimizar-Mob-Spawns");
 
         if (VersionManager.isRunningPostNetherUpdate()) {
             this.PIGMAN = EntityType.valueOf("ZOMBIFIED_PIGLIN");
@@ -89,7 +84,7 @@ public class SpawnListener implements Listener {
         World world = location.getWorld();
         CreatureSpawnEvent.SpawnReason reason = event.getSpawnReason();
 
-        if (optimizeSpawns && world.getEnvironment() == World.Environment.NORMAL) {
+        if (Main.OPTIMIZE_SPAWNS && world.getEnvironment() == World.Environment.NORMAL) {
             if (reason == CreatureSpawnEvent.SpawnReason.NATURAL || reason == CreatureSpawnEvent.SpawnReason.CUSTOM) {
                 if (eventEntityType == EntityType.COD || eventEntityType == EntityType.VINDICATOR || eventEntityType == EntityType.GUARDIAN || eventEntityType == EntityType.ELDER_GUARDIAN || eventEntityType == PIGMAN || eventEntityType == EntityType.EVOKER || eventEntityType == EntityType.CAVE_SPIDER || eventEntityType == EntityType.SKELETON || eventEntityType == EntityType.BLAZE) {
                     if (Arrays.stream(location.getChunk().getEntities())
@@ -102,7 +97,7 @@ public class SpawnListener implements Listener {
             }
         }
 
-        if (optimizeSpawns && world.getEnvironment() != World.Environment.THE_END && entity instanceof Monster) {
+        if (Main.OPTIMIZE_SPAWNS && world.getEnvironment() != World.Environment.THE_END && entity instanceof Monster) {
             Player nearest = null;
             double minDist = 128 * 128;
             for (Player p : world.getPlayers()) {
@@ -132,6 +127,11 @@ public class SpawnListener implements Listener {
 
         spawnBeginningMob(event);
         spawnNetheriteMob(event);
+        
+        // Logic for Nether Difficulty (Piglins & Reinforcements)
+        if (world.getEnvironment() == World.Environment.NETHER && plugin.getDay() >= 30) {
+            handleNetherDifficulty(event);
+        }
 
         // Iniciar lógica regional/por entidad
         startRegionalEntityTask(entity);
@@ -177,12 +177,6 @@ public class SpawnListener implements Listener {
 
             if (event.getEntityType() == PIGMAN) { // Pigman = 1.15 y 1.14 PIG_ZOMBIE | 1.16 ZOMBIFIED_PIGLIN
 
-                if (plugin.getDay() >= 60) {
-
-                    event.setCancelled(true);
-                    return;
-                }
-
                 LivingEntity pigman = entity;
 
                 try {
@@ -206,10 +200,6 @@ public class SpawnListener implements Listener {
                 if (plugin.getDay() >= 40) {
 
                     if (event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.CUSTOM) return;
-                    if (plugin.getDay() >= 60 && world.getEnvironment() == World.Environment.NETHER) {
-                        event.setCancelled(true);
-                        return;
-                    }
 
                     int randomProb = random.nextInt(99) + 1;
                     int cantidad = (plugin.getDay() < 50 ? 5 : 20);
@@ -241,8 +231,12 @@ public class SpawnListener implements Listener {
                             bee.setCollidable(true);
 
                             runTaskEntityLater(bee, () -> {
-                                pigman.teleport(bee.getLocation());
-                                bee.addPassenger(pigman);
+                                if (Main.isRunningFolia()) {
+                                    pigman.teleportAsync(bee.getLocation()).thenAccept(b -> bee.addPassenger(pigman));
+                                } else {
+                                    pigman.teleport(bee.getLocation());
+                                    bee.addPassenger(pigman);
+                                }
                             }, 10L);
                         }
 
@@ -287,17 +281,30 @@ public class SpawnListener implements Listener {
 
                             runTaskEntityLater(pig, () -> {
                                 pig.setSaddle(true);
-                                pigman.teleport(pig.getLocation());
-                                pig.addPassenger(pigman);
+                                if (Main.isRunningFolia()) {
+                                    pigman.teleportAsync(pig.getLocation()).thenAccept(b -> pig.addPassenger(pigman));
+                                } else {
+                                    pigman.teleport(pig.getLocation());
+                                    pig.addPassenger(pigman);
+                                }
                             }, 10L);
                         }
                     } else {
 
                         EntityEquipment eq = pigman.getEquipment();
-                        eq.setHelmet(new ItemStack(Material.DIAMOND_HELMET));
-                        eq.setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
-                        eq.setLeggings(new ItemStack(Material.DIAMOND_LEGGINGS));
-                        eq.setBoots(new ItemStack(Material.DIAMOND_BOOTS));
+                        if (plugin.getDay() < 60) {
+                            eq.setHelmet(new ItemStack(Material.DIAMOND_HELMET));
+                            eq.setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
+                            eq.setLeggings(new ItemStack(Material.DIAMOND_LEGGINGS));
+                            eq.setBoots(new ItemStack(Material.DIAMOND_BOOTS));
+                        } else {
+                            eq.setHelmet(InfernalNetherite.craftNetheriteHelmet());
+                            eq.setChestplate(InfernalNetherite.craftNetheriteChest());
+                            eq.setLeggings(InfernalNetherite.craftNetheriteLegs());
+                            eq.setBoots(InfernalNetherite.craftNetheriteBoots());
+                            pigman.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1));
+                            pigman.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 1));
+                        }
                     }
                 }
             }
@@ -1119,26 +1126,12 @@ public class SpawnListener implements Listener {
             if (cat == null || !cat.isValid() || !gatosSupernova.contains(cat)) return;
 
             int configPower = plugin.getConfig().getInt("Toggles.Gatos-Supernova.Explosion-Power");
-            // Limitar el poder para evitar crashes, 200 es excesivo. Un valor de 50 ya es masivo.
-            float power = (float) Math.min(configPower, 50.0);
+            float power = (float) configPower;
             boolean breakBlocks = plugin.getConfig().getBoolean("Toggles.Gatos-Supernova.Destruir-Bloques");
             boolean placeFire = plugin.getConfig().getBoolean("Toggles.Gatos-Supernova.Fuego");
 
-            if (configPower > 50) {
-                Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[Permadeath] Se ha limitado la explosion del Gato Supernova a 50 para prevenir lag masivo (Config: " + configPower + ")");
-            }
-
             w.createExplosion(loc, power, placeFire, breakBlocks, cat);
             
-            // Si el poder era muy alto, simulamos el daño extra a entidades sin romper bloques para no laguear
-            if (configPower > 50) {
-                for (Entity e : w.getNearbyEntities(loc, power * 2, power * 2, power * 2)) {
-                    if (e instanceof LivingEntity && e != cat) {
-                        ((LivingEntity) e).damage(configPower / 2.0);
-                    }
-                }
-            }
-
             gatosSupernova.remove(cat);
             cat.remove();
         }, 20 * 30);
@@ -1412,7 +1405,6 @@ public class SpawnListener implements Listener {
     private void spawnBeginningMob(CreatureSpawnEvent e) {
 
         World beginningWorld = e.getLocation().getWorld();
-        Location location = e.getLocation();
 
         if (plugin.getDay() < 0) return;
         if (plugin.getBeginningManager() == null) return;
@@ -1420,53 +1412,72 @@ public class SpawnListener implements Listener {
         if (!beginningWorld.getName().equalsIgnoreCase(plugin.getBeginningManager().getBeginningWorld().getName()))
             return;
 
+        // Cancel natural spawns to let BeginningManager handle mob population control
         if (e.getSpawnReason() != CreatureSpawnEvent.SpawnReason.SPAWNER && e.getSpawnReason() != CreatureSpawnEvent.SpawnReason.CUSTOM) {
             e.setCancelled(true);
-            if (beginningWorld.getLivingEntities().size() > 70) {
-                return;
+        }
+    }
+
+    private void handleNetherDifficulty(CreatureSpawnEvent e) {
+        LivingEntity entity = e.getEntity();
+        
+        // 1. Reinforcements (More Mobs)
+        if (e.getSpawnReason() == CreatureSpawnEvent.SpawnReason.NATURAL) {
+            if (random.nextInt(100) < 50) { // 50% chance
+                int amount = random.nextInt(3) + 2; // 2 to 4 extra mobs
+                for (int i = 0; i < amount; i++) {
+                    plugin.getNmsHandler().spawnNMSEntity(entity.getType().name(), entity.getType(), e.getLocation().add(random.nextInt(7) - 3, 0, random.nextInt(7) - 3), CreatureSpawnEvent.SpawnReason.CUSTOM);
+                }
             }
+        }
 
-            int p = random.nextInt(101);
-
-            if (p <= 60) {
-                WitherSkeleton skeleton = (WitherSkeleton) plugin.getNmsHandler().spawnNMSEntity("SkeletonWither", EntityType.WITHER_SKELETON, e.getLocation(), CreatureSpawnEvent.SpawnReason.CUSTOM);
-
-                skeleton.getEquipment().setChestplate(new LeatherArmorBuilder(Material.LEATHER_CHESTPLATE, 1).setColor(Color.fromRGB(255, 182, 193)).build());
-                skeleton.getEquipment().setBoots(new LeatherArmorBuilder(Material.LEATHER_BOOTS, 1).setColor(Color.fromRGB(255, 182, 193)).build());
-
-                int enchantLevel = (int) (Math.random() * 5) + 1;
-                skeleton.getEquipment().setItemInMainHand(new ItemBuilder(PermadeathItems.craftNetheriteSword()).addEnchant(Enchantment.SHARPNESS, enchantLevel).build());
-
-                skeleton.getEquipment().setChestplateDropChance(0);
-                skeleton.getEquipment().setBootsDropChance(0);
-                skeleton.getEquipment().setItemInMainHandDropChance(0);
-
-                skeleton.setCustomName(TextUtils.format("&6Wither Skeleton Rosáceo"));
-                skeleton.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 2));
-                plugin.getNmsAccessor().setMaxHealth(skeleton, 100.0D, true);
+        // 2. Piglin Buffs
+        if (entity.getType() == EntityType.PIGLIN || entity.getType() == EntityType.PIGLIN_BRUTE) {
+            PiglinAbstract piglin = (PiglinAbstract) entity;
+            EntityEquipment eq = piglin.getEquipment();
+            
+            if (plugin.getDay() >= 30) {
+                if (plugin.getDay() < 60) {
+                    eq.setHelmet(new ItemStack(Material.DIAMOND_HELMET));
+                    eq.setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
+                    eq.setLeggings(new ItemStack(Material.DIAMOND_LEGGINGS));
+                    eq.setBoots(new ItemStack(Material.DIAMOND_BOOTS));
+                } else {
+                    eq.setHelmet(InfernalNetherite.craftNetheriteHelmet());
+                    eq.setChestplate(InfernalNetherite.craftNetheriteChest());
+                    eq.setLeggings(InfernalNetherite.craftNetheriteLegs());
+                    eq.setBoots(InfernalNetherite.craftNetheriteBoots());
+                }
+                
+                if (piglin.getType() == EntityType.PIGLIN) {
+                    eq.setItemInMainHand(new ItemStack(Material.GOLDEN_SWORD));
+                }
             }
-
-            if (p > 60 && p <= 75) {
-                Vex vex = beginningWorld.spawn(location, Vex.class);
-                vex.getEquipment().setHelmet(new ItemBuilder(Material.valueOf("HONEY_BLOCK")).addEnchant(Enchantment.PROTECTION, 4).build());
-                vex.getEquipment().setItemInMainHand(new ItemBuilder(Material.END_CRYSTAL).addEnchant(Enchantment.SHARPNESS, 15).addEnchant(Enchantment.KNOCKBACK, 10).build());
-                vex.getEquipment().setHelmetDropChance(0);
-                vex.getEquipment().setItemInMainHandDropChance(0);
-
-                vex.setCustomName(TextUtils.format("&6Vex Definitivo"));
+            
+            if (plugin.getDay() >= 50) {
+                // Enchantments
+                if (plugin.getDay() < 60) {
+                    if (eq.getHelmet() != null) eq.setHelmet(new ItemBuilder(eq.getHelmet()).addEnchant(Enchantment.PROTECTION, 4).build());
+                    if (eq.getChestplate() != null) eq.setChestplate(new ItemBuilder(eq.getChestplate()).addEnchant(Enchantment.PROTECTION, 4).build());
+                }
+                
+                // Weapon Upgrade
+                if (piglin.getType() == EntityType.PIGLIN) {
+                    eq.setItemInMainHand(new ItemBuilder(Material.DIAMOND_SWORD).addEnchant(Enchantment.SHARPNESS, 3).build());
+                } else {
+                    eq.setItemInMainHand(new ItemBuilder(Material.NETHERITE_AXE).addEnchant(Enchantment.SHARPNESS, 5).build());
+                }
+                
+                piglin.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1));
+                piglin.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 0));
             }
-
-            if (p > 75 && p <= 79) {
-                Ghast ghast = (Ghast) plugin.getNmsHandler().spawnCustomGhast(e.getLocation().add(0, 5, 0), CreatureSpawnEvent.SpawnReason.CUSTOM, true);
-                plugin.getNmsAccessor().setMaxHealth(ghast, 150.0D, true);
-                ghast.setCustomName(TextUtils.format("&6Ender Ghast Definitivo"));
-            }
-
-            if (p >= 80) {
-                Creeper c = plugin.getFactory().spawnEnderQuantumCreeper(e.getLocation(), null);
-                plugin.getNmsAccessor().setMaxHealth(c, 100.0D, true);
-                c.setExplosionRadius(7);
-            }
+            
+            // Drop Chance Override
+            eq.setHelmetDropChance(0f);
+            eq.setChestplateDropChance(0f);
+            eq.setLeggingsDropChance(0f);
+            eq.setBootsDropChance(0f);
+            eq.setItemInMainHandDropChance(0f);
         }
     }
 
@@ -1494,20 +1505,3 @@ public class SpawnListener implements Listener {
         return new ItemBuilder(mat);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

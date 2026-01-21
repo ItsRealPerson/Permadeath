@@ -39,11 +39,8 @@ public class BeginningLootTable {
     public void populateChest(Chest chest) {
 
         World w = chest.getWorld();
-        Inventory inv = chest.getBlockInventory();
-        if (!w.getName().equalsIgnoreCase("pdc_the_beginning")) return;
-        if (inv.contains(Material.DIAMOND_PICKAXE)) {
-            return;
-        }
+        if (!w.getName().toLowerCase().endsWith("beginning")) return;
+        
         roll(chest);
     }
 
@@ -52,6 +49,7 @@ public class BeginningLootTable {
     }
 
     private void roll(Chest c) {
+        alreadyRolled.clear();
         int rollTimes = random.nextInt(3) + 1;
         for (int i = 0; i < rollTimes; i++) {
             generate(c);

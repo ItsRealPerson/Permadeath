@@ -34,10 +34,13 @@ public class BeginningManager implements Listener {
         this.data = main.getBeData();
         this.beginningWorld = Bukkit.getWorld(WORLD_NAME);
 
+        Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] BeginningManager inicializado correctamente.");
+
         main.getServer().getPluginManager().registerEvents(this, main);
         
         if (main.getDay() >= 40) {
             loadWorld();
+            startSpawnerTask();
         }
     }
 
@@ -84,6 +87,11 @@ public class BeginningManager implements Listener {
                 Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[Permadeath] Error al cargar The Beginning: " + e.getMessage());
             }
         }
+
+        if (this.beginningWorld != null) {
+            this.beginningWorld.setSpawnLocation(0, 100, 0);
+            setupWorldDefaults();
+        }
     }
 
     private void setupWorldDefaults() {
@@ -116,9 +124,9 @@ public class BeginningManager implements Listener {
         return beginningWorld;
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onMove(org.bukkit.event.player.PlayerMoveEvent e) {
-        if (beginningWorld == null || main.getDay() < 50) return;
+        if (beginningWorld == null) return;
         
         Block b = e.getTo().getBlock();
         if (b.getType() == Material.END_GATEWAY) {
@@ -129,32 +137,28 @@ public class BeginningManager implements Listener {
             boolean isBeginning = w.getName().endsWith("permadeath_beginning") || w.getName().endsWith("permadeath/beginning");
             
             if (isOverworld || isBeginning) {
-                Bukkit.getConsoleSender().sendMessage(ChatColor.AQUA + "[Permadeath-Debug] Sensor de proximidad activado para " + p.getName());
-                handlePortalTeleport(p, w, null);
+                handlePortalTeleport(p, w, e);
             }
         }
     }
 
     // --- SISTEMA DE TELETRANSPORTE REFORZADO ---
 
-    @EventHandler(priority = EventPriority.LOWEST)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onPaperGateway(PlayerTeleportEndGatewayEvent e) {
-        Bukkit.getConsoleSender().sendMessage(ChatColor.LIGHT_PURPLE + "[Permadeath-Debug] PaperGateway detectado para " + e.getPlayer().getName());
         handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onVanillaTeleport(PlayerTeleportEvent e) {
         if (e.getCause() == PlayerTeleportEvent.TeleportCause.END_GATEWAY) {
-            Bukkit.getConsoleSender().sendMessage(ChatColor.LIGHT_PURPLE + "[Permadeath-Debug] VanillaTeleport detectado para " + e.getPlayer().getName());
             handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
         }
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onPortalEvent(PlayerPortalEvent e) {
         if (e.getCause() == PlayerTeleportEvent.TeleportCause.END_GATEWAY) {
-            Bukkit.getConsoleSender().sendMessage(ChatColor.LIGHT_PURPLE + "[Permadeath-Debug] PortalEvent detectado para " + e.getPlayer().getName());
             handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
         }
     }
@@ -164,6 +168,18 @@ public class BeginningManager implements Listener {
             Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[Permadeath-Debug] Abortado: beginningWorld es NULL");
             return;
         }
+
+        // Cooldown Check
+        if (p.hasMetadata("pdc_tp_cooldown")) {
+            long lastTp = p.getMetadata("pdc_tp_cooldown").get(0).asLong();
+            if (System.currentTimeMillis() - lastTp < 2000) { // 2 seconds cooldown
+                if (event != null && !(event instanceof org.bukkit.event.player.PlayerMoveEvent)) {
+                    event.setCancelled(true);
+                }
+                return;
+            }
+        }
+        p.setMetadata("pdc_tp_cooldown", new org.bukkit.metadata.FixedMetadataValue(main, System.currentTimeMillis()));
 
         boolean isOverworld = fromWorld.getEnvironment() == World.Environment.NORMAL;
         boolean isBeginning = fromWorld.getName().endsWith("permadeath_beginning") || fromWorld.getName().endsWith("permadeath/beginning");
@@ -186,14 +202,24 @@ public class BeginningManager implements Listener {
             return;
         }
 
+        Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[Permadeath-Debug] Intentando teleportar " + p.getName() + " desde " + fromWorld.getName());
+
         // 3. Teletransporte al Beginning
         if (isOverworld) {
             if (event != null) event.setCancelled(true);
-            Location to = beginningWorld.getSpawnLocation();
+            
+            // Fixed Spawn Location
+            Location to = new Location(beginningWorld, 0.5, 101, 3.5); 
+            to.setYaw(180f); 
+
             if (Main.isRunningFolia()) {
-                p.teleportAsync(to).thenAccept(success -> {
-                    if (success) p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e."));
-                });
+                p.getScheduler().run(main, task -> {
+                    p.teleportAsync(to).thenAccept(success -> {
+                        if (success) {
+                            p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e."));
+                        }
+                    });
+                }, null);
             } else {
                 p.teleport(to);
                 p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e."));
@@ -203,9 +229,17 @@ public class BeginningManager implements Listener {
         // 4. Teletransporte de vuelta al Overworld
         if (isBeginning) {
             if (event != null) event.setCancelled(true);
-            Location to = main.world.getSpawnLocation();
+            
+            Location target = data.getOverWorldPortal();
+            if (target == null) target = main.world.getSpawnLocation();
+            
+            // Offset to avoid infinite loop
+            Location to = target.clone().add(3.5, 0, 0.5);
+            
             if (Main.isRunningFolia()) {
-                p.teleportAsync(to);
+                p.getScheduler().run(main, task -> {
+                    p.teleportAsync(to);
+                }, null);
             } else {
                 p.teleport(to);
             }
@@ -215,8 +249,8 @@ public class BeginningManager implements Listener {
     @EventHandler
     public void onInteract(org.bukkit.event.player.PlayerInteractEvent e) {
         if (beginningWorld == null || !e.getPlayer().getWorld().equals(beginningWorld)) return;
-        if (e.getClickedBlock() != null && e.getClickedBlock().getState() instanceof Chest chest) {
-            populateChest(chest);
+        if (e.getClickedBlock() != null && e.getClickedBlock().getState() instanceof Chest holder) {
+            populateChest(holder);
         }
     }
 
@@ -230,6 +264,76 @@ public class BeginningManager implements Listener {
     }
 
     public void generatePortal(boolean overworld, Location location) {
+        if (!overworld) {
+            // Force inner portal to spawn at 0, 100, 0
+            location = new Location(beginningWorld, 0, 100, 0);
+            beginningWorld.setSpawnLocation(0, 100, 0);
+        }
         WorldEditPortal.generatePortal(overworld, location);
+    }
+
+    private void startSpawnerTask() {
+        Runnable spawner = () -> {
+            if (beginningWorld == null) return;
+            
+            for (Player p : beginningWorld.getPlayers()) {
+                if (p.getGameMode() == GameMode.SPECTATOR) continue;
+                
+                // Count mobs near player to avoid overcrowding
+                long nearbyMobs = p.getNearbyEntities(30, 30, 30).stream()
+                        .filter(e -> e instanceof Monster || e instanceof Ghast)
+                        .count();
+                
+                if (nearbyMobs < 10) {
+                    Location spawnLoc = findSpawnLocation(p.getLocation());
+                    if (spawnLoc != null) {
+                        BeginningMobs.spawnMob(spawnLoc);
+                    }
+                }
+            }
+        };
+
+        if (Main.isRunningFolia()) {
+            Bukkit.getGlobalRegionScheduler().runAtFixedRate(main, t -> {
+                if (beginningWorld == null) return;
+                for (Player p : beginningWorld.getPlayers()) {
+                     p.getScheduler().run(main, task -> {
+                         if (p.getGameMode() == GameMode.SPECTATOR) return;
+                         long nearbyMobs = p.getNearbyEntities(30, 30, 30).stream()
+                                 .filter(e -> e instanceof Monster || e instanceof Ghast)
+                                 .count();
+                         if (nearbyMobs < 10) {
+                             Location spawnLoc = findSpawnLocation(p.getLocation());
+                             if (spawnLoc != null) {
+                                 BeginningMobs.spawnMob(spawnLoc);
+                             }
+                         }
+                     }, null);
+                }
+            }, 100L, 100L);
+        } else {
+            Bukkit.getScheduler().runTaskTimer(main, spawner, 100L, 100L);
+        }
+    }
+
+    private Location findSpawnLocation(Location center) {
+        java.util.SplittableRandom random = new java.util.SplittableRandom();
+        for (int i = 0; i < 10; i++) {
+            int x = random.nextInt(20) - 10;
+            int z = random.nextInt(20) - 10;
+            int y = random.nextInt(10) - 5;
+            
+            Location loc = center.clone().add(x, y, z);
+            
+            // Safe zone check: Don't spawn near portal (0, 100, 0)
+            if (loc.distanceSquared(new Location(beginningWorld, 0, 100, 0)) < 25 * 25) continue;
+
+            if (loc.getBlock().getType() == Material.AIR && loc.clone().add(0, 1, 0).getBlock().getType() == Material.AIR) {
+                if (loc.clone().add(0, -1, 0).getBlock().getType().isSolid()) {
+                    return loc;
+                }
+            }
+        }
+        return null;
     }
 }

@@ -91,6 +91,22 @@ public class PlayerListener implements Listener {
     public void onInteract(PlayerInteractEvent e) {
         if (e.getAction().name().contains("RIGHT_CLICK") && e.getItem() != null) {
             ItemStack item = e.getItem();
+            
+            // Placement of Infernal Netherite Block
+            if (e.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK && e.getClickedBlock() != null) {
+                if (item.isSimilar(PermadeathItems.createInfernalNetheriteBlock()) || (item.hasItemMeta() && item.getItemMeta().getDisplayName().contains("Infernal Netherite Block"))) {
+                    Block target = e.getClickedBlock().getRelative(e.getBlockFace());
+                    if (target.getType().isAir() || target.isLiquid()) {
+                        Main.getInstance().getNetheriteBlock().placeCustomBlock(target.getLocation());
+                        if (e.getPlayer().getGameMode() != GameMode.CREATIVE) {
+                            item.setAmount(item.getAmount() - 1);
+                        }
+                        e.setCancelled(true);
+                        return;
+                    }
+                }
+            }
+
             if (item.isSimilar(PermadeathItems.createAbyssalHeart())) {
                 e.setCancelled(true);
                 Player p = e.getPlayer();
@@ -611,8 +627,8 @@ public class PlayerListener implements Listener {
                 }
 
                 if (!Main.instance.getBeData().generatedBeginningPortal()) {
-                    Main.instance.getBeginningManager().generatePortal(false, new Location(Main.instance.getBeginningManager().getBeginningWorld(), 50, 140, 50));
-                    Main.instance.getBeginningManager().getBeginningWorld().setSpawnLocation(new Location(Main.instance.getBeginningManager().getBeginningWorld(), 50, 140, 50));
+                    Main.instance.getBeginningManager().generatePortal(false, new Location(Main.instance.getBeginningManager().getBeginningWorld(), 0, 100, 0));
+                    Main.instance.getBeginningManager().getBeginningWorld().setSpawnLocation(new Location(Main.instance.getBeginningManager().getBeginningWorld(), 0, 100, 0));
                 }
             }
         }
@@ -1092,7 +1108,27 @@ public class PlayerListener implements Listener {
 
                 if (res.isSimilar(PermadeathItems.createBeginningRelic()) || res.isSimilar(PermadeathItems.createLifeOrb())) {
                     if (e.getWhoClicked() instanceof Player) {
-                        e.getInventory().setMatrix(clearMatrix());
+                        ItemStack[] matrix = e.getInventory().getMatrix();
+                        for (int i = 0; i < matrix.length; i++) {
+                            ItemStack item = matrix[i];
+                            if (item != null) {
+                                int amountToReduce = 1;
+                                
+                                if (res.isSimilar(PermadeathItems.createBeginningRelic())) {
+                                    if (item.getType() == Material.DIAMOND_BLOCK) amountToReduce = 32;
+                                } else if (res.isSimilar(PermadeathItems.createLifeOrb())) {
+                                    if (item.getType() != Material.HEART_OF_THE_SEA) amountToReduce = 64;
+                                }
+
+                                if (item.getAmount() > amountToReduce) {
+                                    item.setAmount(item.getAmount() - amountToReduce);
+                                } else {
+                                    matrix[i] = null;
+                                }
+                            }
+                        }
+                        e.getInventory().setMatrix(matrix);
+                        
                         Player p = (Player) e.getWhoClicked();
                         p.setItemOnCursor(res);
                     }
@@ -1157,6 +1193,8 @@ public class PlayerListener implements Listener {
                         if (s.getType() == Material.DIAMOND_BLOCK) {
                             if (s.getAmount() >= 32) {
                                 diamondBlocks++;
+                            } else {
+                                // Bukkit.getConsoleSender().sendMessage("[Permadeath-Debug] Diamond Block stack too small: " + s.getAmount());
                             }
                         }
                         if (PermadeathItems.isEndRelic(s)) {
@@ -1164,6 +1202,8 @@ public class PlayerListener implements Listener {
                         }
                     }
                 }
+
+                // Bukkit.getConsoleSender().sendMessage("[Permadeath-Debug] Checking Beginning Relic Craft: Diamonds=" + diamondBlocks + " (Req 4 stacks of 32), Relic=" + r);
 
                 if (diamondBlocks < 4 || r < 1) {
                     e.getInventory().setResult(null);

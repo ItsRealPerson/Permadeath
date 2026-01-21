@@ -43,19 +43,22 @@ public class CustomWarden implements Listener {
         Warden warden = (Warden) loc.getWorld().spawnEntity(loc, EntityType.WARDEN, CreatureSpawnEvent.SpawnReason.CUSTOM);
 
         // --- Configuración Visual y Base ---
-        warden.setCustomName("§3§lTwisted Warden");
+        warden.setCustomName("§3§lWarden Retorcido");
         warden.setCustomNameVisible(true);
         SpawnUtils.playSpawnEffects(loc);
 
         // --- Atributos Mejorados ---
-        // Vida de jefe real (500 de vida = 250 corazones)
-        EffectUtils.setMaxHealth(warden, 500.0);
-        // Daño físico absurdo (45 = 22.5 corazones, mata de un golpe sin armadura)
-        EffectUtils.setAttackDamage(warden, 45.0);
+        // Vida de jefe real (1200 de vida = 600 corazones)
+        EffectUtils.setMaxHealth(warden, 1200.0);
+        // Daño físico absurdo (60 = 30 corazones)
+        EffectUtils.setAttackDamage(warden, 60.0);
         // Resistencia al empuje total
         EffectUtils.setKnockbackResistance(warden, 1.0);
         // Un poco más rápido que el Warden normal (que ya es rápido)
         EffectUtils.setMovementSpeed(warden, 0.35);
+
+        EffectUtils.addPotionEffect(warden, new PotionEffect(PotionEffectType.RESISTANCE, Integer.MAX_VALUE, 2));
+        EffectUtils.addPotionEffect(warden, new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 2));
 
         // --- Comportamiento y Habilidades (IA Manual) ---
         Runnable wardenTask = new Runnable() {
@@ -95,8 +98,8 @@ public class CustomWarden implements Listener {
                     }
 
                     // 4. Habilidad Definitiva: Invocar Minions Custom
-                    // Se activa si tiene menos del 80% de vida
-                    if (warden.getHealth() < 400.0 && tickCounter % 150 == 0) { // Cada 15 segundos
+                    // Se activa si tiene menos de 1000 de vida
+                    if (warden.getHealth() < 1000.0 && tickCounter % 150 == 0) { // Cada 15 segundos
                         summonCustomMinions(warden);
                     }
 
@@ -113,7 +116,7 @@ public class CustomWarden implements Listener {
                 source.getWorld().spawnParticle(Particle.SONIC_BOOM, source.getEyeLocation(), 1, 0, 0, 0, 0);
 
                 // Daño mágico que atraviesa armadura
-                target.damage(15.0, source); // 7.5 corazones
+                target.damage(25.0, source); // 12.5 corazones
                 target.setVelocity(target.getLocation().toVector().subtract(source.getLocation().toVector()).normalize().multiply(2.5));
                 target.sendMessage("§3§l" + source.getCustomName() + " §bte ha golpeado con su rugido sónico!");
             }
@@ -141,7 +144,7 @@ public class CustomWarden implements Listener {
                 // También invocamos almas (Vexes) siempre como apoyo
                 for (int i = 0; i < 2; i++) {
                     Vex soul = (Vex) source.getWorld().spawnEntity(source.getLocation().add(0, 2, 0), EntityType.VEX);
-                    soul.setCustomName("§bTormented Soul");
+                    soul.setCustomName("§b§lAlma Tormentada");
                     soul.setLifeTicks(20 * 30);
                     EffectUtils.setAttackDamage(soul, 8.0);
                 }

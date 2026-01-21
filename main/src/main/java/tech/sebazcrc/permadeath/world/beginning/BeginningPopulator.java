@@ -14,6 +14,10 @@ import tech.sebazcrc.permadeath.world.WorldEditPortal;
 import java.util.Random;
 import java.util.SplittableRandom;
 
+import org.bukkit.BlockChangeDelegate;
+import org.bukkit.TreeType;
+import org.bukkit.block.data.BlockData;
+
 public class BeginningPopulator extends BlockPopulator {
 
     private static final int HEIGHT = 100;
@@ -27,13 +31,6 @@ public class BeginningPopulator extends BlockPopulator {
 
         int startX = chunkX << 4;
         int startZ = chunkZ << 4;
-
-        // 1. Suelo de Bedrock
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-                limitedRegion.setType(startX + x, 0, startZ + z, Material.BEDROCK);
-            }
-        }
 
         // 2. Islas de Purpur
         for (int x = 0; x < 16; x++) {
@@ -53,12 +50,28 @@ public class BeginningPopulator extends BlockPopulator {
                 }
 
                 int chance = Main.getInstance().getConfig().getInt("Toggles.TheBeginning.YticGenerateChance", 100000);
+                // Fix: Config comment says value is divided by 256. Code was using raw value.
+                if (chance >= 256) chance = chance / 256;
+                if (chance < 1) chance = 1;
+
                 if (splittableRandom.nextInt(chance) == 0 && x == 8 && z == 8) {
+                    // Bukkit.getConsoleSender().sendMessage("[Permadeath-Debug] Scheduling Ytic at " + realX + ", " + realZ);
                     scheduleSchematic(worldInfo, realX, realZ, "ytic", null);
                 }
 
                 for (int i = 0; i < noise / 3; i++) limitedRegion.setType(realX, HEIGHT + i, realZ, Material.PURPUR_BLOCK);
                 for (int i = 0; i < noise; i++) limitedRegion.setType(realX, HEIGHT - i - 1, realZ, Material.PURPUR_BLOCK);
+            
+                // 3. Arboles (Corrupted Chorus) - Logic imported from TreePopulator
+                // Check top block
+                int topY = HEIGHT + (noise / 3) - 1; 
+                // TreePopulator checks 100-105. HEIGHT is 100. noise/3 is max 5 (15/3). So range is 100-104. Perfect.
+                
+                if (x == 8 && z == 8) { // Try to spawn 1 tree per chunk center if valid
+                     if (splittableRandom.nextInt(5) == 0) { // 20% chance
+                         scheduleSchematic(worldInfo, realX, realZ, "tree", null);
+                     }
+                }
             }
         }
     }
@@ -76,8 +89,42 @@ public class BeginningPopulator extends BlockPopulator {
                     WorldEditPortal.generateIsland(world, x, z, HEIGHT, random);
                 } else if (type.equals("ytic")) {
                     WorldEditPortal.generateYtic(world, x, z, HEIGHT);
+                } else if (type.equals("tree")) {
+                    generateTree(world, x, z);
                 }
             });
         }, 100L); // Esperar 5 segundos para asegurar que el mundo esté listo
+    }
+
+    private void generateTree(World world, int x, int z) {
+        int y = world.getHighestBlockYAt(x, z);
+        if (y < HEIGHT) return; 
+
+        world.generateTree(new org.bukkit.Location(world, x, y + 1, z), TreeType.CHORUS_PLANT, new BlockChangeDelegate() {
+            @Override
+            public boolean setBlockData(int i, int i1, int i2, @NotNull BlockData blockData) {
+                if (blockData.getMaterial() == Material.CHORUS_FLOWER) {
+                    world.getBlockAt(i, i1, i2).setType(Material.SEA_LANTERN);
+                } else if (blockData.getMaterial() == Material.CHORUS_PLANT) {
+                    world.getBlockAt(i, i1, i2).setType(Material.END_STONE_BRICK_WALL);
+                }
+                return true;
+            }
+
+            @Override
+            public @NotNull BlockData getBlockData(int i, int i1, int i2) {
+                return world.getBlockData(i, i1, i2);
+            }
+
+            @Override
+            public int getHeight() {
+                return 255;
+            }
+
+            @Override
+            public boolean isEmpty(int i, int i1, int i2) {
+                return world.getBlockAt(i, i1, i2).getType() == Material.AIR;
+            }
+        });
     }
 }

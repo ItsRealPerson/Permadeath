@@ -22,10 +22,10 @@ public class GloomBat {
 
     public static Bat spawn(Location loc, Plugin plugin) {
         Bat bat = (Bat) loc.getWorld().spawnEntity(loc, EntityType.BAT, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        bat.setCustomName("§8§lGloom Scout");
+        bat.setCustomName("§8§lExplorador Sombrío");
         bat.setCustomNameVisible(true);
 
-        EffectUtils.setMaxHealth(bat, 20.0); // Difícil de matar para un murciélago
+        EffectUtils.setMaxHealth(bat, 100.0); // Difícil de matar para un murciélago
 
         Runnable batTask = new Runnable() {
             int ticks = 0;

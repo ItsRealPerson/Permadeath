@@ -83,12 +83,13 @@ public class RecipeGUI {
             if (page == 0) setupEndRelic(inv);
             else if (page == 1) setupBeginningRelic(inv);
             else if (page == 2) setupWaterMedal(inv);
+            else if (page == 3) setupLifeOrb(inv);
             else {
                 boolean canSeeHeart = Main.instance.getDay() >= 60 && Main.instance.getConfig().getBoolean("Toggles.ExtendToDay90");
                 if (canSeeHeart) setupAbyssalHeart(inv);
                 else setupLockedRecipe(inv, "Corazón del Abismo");
             }
-            setupPagination(inv, category, page, 3);
+            setupPagination(inv, category, page, 4);
         } else if (category.equals("armor")) {
             if (page == 0) setupAncestralFragment(inv);
             else {
@@ -162,13 +163,34 @@ public class RecipeGUI {
 
     private static void setupBeginningRelic(Inventory inv) {
         inv.setItem(4, new ItemBuilder(Material.BOOK).setDisplayName("&6&lRECETA: Reliquia del Comienzo").build());
-        ItemStack b = new ItemStack(Material.DIAMOND_BLOCK);
+        ItemStack b = new ItemStack(Material.DIAMOND_BLOCK, 32);
         ItemStack s = new ItemStack(Material.SHULKER_SHELL);
         ItemStack d = new ItemStack(Material.LIGHT_BLUE_DYE);
         inv.setItem(10, s); inv.setItem(11, b); inv.setItem(12, s);
         inv.setItem(19, b); inv.setItem(20, d); inv.setItem(21, b);
         inv.setItem(28, s); inv.setItem(29, b); inv.setItem(30, s);
         inv.setItem(25, PermadeathItems.createBeginningRelic());
+    }
+
+    private static void setupLifeOrb(Inventory inv) {
+        inv.setItem(4, new ItemBuilder(Material.BOOK).setDisplayName("&6&lRECETA: Orbe de Vida").build());
+        
+        ItemStack d = new ItemStack(Material.DIAMOND, 64);
+        ItemStack g = new ItemStack(Material.GOLD_INGOT, 64);
+        ItemStack b = new ItemStack(Material.BONE_BLOCK, 64);
+        ItemStack r = new ItemStack(Material.BLAZE_ROD, 64);
+        ItemStack s = new ItemStack(Material.HEART_OF_THE_SEA, 1);
+        ItemStack e = new ItemStack(Material.END_STONE, 64);
+        ItemStack n = new ItemStack(Material.NETHER_BRICKS, 64);
+        ItemStack o = new ItemStack(Material.OBSIDIAN, 64);
+        ItemStack l = new ItemStack(Material.LAPIS_BLOCK, 64);
+
+        // Shape: D G B / R S E / N O L
+        inv.setItem(10, d); inv.setItem(11, g); inv.setItem(12, b);
+        inv.setItem(19, r); inv.setItem(20, s); inv.setItem(21, e);
+        inv.setItem(28, n); inv.setItem(29, o); inv.setItem(30, l);
+        
+        inv.setItem(25, PermadeathItems.createLifeOrb());
     }
 
     private static void setupWaterMedal(Inventory inv) {

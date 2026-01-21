@@ -16,7 +16,7 @@ public class PDCCommandCompleter implements TabCompleter {
     private static final List<String> SUBCOMMANDS = Arrays.asList(
             "awake", "duracion", "idioma", "cambiarDia", "reload", "debug", 
             "mensaje", "dias", "info", "discord", "cambios", "beginning", 
-            "speedrun", "event", "locate", "give", "afk", "storm", "spawn", "boss"
+            "speedrun", "event", "locate", "give", "afk", "storm", "spawn", "boss", "backup"
     );
 
     private static final List<String> GIVE_ITEMS = Arrays.asList(
@@ -40,12 +40,13 @@ public class PDCCommandCompleter implements TabCompleter {
         List<String> completions = new ArrayList<>();
 
         if (args.length == 1) {
-            String[] subcommands = {"info", "give", "diseno", "cambiarDia", "setupBeginning", "reload", "spawn", "boss"};
-            for (String sub : subcommands) {
-                if (sub.toLowerCase().startsWith(args[0].toLowerCase())) {
-                    completions.add(sub);
-                }
-            }
+            // Updated to include all functional commands
+            List<String> subcommands = new ArrayList<>(SUBCOMMANDS);
+            subcommands.add("recipes");
+            subcommands.add("accesorios");
+            subcommands.add("abyss");
+            
+            StringUtil.copyPartialMatches(args[0], subcommands, completions);
         } else if (args.length == 2) {
             String sub = args[0].toLowerCase();
             switch (sub) {
@@ -68,7 +69,7 @@ public class PDCCommandCompleter implements TabCompleter {
                     StringUtil.copyPartialMatches(args[1], Collections.singletonList("beginning"), completions);
                     break;
                 case "storm":
-                    StringUtil.copyPartialMatches(args[1], Arrays.asList("addHours", "removeHours"), completions);
+                    StringUtil.copyPartialMatches(args[1], Arrays.asList("add", "remove"), completions);
                     break;
                 case "afk":
                     StringUtil.copyPartialMatches(args[1], Arrays.asList("unban", "bypass"), completions);
@@ -82,6 +83,9 @@ public class PDCCommandCompleter implements TabCompleter {
                 case "beginning":
                     StringUtil.copyPartialMatches(args[1], Arrays.asList("bendicion", "maldicion"), completions);
                     break;
+                case "abyss":
+                    if (sender.isOp()) StringUtil.copyPartialMatches(args[1], Collections.singletonList("force"), completions);
+                    break;
             }
         } else if (args.length == 3) {
             String sub = args[0].toLowerCase();
@@ -89,6 +93,11 @@ public class PDCCommandCompleter implements TabCompleter {
                 StringUtil.copyPartialMatches(args[2], Arrays.asList("add", "remove"), completions);
             } else if (sub.equals("boss") && args[1].equalsIgnoreCase("spawn")) {
                 StringUtil.copyPartialMatches(args[2], Collections.singletonList("warden"), completions);
+            }
+        } else if (args.length == 4) {
+            String sub = args[0].toLowerCase();
+            if (sub.equals("storm")) {
+                StringUtil.copyPartialMatches(args[3], Arrays.asList("h", "m"), completions);
             }
         }
 

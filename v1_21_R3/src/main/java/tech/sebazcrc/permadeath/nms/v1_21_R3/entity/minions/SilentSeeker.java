@@ -20,7 +20,7 @@ public class SilentSeeker {
 
     public static Creeper spawn(Location loc, Plugin plugin) {
         Creeper creeper = (Creeper) loc.getWorld().spawnEntity(loc, EntityType.CREEPER, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        creeper.setCustomName("§1§lSilent Seeker");
+        creeper.setCustomName("§1§lBuscador Silencioso");
         creeper.setMaxFuseTicks(15); // Explosión rápida
         creeper.setExplosionRadius(0); // No rompe bloques, pero...
 
@@ -29,7 +29,7 @@ public class SilentSeeker {
         creeper.setSilent(true); // Sin sonido de pasos vanilla
 
         // Más salud para aguantar hasta llegar
-        EffectUtils.setMaxHealth(creeper, 40.0);
+        EffectUtils.setMaxHealth(creeper, 150.0);
 
         Runnable seekerTask = new Runnable() {
             int ticks = 0;

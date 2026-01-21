@@ -9,6 +9,8 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Silverfish;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import tech.sebazcrc.permadeath.nms.v1_21_R3.utils.EffectUtils;
 import tech.sebazcrc.permadeath.nms.v1_21_R3.utils.MobUtils;
@@ -19,10 +21,11 @@ public class SculkParasite {
 
     public static Silverfish spawn(Location loc, Plugin plugin) {
         Silverfish fish = (Silverfish) loc.getWorld().spawnEntity(loc, EntityType.SILVERFISH, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        fish.setCustomName("§3§lSculk Parasite");
+        fish.setCustomName("§3§lParásito de Sculk");
 
-        EffectUtils.setMaxHealth(fish, 20.0);
-        EffectUtils.setMovementSpeed(fish, 0.4);
+        EffectUtils.setMaxHealth(fish, 100.0);
+        EffectUtils.setMovementSpeed(fish, 0.5);
+        EffectUtils.addPotionEffect(fish, new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 2));
 
         Runnable fishTask = new Runnable() {
             int ticks = 0;

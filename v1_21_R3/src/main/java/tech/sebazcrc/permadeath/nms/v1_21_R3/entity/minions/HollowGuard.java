@@ -25,7 +25,7 @@ public class HollowGuard {
 
     public static Husk spawn(Location loc, Plugin plugin) {
         Husk guard = (Husk) loc.getWorld().spawnEntity(loc, EntityType.HUSK, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        guard.setCustomName("§3§lHollow Guard");
+        guard.setCustomName("§3§lGuardián del Vacío");
         guard.setCustomNameVisible(true);
 
         // Armadura Oscura (Netherite)
@@ -35,10 +35,13 @@ public class HollowGuard {
                 null, null);
         InventoryUtils.clearDropChances(guard);
 
-        EffectUtils.setMaxHealth(guard, 80.0);
-        EffectUtils.setAttackDamage(guard, 15.0);
-        EffectUtils.setKnockbackResistance(guard, 0.8);
+        EffectUtils.setMaxHealth(guard, 350.0);
+        EffectUtils.setAttackDamage(guard, 25.0);
+        EffectUtils.setKnockbackResistance(guard, 1.0);
         EffectUtils.setMovementSpeed(guard, 0.2); // Lento por defecto
+
+        EffectUtils.addPotionEffect(guard, new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 4));
+        EffectUtils.addPotionEffect(guard, new PotionEffect(PotionEffectType.RESISTANCE, Integer.MAX_VALUE, 2));
 
         Runnable guardTask = new Runnable() {
             int ticks = 0;
