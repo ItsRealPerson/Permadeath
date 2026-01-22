@@ -105,7 +105,7 @@ public class DeepDarkAbyssGenerator extends ChunkGenerator {
 
                 // 1. Decoración sobre el suelo de Sculk (Y = minHeight + 11)
                 if (random.nextInt(100) < 20) { // 20% de probabilidad de decoración en el suelo por chunk-column
-                    applyDecoration(chunkData, x, minHeight + 12, z, random, false);
+                    applyDecoration(chunkData, x, minHeight + 12, z, random);
                 }
 
                 // 2. Decoración en cuevas
@@ -114,21 +114,11 @@ public class DeepDarkAbyssGenerator extends ChunkGenerator {
                     if (current == Material.DEEPSLATE && isExposed(chunkData, x, y, z)) {
                         double noise = sculkNoise.noise(realX, y, realZ, 0.5D, 0.5D, true);
                         
-                        boolean placeSculk = false;
-                        boolean isHighLayer = y > 50;
-
-                        if (isHighLayer) {
-                            // Capas altas: Pequeños parches dispersos (Umbral más alto)
-                            if (noise > 0.45D) placeSculk = true;
-                        } else {
-                            // Capas bajas: Cobertura densa (Umbral estándar)
-                            if (noise > -0.2D) placeSculk = true;
-                        }
-
-                        if (placeSculk) {
+                        // Generación unificada en todas las alturas
+                        if (noise > -0.2D) {
                             chunkData.setBlock(x, y, z, Material.SCULK);
                             if (y < 118 && chunkData.getType(x, y + 1, z) == Material.AIR) {
-                                applyDecoration(chunkData, x, y + 1, z, random, isHighLayer);
+                                applyDecoration(chunkData, x, y + 1, z, random);
                             }
                         }
                     }
@@ -137,21 +127,14 @@ public class DeepDarkAbyssGenerator extends ChunkGenerator {
         }
     }
 
-    private void applyDecoration(ChunkData chunkData, int x, int y, int z, Random random, boolean isHighLayer) {
+    private void applyDecoration(ChunkData chunkData, int x, int y, int z, Random random) {
         if (y >= 128) return;
         int roll = random.nextInt(100);
         
-        if (isHighLayer) {
-            // Mayor probabilidad de trampas en los parches altos
-            if (roll < 10) chunkData.setBlock(x, y, z, Material.SCULK_CATALYST); // 10%
-            else if (roll < 15) chunkData.setBlock(x, y, z, Material.SCULK_SHRIEKER); // 5% Chilladores
-            else if (roll < 35) chunkData.setBlock(x, y, z, Material.SCULK_SENSOR); // 20% Sensores
-        } else {
-            // Probabilidad estándar en el fondo
-            if (roll < 5) chunkData.setBlock(x, y, z, Material.SCULK_CATALYST);
-            else if (roll < 6) chunkData.setBlock(x, y, z, Material.SCULK_SHRIEKER); // 1% Chilladores
-            else if (roll < 15) chunkData.setBlock(x, y, z, Material.SCULK_SENSOR);
-        }
+        // Probabilidades unificadas para toda la dimensión
+        if (roll < 5) chunkData.setBlock(x, y, z, Material.SCULK_CATALYST); // 5%
+        else if (roll < 6) chunkData.setBlock(x, y, z, Material.SCULK_SHRIEKER); // 1% Chilladores
+        else if (roll < 13) chunkData.setBlock(x, y, z, Material.SCULK_SENSOR); // 7% Sensores
     }
 
     private boolean isExposed(ChunkData data, int x, int y, int z) {

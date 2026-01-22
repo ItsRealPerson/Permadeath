@@ -12,7 +12,10 @@ Una reconstrucción avanzada y optimizada del plugin de supervivencia extrema **
 
 ### 🌌 Dimensiones Personalizadas
 *   **The Beginning (Día 40+):** Una dimensión hostil basada en el End con generación de terreno personalizada, estructuras flotantes (Ytics) y mobs de élite.
-*   **El Abismo Profundo (Día 60+):** Una dimensión de oscuridad total donde la presión atmosférica es mortal. Requiere equipamiento especializado (Máscaras Abisales y Pociones de Respiración) para sobrevivir.
+*   **El Abismo Profundo (Día 60+):** Una dimensión de oscuridad total compuesta casi en su totalidad por Sculk y Deepslate.
+    *   **Generación Unificada:** Parches de Sculk, Catalizadores, Chilladores y Sensores distribuidos en todas las alturas de la dimensión.
+    *   **Atmósfera Mortal:** La presión atmosférica requiere equipamiento especializado (Máscaras Abisales y Pociones de Respiración).
+    *   **Encantamientos Exclusivos:** Nuevo encantamiento *Respiración Abisal* para contrarrestar los efectos del vacío.
 
 ### 📈 Escalado de Dificultad Dinámico (Días 1-90)
 *   **Progresión Diaria:** Los atributos de los mobs (vida, daño, velocidad) aumentan cada día.
@@ -30,7 +33,10 @@ Una reconstrucción avanzada y optimizada del plugin de supervivencia extrema **
 ## 🚀 Mejoras de esta Versión (v1.4)
 
 *   **Soporte Completo para Folia:** Lógica de teletransporte asíncrona y schedulers regionales para evitar crashes y lag spikes.
-*   **Inmersión Sonora en el Abismo:** Sistema de latidos y efectos visuales que reaccionan al nivel de oxígeno del jugador.
+*   **IA Nativa (NMS):** Sistema de hostilidad reimplementado utilizando inyección directa de *Pathfinders* de Minecraft, mejorando el rendimiento y eliminando dependencias externas pesadas.
+*   **Overhaul del Abismo:** 
+    *   Suelo sólido de Sculk y decoración equilibrada (5% Catalizadores, 1% Chilladores, 7% Sensores).
+    *   Mobs adaptados con mecánicas de detección de sonido y olfato (Warden-like).
 *   **Nether Overhaul:** Reinforcements automáticos y Piglins equipados con armaduras de diamante/netherite desde el día 30.
 *   **Sistema de Backups:** Comando `/pdc backup` para respaldar tus mundos de forma asíncrona y segura.
 *   **Traducción Completa:** Todas las entidades especiales y mensajes del sistema están en español.
