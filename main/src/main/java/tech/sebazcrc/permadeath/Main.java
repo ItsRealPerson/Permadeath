@@ -100,6 +100,12 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     public SpawnListener spawnListener;
     private int deathTrainVersion = 0;
     private tech.sebazcrc.permadeath.util.LootManager lootManager;
+    private FileConfiguration abyssConfig;
+    private File abyssFile;
+
+    public FileConfiguration getAbyssConfig() {
+        return abyssConfig;
+    }
     private boolean isStormingCache = false;
     private long weatherDurationCache = 0;
 
@@ -142,12 +148,6 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         instance = this;
         this.abyssManager = new AbyssManager(this);
         
-        // Inicializar PacketEvents 2.11.1
-        com.github.retrooper.packetevents.PacketEvents.setAPI(io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder.build(this));
-        com.github.retrooper.packetevents.PacketEvents.getAPI().getSettings()
-                .checkForUpdates(false);
-        com.github.retrooper.packetevents.PacketEvents.getAPI().load();
-
         try {
             NMS.loadInfernalNetheriteBlock();
             NMS.loadNMSAccessor();
@@ -162,7 +162,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     @Override
     public void onEnable() {
         instance = this;
-        com.github.retrooper.packetevents.PacketEvents.getAPI().init();
+        
         this.backupManager = new tech.sebazcrc.permadeath.util.BackupManager(this);
         runningFolia = isRunningFolia();
         this.lootManager = new tech.sebazcrc.permadeath.util.LootManager(this);
@@ -179,13 +179,10 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
         this.playTime = getConfig().getInt("DontTouch.PlayTime");
         this.abyssManager.startSpawnerTask();
-        
-        setupListeners();
     }
 
     @Override
     public void onDisable() {
-        com.github.retrooper.packetevents.PacketEvents.getAPI().terminate();
         getConfig().set("DontTouch.PlayTime", this.playTime);
         if (this.orbEvent != null) {
             this.orbEvent.saveTime();
@@ -265,10 +262,10 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
                 if (!loaded) {
                     startPlugin();
                     setupConfig();
+                    registerListeners();
                     loaded = true;
                 }
                 DateManager.getInstance().tick();
-                registerListeners();
 
                 if (world != null) {
                     isStormingCache = world.hasStorm();
@@ -636,6 +633,13 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
     private void startPlugin() {
         this.messages = new Messages(this);
+        
+        this.abyssFile = new File(getDataFolder(), "abyss.yml");
+        if (!abyssFile.exists()) {
+            saveResource("abyss.yml", false);
+        }
+        this.abyssConfig = YamlConfiguration.loadConfiguration(abyssFile);
+
         this.shulkerEvent = new ShellEvent(this);
         this.orbEvent = new LifeOrbEvent(this);
         this.factory = new MobFactory(this);

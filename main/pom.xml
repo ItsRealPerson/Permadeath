@@ -37,14 +37,6 @@
                     <finalName>Permadeath</finalName>
                     <relocations>
                         <relocation>
-                            <pattern>com.github.retrooper.packetevents</pattern>
-                            <shadedPattern>tech.sebazcrc.permadeath.libs.packetevents</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>io.github.retrooper.packetevents</pattern>
-                            <shadedPattern>tech.sebazcrc.permadeath.libs.packetevents</shadedPattern>
-                        </relocation>
-                        <relocation>
                             <pattern>org.apache.commons.lang3</pattern>
                             <shadedPattern>tech.sebazcrc.permadeath.libs.commons</shadedPattern>
                         </relocation>
@@ -130,12 +122,6 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.12.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.retrooper</groupId>
-            <artifactId>packetevents-spigot</artifactId>
-            <version>2.11.1</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

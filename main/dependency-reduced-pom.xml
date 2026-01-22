@@ -33,14 +33,6 @@
           <finalName>Permadeath</finalName>
           <relocations>
             <relocation>
-              <pattern>com.github.retrooper.packetevents</pattern>
-              <shadedPattern>tech.sebazcrc.permadeath.libs.packetevents</shadedPattern>
-            </relocation>
-            <relocation>
-              <pattern>io.github.retrooper.packetevents</pattern>
-              <shadedPattern>tech.sebazcrc.permadeath.libs.packetevents</shadedPattern>
-            </relocation>
-            <relocation>
               <pattern>org.apache.commons.lang3</pattern>
               <shadedPattern>tech.sebazcrc.permadeath.libs.commons</shadedPattern>
             </relocation>

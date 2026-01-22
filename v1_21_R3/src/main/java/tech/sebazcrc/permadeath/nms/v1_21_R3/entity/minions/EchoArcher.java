@@ -39,18 +39,29 @@ public class EchoArcher {
                 if (!stray.isValid()) { return; }
                 ticks++;
 
-                // Rastro de partÃ­culas sÃ³nicas
+                // Rastro de partículas sónicas
                 if (ticks % 10 == 0) {
                     stray.getWorld().spawnParticle(Particle.SONIC_BOOM, stray.getLocation().add(0, 1, 0), 0, 0, 0, 0);
                 }
 
+                // --- Lógica de Olfato y Sigilo ---
                 Player target = MobUtils.getNearestPlayer(stray, 45);
+
                 if (target != null) {
+                    double distSq = stray.getLocation().distanceSquared(target.getLocation());
+                    boolean isSneaking = target.isSneaking();
+                    double detectionRangeSq = isSneaking ? 8 * 8 : 24 * 24;
+
+                    if (distSq > detectionRangeSq) {
+                        if (stray.getTarget() != null) stray.setTarget(null);
+                        return;
+                    }
+
                     stray.setTarget(target);
                     
                     // Movimiento para mantener distancia pero estar cerca
                     TeleportUtils.lookAt(stray, target.getLocation());
-                    if (stray.getLocation().distanceSquared(target.getLocation()) > 15 * 15) {
+                    if (distSq > 15 * 15) {
                         TeleportUtils.moveTowards(stray, target.getLocation(), 0.4, 0.2);
                     }
 
@@ -73,14 +84,14 @@ public class EchoArcher {
                 org.bukkit.util.Vector direction = target.getEyeLocation().toVector().subtract(source.getEyeLocation().toVector()).normalize();
                 Location start = source.getEyeLocation();
 
-                // Proyectil sÃ³nico (alcance 30 bloques)
+                // Proyectil sónico (alcance 30 bloques)
                 for (int i = 1; i < 30; i++) {
                     Location point = start.clone().add(direction.clone().multiply(i));
                     if (!point.getBlock().getType().isAir() && point.getBlock().getType().isSolid()) break;
 
                     source.getWorld().spawnParticle(Particle.SONIC_BOOM, point, 1, 0, 0, 0, 0);
 
-                    // DaÃ±ar entidades cercanas al punto (EXCLUYENDO AL ARQUERO)
+                    // Dañar entidades cercanas al punto (EXCLUYENDO AL ARQUERO)
                     point.getWorld().getNearbyEntities(point, 2.0, 2.0, 2.0).forEach(entity -> {
                         if (entity instanceof LivingEntity liv && !entity.equals(source)) {
                             liv.damage(50.0, source); // 25 corazones

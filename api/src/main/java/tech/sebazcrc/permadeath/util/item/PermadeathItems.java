@@ -84,11 +84,15 @@ public class PermadeathItems {
                         TextUtils.format("&eUsa un Filtro Abisal para recuperarte.")
                 ))
                 .build();
+        
+        ItemMeta meta = s.getItemMeta();
+        meta.getPersistentDataContainer().set(new NamespacedKey("permadeath", "abyssal_item"), PersistentDataType.STRING, "mask");
+        s.setItemMeta(meta);
         return s;
     }
 
     public static ItemStack createAbyssalFilter() {
-        return new ItemBuilder(Material.NETHER_WART)
+        ItemStack item = new ItemBuilder(Material.NETHER_WART)
                 .setDisplayName(TextUtils.format("&bFiltro Abisal"))
                 .setLore(Arrays.asList(
                         TextUtils.format("&7Un purificador de aire diseñado"),
@@ -99,6 +103,11 @@ public class PermadeathItems {
                 ))
                 .setCustomModelData(101)
                 .build();
+
+        ItemMeta meta = item.getItemMeta();
+        meta.getPersistentDataContainer().set(new NamespacedKey("permadeath", "abyssal_item"), PersistentDataType.STRING, "filter");
+        item.setItemMeta(meta);
+        return item;
     }
 
     public static ItemStack createVoidShard() {
@@ -393,9 +402,20 @@ public class PermadeathItems {
     }
 
     public static boolean isAbyssalMask(ItemStack item) {
-        if (item == null || item.getType() != Material.LEATHER_HELMET) return false;
-        if (!item.hasItemMeta() || !item.getItemMeta().hasDisplayName()) return false;
-        return item.getItemMeta().getDisplayName().contains("Máscara del Abismo");
+        if (item == null || item.getType() == Material.AIR || !item.hasItemMeta()) return false;
+        String tag = item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey("permadeath", "abyssal_item"), PersistentDataType.STRING);
+        return "mask".equals(tag);
+    }
+
+    public static boolean isAbyssalHeart(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR || !item.hasItemMeta()) return false;
+        return item.getType() == Material.RECOVERY_COMPASS && item.getItemMeta().hasEnchant(Enchantment.INFINITY);
+    }
+
+    public static boolean isAbyssalFilter(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR || !item.hasItemMeta()) return false;
+        String tag = item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey("permadeath", "abyssal_item"), PersistentDataType.STRING);
+        return "filter".equals(tag);
     }
     
     // Métodos auxiliares para no romper otras clases que los usan, pero slotBlock ya no los usa

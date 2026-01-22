@@ -39,7 +39,7 @@ public class RecipeGUI {
         inv.setItem(11, createCategoryIcon(Material.SMITHING_TABLE, "&6&lMESA DE HERRERÍA", "smithing"));
         inv.setItem(13, createCategoryIcon(Material.NETHERITE_CHESTPLATE, "&6&lARMADURAS ESPECIALES", "armor"));
         inv.setItem(15, createCategoryIcon(Material.LIGHT_BLUE_DYE, "&e&lRELIQUIAS", "relics"));
-        inv.setItem(16, createCategoryIcon(Material.GOLDEN_APPLE, "&d&lITEMS ESPECIALES", "special"));
+        inv.setItem(16, createCategoryIcon(Material.GOLDEN_APPLE, "&d&lCONSUMIBLES", "special"));
 
         p.openInventory(inv);
     }
@@ -66,7 +66,6 @@ public class RecipeGUI {
     private static void loadCategoryRecipe(Inventory inv, String category, int page) {
         for (int i : new int[]{10,11,12,19,20,21,28,29,30,23,24,25,4}) inv.setItem(i, new ItemStack(Material.AIR));
         
-        // Flecha larga
         ItemStack arrow = new ItemBuilder(Material.IRON_BARS).setDisplayName("&7➤").build();
         inv.setItem(23, arrow);
         inv.setItem(24, arrow);
@@ -99,8 +98,12 @@ public class RecipeGUI {
             setupPagination(inv, category, page, 1);
         } else if (category.equals("special")) {
             if (page == 0) setupSuperGAP(inv);
-            else setupHyperGAP(inv);
-            setupPagination(inv, category, page, 1);
+            else if (page == 1) setupHyperGAP(inv);
+            else {
+                if (Main.instance.getDay() >= 60 || extended) setupAbyssalFilter(inv);
+                else setupLockedRecipe(inv, "Filtro Abisal");
+            }
+            setupPagination(inv, category, page, 2);
         }
     }
 
@@ -185,7 +188,6 @@ public class RecipeGUI {
         ItemStack o = new ItemStack(Material.OBSIDIAN, 64);
         ItemStack l = new ItemStack(Material.LAPIS_BLOCK, 64);
 
-        // Shape: D G B / R S E / N O L
         inv.setItem(10, d); inv.setItem(11, g); inv.setItem(12, b);
         inv.setItem(19, r); inv.setItem(20, s); inv.setItem(21, e);
         inv.setItem(28, n); inv.setItem(29, o); inv.setItem(30, l);
@@ -255,5 +257,19 @@ public class RecipeGUI {
         for(int i : new int[]{10,11,12,19,21,28,29,30}) inv.setItem(i, g);
         inv.setItem(20, a);
         inv.setItem(25, new ItemBuilder(Material.GOLDEN_APPLE).setDisplayName("&6Hyper Golden Apple +").build());
+    }
+
+    private static void setupAbyssalFilter(Inventory inv) {
+        inv.setItem(4, new ItemBuilder(Material.BOOK).setDisplayName("&b&lRECETA: Filtro Abisal").build());
+        ItemStack shard = PermadeathItems.createVoidShard();
+        ItemStack echo = new ItemStack(Material.ECHO_SHARD);
+        
+        inv.setItem(11, shard);
+        inv.setItem(19, shard);
+        inv.setItem(20, echo);
+        inv.setItem(21, shard);
+        inv.setItem(29, shard);
+        
+        inv.setItem(25, PermadeathItems.createAbyssalFilter());
     }
 }

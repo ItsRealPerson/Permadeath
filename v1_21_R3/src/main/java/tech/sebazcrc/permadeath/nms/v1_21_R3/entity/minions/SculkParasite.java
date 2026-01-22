@@ -21,55 +21,59 @@ public class SculkParasite {
 
     public static Silverfish spawn(Location loc, Plugin plugin) {
         Silverfish fish = (Silverfish) loc.getWorld().spawnEntity(loc, EntityType.SILVERFISH, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        fish.setCustomName("§3ParÃ¡sito de Sculk");
-        fish.setRemoveWhenFarAway(false);
-        fish.setPersistent(true);
+        fish.setCustomName("§3Parásito de Sculk");
+        fish.setCustomNameVisible(true);
 
         EffectUtils.setMaxHealth(fish, 300.0);
-        EffectUtils.setMovementSpeed(fish, 0.6);
-        EffectUtils.addPotionEffect(fish, new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 8)); // Fuerza IX
-        EffectUtils.addPotionEffect(fish, new PotionEffect(PotionEffectType.RESISTANCE, Integer.MAX_VALUE, 3)); // Resistencia IV
+        EffectUtils.addPotionEffect(fish, new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 2));
+        EffectUtils.addPotionEffect(fish, new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 10));
 
-        Runnable fishTask = new Runnable() {
+        Runnable parasiteTask = new Runnable() {
             int ticks = 0;
             @Override
             public void run() {
-                if (!fish.isValid()) { return; }
+                if (!fish.isValid()) return;
                 ticks++;
 
-                if (ticks % 30 == 0) {
-                    Player target = MobUtils.getNearestPlayer(fish, 25);
-                    if (target != null) {
-                        fish.getWorld().playSound(fish.getLocation(), Sound.ENTITY_WARDEN_SNIFF, 1.0f, 2.0f);
-                        fish.setTarget(target);
-                    }
+                // Partículas de Sculk al moverse
+                if (ticks % 5 == 0) {
+                    fish.getWorld().spawnParticle(Particle.SCULK_CHARGE_POP, fish.getLocation().add(0, 0.2, 0), 3, 0.1, 0.1, 0.1, 0.05);
                 }
 
-                if (fish.getTarget() != null) {
-                    Player target = (Player) fish.getTarget();
-                    TeleportUtils.lookAt(fish, target.getLocation());
-                    TeleportUtils.moveTowards(fish, target.getLocation(), 0.6, 0.3);
-                    
-                    if (fish.getLocation().distanceSquared(target.getLocation()) < 2.0) {
-                        target.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 100, 3));
-                        target.damage(10.0, fish); // DaÃ±o extra por contacto
+                // --- Lógica de Olfato y Sigilo ---
+                Player target = MobUtils.getNearestPlayer(fish, 45); 
+
+                if (target != null) {
+                    double distSq = fish.getLocation().distanceSquared(target.getLocation());
+                    boolean isSneaking = target.isSneaking();
+                    double detectionRangeSq = isSneaking ? 8 * 8 : 24 * 24;
+
+                    if (distSq > detectionRangeSq) {
+                        if (fish.getTarget() != null) fish.setTarget(null);
+                        return;
                     }
 
-                    if (ticks % 10 == 0) {
-                        fish.getWorld().spawnParticle(Particle.SCULK_CHARGE_POP, fish.getLocation(), 1, 0.1, 0.1, 0.1, 0.05);
+                    fish.setTarget(target);
+                    TeleportUtils.moveTowards(fish, target.getLocation(), 0.65, 0.1);
+                    
+                    // Inyectar parásito si toca al jugador
+                    if (distSq < 2.5) {
+                        target.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 200, 3));
+                        target.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 300, 4));
+                        target.playSound(target.getLocation(), Sound.ENTITY_SILVERFISH_HURT, 1.0f, 0.5f);
                     }
                 }
             }
         };
 
         try {
-            fish.getScheduler().runAtFixedRate(plugin, t -> fishTask.run(), null, 10L, 5L);
+            fish.getScheduler().runAtFixedRate(plugin, t -> parasiteTask.run(), null, 10L, 5L);
         } catch (NoSuchMethodError e) {
             new BukkitRunnable() {
                 @Override
                 public void run() {
                     if (!fish.isValid()) { this.cancel(); return; }
-                    fishTask.run();
+                    parasiteTask.run();
                 }
             }.runTaskTimer(plugin, 10, 5);
         }

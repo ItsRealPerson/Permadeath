@@ -1,0 +1,36 @@
+package tech.sebazcrc.permadeath.event.player;
+
+import org.apache.commons.lang3.StringUtils;
+import org.bukkit.*;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.Skull;
+import org.bukkit.block.data.Rotatable;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.*;
+import org.bukkit.event.Event;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityAirChangeEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.CraftItemEvent;
+import org.bukkit.event.inventory.PrepareItemCraftEvent;
+import org.bukkit.event.player.*;
+import org.bukkit.event.world.ChunkPopulateEvent;
+import org.bukkit.inventory.CraftingInventory;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitScheduler;
+import tech.sebazcrc.permadeath.Main;
+import tech.sebazcrc.permadeath.api.PermadeathAPI;
+import tech.sebazcrc.permadeath.util.TextUtils;
+import tech.sebazcrc.permadeath.util.item.PermadeathItems;
+
+import java.util.ArrayList;
+import java.util.Random;

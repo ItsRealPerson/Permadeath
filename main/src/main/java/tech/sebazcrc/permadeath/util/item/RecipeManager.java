@@ -105,7 +105,7 @@ public class RecipeManager {
 
         ShapedRecipe filter = new ShapedRecipe(new NamespacedKey(Main.instance, "abyssal_filter"), PermadeathItems.createAbyssalFilter());
         filter.shape(" S ", "SES", " S ");
-        filter.setIngredient('S', Material.AMETHYST_SHARD); // Representa Fragmento de Vacío en receta
+        filter.setIngredient('S', new RecipeChoice.ExactChoice(PermadeathItems.createVoidShard()));
         filter.setIngredient('E', Material.ECHO_SHARD);
         Bukkit.addRecipe(filter);
 

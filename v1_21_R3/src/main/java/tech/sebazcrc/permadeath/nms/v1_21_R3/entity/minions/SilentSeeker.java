@@ -21,14 +21,14 @@ public class SilentSeeker {
     public static Creeper spawn(Location loc, Plugin plugin) {
         Creeper creeper = (Creeper) loc.getWorld().spawnEntity(loc, EntityType.CREEPER, CreatureSpawnEvent.SpawnReason.CUSTOM);
         creeper.setCustomName("§1Buscador Silencioso");
-        creeper.setMaxFuseTicks(15); // ExplosiÃ³n rÃ¡pida
+        creeper.setMaxFuseTicks(15); // Explosión rápida
         creeper.setExplosionRadius(0); // No rompe bloques, pero...
 
         // Hacemos que sea "Casi" invisible (transparente) y silencioso
         EffectUtils.addPotionEffect(creeper, new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0));
         creeper.setSilent(true); // Sin sonido de pasos vanilla
 
-        // MÃ¡s salud para aguantar hasta llegar
+        // Más salud para aguantar hasta llegar
         EffectUtils.setMaxHealth(creeper, 400.0);
         EffectUtils.addPotionEffect(creeper, new PotionEffect(PotionEffectType.RESISTANCE, Integer.MAX_VALUE, 2));
 
@@ -39,15 +39,29 @@ public class SilentSeeker {
                 if (!creeper.isValid()) { return; }
                 ticks++;
 
-                // Solo partÃ­culas para verlo
+                // Solo partículas para verlo
                 creeper.getWorld().spawnParticle(Particle.SCULK_SOUL, creeper.getLocation().add(0, 0.5, 0), 1, 0.1, 0.1, 0.1, 0.01);
 
-                // 1. DetecciÃ³n tipo Warden (Rango ampliado, ignora paredes si estÃ¡s cerca)
-                Player target = MobUtils.getNearestPlayer(creeper, 30);
+                // --- Lógica de Olfato y Sigilo ---
+                // Buscamos al jugador más cercano en un rango amplio primero
+                Player target = MobUtils.getNearestPlayer(creeper, 45); 
 
                 if (target != null) {
-                    creeper.setTarget(target);
                     double distSq = creeper.getLocation().distanceSquared(target.getLocation());
+                    boolean isSneaking = target.isSneaking();
+                    double detectionRangeSq = isSneaking ? 8 * 8 : 24 * 24;
+
+                    // Si está fuera del rango de detección (por sigilo o distancia), perder el rastro
+                    if (distSq > detectionRangeSq) {
+                        if (creeper.getTarget() != null) {
+                            creeper.setTarget(null); // Perdió el olor
+                            if (ticks % 40 == 0) creeper.getWorld().playSound(creeper.getLocation(), Sound.ENTITY_WARDEN_SNIFF, 0.5f, 1.5f);
+                        }
+                        return;
+                    }
+
+                    // Si llegamos aquí, el jugador es detectado
+                    creeper.setTarget(target);
                     
                     // Seguimiento constante
                     TeleportUtils.lookAt(creeper, target.getLocation());
@@ -60,9 +74,9 @@ public class SilentSeeker {
                         }
                     }
 
-                    // ExplosiÃ³n sÃ³nica personalizada (Letal)
+                    // Explosión sónica personalizada (Letal)
                     if (distSq < 4) {
-                        // DetonaciÃ³n manual para efecto sÃ³nico
+                        // Detonación manual para efecto sónico
                         creeper.getWorld().playSound(creeper.getLocation(), Sound.ENTITY_WARDEN_SONIC_BOOM, 2.0f, 1.5f);
                         creeper.getWorld().spawnParticle(Particle.SONIC_BOOM, creeper.getLocation(), 5);
                         target.damage(45.0, creeper); // 22.5 corazones
@@ -71,7 +85,7 @@ public class SilentSeeker {
                         creeper.remove();
                     }
                 } else if (ticks % 60 == 0) {
-                    // Olfatear si no hay target
+                    // Olfatear si no hay nadie cerca
                     creeper.getWorld().playSound(creeper.getLocation(), Sound.ENTITY_WARDEN_SNIFF, 0.5f, 2.0f);
                 }
             }

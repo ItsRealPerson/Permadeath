@@ -25,7 +25,7 @@ public class HollowGuard {
 
     public static Husk spawn(Location loc, Plugin plugin) {
         Husk guard = (Husk) loc.getWorld().spawnEntity(loc, EntityType.HUSK, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        guard.setCustomName("§3GuardiÃ¡n del VacÃ­o");
+        guard.setCustomName("§3Guardián del Vacío");
         guard.setCustomNameVisible(true);
 
         // Armadura Oscura (Netherite)
@@ -52,35 +52,41 @@ public class HollowGuard {
                 if (!guard.isValid()) { return; }
                 ticks++;
 
-                Player target = MobUtils.getNearestPlayer(guard, 35);
+                // --- Lógica de Olfato y Sigilo ---
+                Player target = MobUtils.getNearestPlayer(guard, 45);
 
-                // MecÃ¡nica de Olfateo (Cada 4 segundos)
-                if (ticks % 80 == 0) {
-                    sniffing = true;
-                    // Se detiene para oler
-                    guard.setVelocity(new org.bukkit.util.Vector(0, 0, 0));
-                    guard.getWorld().playSound(guard.getLocation(), Sound.ENTITY_WARDEN_SNIFF, 1.2f, 0.7f);
+                if (target != null) {
+                    double distSq = guard.getLocation().distanceSquared(target.getLocation());
+                    boolean isSneaking = target.isSneaking();
+                    double detectionRangeSq = isSneaking ? 8 * 8 : 24 * 24;
 
-                    if (target != null) {
+                    if (distSq > detectionRangeSq) {
+                        if (guard.getTarget() != null) guard.setTarget(null);
+                        return;
+                    }
+
+                    // Mecánica de Olfateo (Cada 4 segundos)
+                    if (ticks % 80 == 0) {
+                        sniffing = true;
+                        guard.setVelocity(new org.bukkit.util.Vector(0, 0, 0));
+                        guard.getWorld().playSound(guard.getLocation(), Sound.ENTITY_WARDEN_SNIFF, 1.2f, 0.7f);
                         TeleportUtils.lookAt(guard, target.getEyeLocation());
-                        
-                        // Si te huele, se enfada mucho
                         guard.getWorld().playSound(guard.getLocation(), Sound.ENTITY_WARDEN_AGITATED, 1.2f, 0.8f);
-                        EffectUtils.addPotionEffect(guard, new PotionEffect(PotionEffectType.SPEED, 100, 3)); // Speed IV por 5s
+                        EffectUtils.addPotionEffect(guard, new PotionEffect(PotionEffectType.SPEED, 100, 3));
+                        sniffing = false;
                     }
-                    sniffing = false;
-                }
 
-                if (!sniffing && target != null) {
-                    guard.setTarget(target);
-                    TeleportUtils.moveTowards(guard, target.getLocation(), 0.45, 0.2);
-                    
-                    if (guard.getLocation().distanceSquared(target.getLocation()) < 4.0) {
-                        target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 100, 0));
-                        target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 100, 2));
+                    if (!sniffing) {
+                        guard.setTarget(target);
+                        TeleportUtils.moveTowards(guard, target.getLocation(), 0.45, 0.2);
+                        
+                        if (distSq < 4.0) {
+                            target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 100, 0));
+                            target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 100, 2));
+                        }
+                        
+                        ParticleUtils.trailEntity(guard, Particle.ASH);
                     }
-                    
-                    ParticleUtils.trailEntity(guard, Particle.ASH);
                 }
             }
         };

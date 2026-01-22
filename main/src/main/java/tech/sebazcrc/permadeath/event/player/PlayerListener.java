@@ -6,6 +6,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Skull;
 import org.bukkit.block.data.Rotatable;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.Event;
@@ -128,6 +129,96 @@ public class PlayerListener implements Listener {
                 }
             }
 
+            // Uso Manual del Filtro Abisal
+            if (PermadeathItems.isAbyssalFilter(item)) {
+                e.setCancelled(true);
+                Player p = e.getPlayer();
+                
+                // Buscar la máscara
+                ItemStack mask = null;
+                boolean isAccessory = false;
+                
+                // 1. Probar en Casco
+                if (PermadeathItems.isAbyssalMask(p.getInventory().getHelmet())) {
+                    mask = p.getInventory().getHelmet();
+                } else {
+                    // 2. Probar en Accesorios
+                    ItemStack[] acc = tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.load(p);
+                    if (acc != null) {
+                        for (int i = 0; i < acc.length; i++) {
+                            if (PermadeathItems.isAbyssalMask(acc[i])) {
+                                mask = acc[i];
+                                isAccessory = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (mask != null && mask.getItemMeta() instanceof org.bukkit.inventory.meta.Damageable damageable) {
+                    if (damageable.getDamage() == 0) {
+                        p.sendMessage(ChatColor.YELLOW + "Tu máscara ya está limpia.");
+                        return;
+                    }
+
+                    // --- Lógica Dinámica de Reparación ---
+                    double repairPercent = 0.15; // 15% base por defecto
+                    long day = Main.getInstance().getDay();
+                    
+                    if (Main.getInstance().isExtendedDifficulty()) {
+                        FileConfiguration config = Main.getInstance().getAbyssConfig();
+                        if (config != null && config.contains("FilterRepair")) {
+                            // Buscar el día más alto que sea menor o igual al día actual
+                            int targetDay = 60;
+                            for (String key : config.getConfigurationSection("FilterRepair").getKeys(false)) {
+                                int d = Integer.parseInt(key);
+                                if (day >= d && d >= targetDay) {
+                                    targetDay = d;
+                                }
+                            }
+                            
+                            if (day >= 60) {
+                                int percent = config.getInt("FilterRepair." + targetDay);
+                                repairPercent = percent / 100.0;
+                            }
+                        }
+                    }
+
+                    if (repairPercent >= 1.0) {
+                        damageable.setDamage(0);
+                    } else {
+                        int repairAmount = (int) (mask.getType().getMaxDurability() * repairPercent);
+                        damageable.setDamage(Math.max(0, damageable.getDamage() - repairAmount));
+                    }
+                    
+                    mask.setItemMeta(damageable);
+                    
+                    // Actualizar presión inmediatamente para evitar desfase visual
+                    double newDurabilityPercent = 1.0 - ((double) damageable.getDamage() / mask.getType().getMaxDurability());
+                    p.getPersistentDataContainer().set(new NamespacedKey(Main.getInstance(), "abyss_pressure"), PersistentDataType.DOUBLE, newDurabilityPercent);
+                    
+                    if (isAccessory) {
+                        ItemStack[] acc = tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.load(p);
+                        for (int i = 0; i < acc.length; i++) {
+                            if (PermadeathItems.isAbyssalMask(acc[i])) {
+                                acc[i] = mask;
+                                break;
+                            }
+                        }
+                        tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.saveFromItems(p, acc);
+                    } else {
+                        p.getInventory().setHelmet(mask);
+                    }
+
+                    if (p.getGameMode() != GameMode.CREATIVE) item.setAmount(item.getAmount() - 1);
+                    p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_BREWING_STAND_BREW, 1.0f, 1.5f);
+                    p.sendMessage(ChatColor.AQUA + "¡Has usado el Filtro Abisal para purificar tu máscara!");
+                } else {
+                    p.sendMessage(ChatColor.RED + "Necesitas tener equipada la Máscara del Abismo para usar este filtro.");
+                }
+                return;
+            }
+
             if (item.isSimilar(PermadeathItems.createAbyssalHeart())) {
                 e.setCancelled(true);
                 Player p = e.getPlayer();
@@ -174,8 +265,6 @@ public class PlayerListener implements Listener {
             item = (e.getCursor() != null && e.getCursor().getType() != Material.AIR) ? e.getCursor() : e.getCurrentItem();
         } else if (e.getAction() == org.bukkit.event.inventory.InventoryAction.MOVE_TO_OTHER_INVENTORY) {
             item = e.getCurrentItem();
-            // Si es shift click, verificamos si terminaría en el casco (esto es una aproximación, Bukkit no da el slot destino fácilmente)
-            // pero para cascos, si el slot 5 está vacío, terminará ahí.
             if (PermadeathItems.isAbyssalMask(item) && e.getWhoClicked().getInventory().getHelmet() == null) {
                 isArmorSlot = true;
             }
@@ -256,7 +345,6 @@ public class PlayerListener implements Listener {
             }
 
             if (Main.instance.getDay() >= 25) {
-                // Incrementar versión global para que las entidades se actualicen en sus hilos regionales
                 Main.instance.incrementDeathTrainVersion();
             }
 
@@ -313,7 +401,7 @@ public class PlayerListener implements Listener {
         man.setDeathTime();
         man.setDeathDay();
         man.setDeathCoords(e.getEntity().getPlayer().getLocation());
-        man.saveFile(); // Guardado único después de setear todo
+        man.saveFile();
         
         DiscordPortal.banPlayer(off, false);
 
@@ -473,15 +561,9 @@ public class PlayerListener implements Listener {
                 player.setStatistic(Statistic.TIME_SINCE_REST, 0);
 
                 if (!sent.contains(player)) {
-
-                    //Bukkit.broadcastMessage(instance.format(Objects.requireNonNull(instance.getConfig().getString("Server-Messages.Sleep").replace("%player%", player.getName()))));
-
                     Bukkit.getOnlinePlayers().forEach(p -> {
-
                         String msg = Main.getInstance().getMessages().getMessage("Sleep", p).replace("%player%", player.getName());
-
                         p.sendMessage(msg);
-
                     });
 
                     Main.getInstance().getMessages().sendConsole(Main.getInstance().getMessages().getMsgForConsole("Sleep").replace("%player%", player.getName()));
@@ -497,11 +579,8 @@ public class PlayerListener implements Listener {
             globalSleeping.add(player);
 
             Bukkit.getOnlinePlayers().forEach(p -> {
-
                 String msg = Main.getInstance().getMessages().getMessage("Sleeping", p).replace("%needed%", String.valueOf(4)).replace("%players%", String.valueOf(globalSleeping.size())).replace("%player%", player.getName());
-
                 p.sendMessage(msg);
-
             });
 
             Main.getInstance().getMessages().sendConsole(Main.getInstance().getMessages().getMsgForConsole("Sleeping").replace("%needed%", String.valueOf(4)).replace("%players%", String.valueOf(globalSleeping.size())).replace("%player%", player.getName()));
@@ -557,17 +636,14 @@ public class PlayerListener implements Listener {
         }
 
         if (sleeping.contains(p)) {
-
             sleeping.remove(p);
         }
 
         if (globalSleeping.contains(p)) {
-
             globalSleeping.remove(p);
         }
 
         if (p.getWorld().getTime() >= 0 && p.getWorld().getTime() < 13000) {
-
             return;
         }
 
@@ -627,10 +703,8 @@ public class PlayerListener implements Listener {
         if (!PermadeathAPI.optifineItemsEnabled())
             player.setResourcePack(Utils.RESOURCE_PACK_LINK);
 
-        // GIVE ACCESSORY MENU ITEM
         ItemStack menu = PermadeathItems.createAccessoryTrigger();
         
-        // Remove existing menu items to prevent duplicates
         for (int i = 0; i < player.getInventory().getSize(); i++) {
             ItemStack item = player.getInventory().getItem(i);
             if (item != null && item.getType() == menu.getType() && item.hasItemMeta() && item.getItemMeta().getDisplayName().contains("Menú de Accesorios")) {
@@ -638,7 +712,6 @@ public class PlayerListener implements Listener {
             }
         }
         
-        // Force set in slot 8
         player.getInventory().setItem(8, menu);
 
         if (Main.instance.getBeginningManager() != null && Main.instance.getBeginningManager().getBeginningWorld() != null) {
@@ -743,21 +816,13 @@ public class PlayerListener implements Listener {
     public void onAirChange(EntityAirChangeEvent e) {
         if (!(e.getEntity() instanceof Player p)) return;
 
-        // Lógica de la Medalla de Agua (Día 30+)
-        // La medalla ya no otorga aire infinito aquí, solo protege del contacto en tickPlayer
-        if (Main.instance.getDay() >= 30) {
-            // Eliminamos e.setAmount(p.getMaximumAir())
-        }
-
         if (Main.instance.getDay() < 50) return;
 
-        // Si el aire está subiendo (jugador salió a superficie), no hacer nada
         if (p.getRemainingAir() <= e.getAmount()) return;
 
         int speed = (Main.instance.getDay() < 60 ? 5 : 10);
         Double damage = (Main.instance.getDay() < 60 ? 5.0D : 10.0D);
 
-        // Si ya no queda aire o estamos a punto de llegar a 0
         if (e.getAmount() <= 10) {
             e.setAmount(0);
             Main.instance.getNmsAccessor().drown(p, damage);
@@ -828,7 +893,6 @@ public class PlayerListener implements Listener {
                     if (e.getPlayer().hasPotionEffect(PotionEffectType.MINING_FATIGUE)) {
                         PotionEffect effect = e.getPlayer().getPotionEffect(PotionEffectType.MINING_FATIGUE);
                         runTaskLaterEntity(e.getPlayer(), () -> {
-
                             e.getPlayer().addPotionEffect(effect);
                         }, 10L);
                     }
@@ -847,7 +911,6 @@ public class PlayerListener implements Listener {
 
                 if (e.getItem().getType() == Material.PUFFERFISH) {
                     runTaskLaterEntity(e.getPlayer(), () -> {
-
                         e.getPlayer().removePotionEffect(PotionEffectType.NAUSEA);
                         e.getPlayer().removePotionEffect(PotionEffectType.POISON);
                         e.getPlayer().removePotionEffect(PotionEffectType.HUNGER);
@@ -859,18 +922,14 @@ public class PlayerListener implements Listener {
 
                 if (e.getItem().getType() == Material.ROTTEN_FLESH) {
                     runTaskLaterEntity(e.getPlayer(), () -> {
-
                         e.getPlayer().removePotionEffect(PotionEffectType.HUNGER);
-
                         e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, Integer.MAX_VALUE, 1));
                     }, 5L);
                 }
 
                 if (e.getItem().getType() == Material.POISONOUS_POTATO) {
                     runTaskLaterEntity(e.getPlayer(), () -> {
-
                         e.getPlayer().removePotionEffect(PotionEffectType.POISON);
-
                         e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.POISON, Integer.MAX_VALUE, 0));
                     }, 5L);
                 }
@@ -878,13 +937,9 @@ public class PlayerListener implements Listener {
         }
 
         if (Main.getInstance().getDay() >= 60) {
-
             ItemStack s = e.getItem();
-
             if (s != null) {
-
                 if (s.getType() == Material.PUMPKIN_PIE) {
-
                     e.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 1, 3));
                 }
             }
@@ -893,7 +948,6 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onTeleport(PlayerTeleportEvent e) {
-
         if (e.getCause() == PlayerTeleportEvent.TeleportCause.ENDER_PEARL && Main.instance.getDay() >= 60) {
             e.getPlayer().setCooldown(Material.ENDER_PEARL, 6 * 20);
         }
@@ -926,20 +980,12 @@ public class PlayerListener implements Listener {
     }
 
     private void createRegenZone(Location playerZone) {
-
         EndDataManager ma = Main.getInstance().getEndData();
-
         if (!ma.getConfig().getBoolean("CreatedRegenZone")) {
-
             Location added = playerZone.add(-10, 0, 0);
             Location toGenerate = Main.getInstance().endWorld.getHighestBlockAt(added).getLocation();
 
-            // * * *
-            // * * *
-            // * * *
-
             if (toGenerate.getY() == -1) {
-
                 toGenerate.setY(playerZone.getY());
             }
 
@@ -1021,66 +1067,44 @@ public class PlayerListener implements Listener {
     }
 
     private void generateBlocks(boolean b, Location toGenerate) {
-
         if (b) {
-
             ArrayList<Block> blocks = new ArrayList<>();
-
             Block centerBlock = Main.getInstance().endWorld.getBlockAt(toGenerate);
             blocks.add(centerBlock);
-
             blocks.add(Main.getInstance().endWorld.getBlockAt(toGenerate).getRelative(BlockFace.EAST));
             blocks.add(Main.getInstance().endWorld.getBlockAt(toGenerate).getRelative(BlockFace.WEST));
-
             blocks.add(centerBlock.getRelative(BlockFace.NORTH));
             blocks.add(centerBlock.getRelative(BlockFace.NORTH_WEST));
             blocks.add(centerBlock.getRelative(BlockFace.NORTH_EAST));
-
             blocks.add(centerBlock.getRelative(BlockFace.SOUTH));
             blocks.add(centerBlock.getRelative(BlockFace.SOUTH_WEST));
             blocks.add(centerBlock.getRelative(BlockFace.SOUTH_EAST));
-
             for (Block all : blocks) {
-
                 all.setType(Material.RED_WOOL);
             }
         } else {
-
             ArrayList<Block> blocks = new ArrayList<>();
             Block centerBlockOfWool = Main.getInstance().endWorld.getBlockAt(toGenerate);
-
             Block corner1 = centerBlockOfWool.getRelative(BlockFace.NORTH).getRelative(BlockFace.NORTH).getRelative(BlockFace.EAST).getRelative(BlockFace.EAST);
-
             blocks.add(corner1);
             blocks.add(corner1.getRelative(BlockFace.WEST));
             blocks.add(corner1.getRelative(BlockFace.WEST).getRelative(BlockFace.WEST));
             blocks.add(corner1.getRelative(BlockFace.WEST).getRelative(BlockFace.WEST).getRelative(BlockFace.WEST));
-
-            // CORNER 2
             blocks.add(corner1.getRelative(BlockFace.WEST).getRelative(BlockFace.WEST).getRelative(BlockFace.WEST).getRelative(BlockFace.WEST));
-
             blocks.add(corner1.getRelative(BlockFace.SOUTH));
             blocks.add(corner1.getRelative(BlockFace.SOUTH).getRelative(BlockFace.SOUTH));
             blocks.add(corner1.getRelative(BlockFace.SOUTH).getRelative(BlockFace.SOUTH).getRelative(BlockFace.SOUTH));
-
-            // CORNER 3
             Block southC = corner1.getRelative(BlockFace.SOUTH).getRelative(BlockFace.SOUTH).getRelative(BlockFace.SOUTH).getRelative(BlockFace.SOUTH);
             blocks.add(southC);
-
             blocks.add(southC.getRelative(BlockFace.WEST));
             blocks.add(southC.getRelative(BlockFace.WEST).getRelative(BlockFace.WEST));
             blocks.add(southC.getRelative(BlockFace.WEST).getRelative(BlockFace.WEST).getRelative(BlockFace.WEST));
-
-            // CORNER 4
             Block finalC = southC.getRelative(BlockFace.WEST).getRelative(BlockFace.WEST).getRelative(BlockFace.WEST).getRelative(BlockFace.WEST);
             blocks.add(finalC);
-
             blocks.add(finalC.getRelative(BlockFace.NORTH));
             blocks.add(finalC.getRelative(BlockFace.NORTH).getRelative(BlockFace.NORTH));
             blocks.add(finalC.getRelative(BlockFace.NORTH).getRelative(BlockFace.NORTH).getRelative(BlockFace.NORTH));
-
             for (Block all : blocks) {
-
                 all.setType(Material.RED_GLAZED_TERRACOTTA);
             }
         }
@@ -1092,9 +1116,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void restrictCrafting(PrepareItemCraftEvent e) {
-
         CraftPrepareManager manager = new CraftPrepareManager(e);
-
         manager.runCheckForLifeOrb();
         manager.runCheckForBeginningRelic();
         manager.runCheckForAbyssalMask();
@@ -1111,21 +1133,14 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onCraftItem(CraftItemEvent e) {
         CraftingInventory inventory = e.getInventory();
-
         if (inventory.getResult() != null) {
-
             ItemStack res = e.getRecipe().getResult();
-
             if (e.isCancelled() || e.getResult() != Event.Result.ALLOW) return;
-
             if (res.hasItemMeta()) {
-
                 if (PermadeathItems.isEndRelic(res)) {
-
                     ItemMeta meta = res.getItemMeta();
                     meta.setLore(Arrays.asList(HiddenStringUtils.encodeString("{" + UUID.randomUUID().toString() + ": 0}")));
                     res.setItemMeta(meta);
-
                     e.setCurrentItem(res);
                     return;
                 }
@@ -1137,13 +1152,11 @@ public class PlayerListener implements Listener {
                             ItemStack item = matrix[i];
                             if (item != null) {
                                 int amountToReduce = 1;
-                                
                                 if (res.isSimilar(PermadeathItems.createBeginningRelic())) {
                                     if (item.getType() == Material.DIAMOND_BLOCK) amountToReduce = 32;
                                 } else if (res.isSimilar(PermadeathItems.createLifeOrb())) {
                                     if (item.getType() != Material.HEART_OF_THE_SEA) amountToReduce = 64;
                                 }
-
                                 if (item.getAmount() > amountToReduce) {
                                     item.setAmount(item.getAmount() - amountToReduce);
                                 } else {
@@ -1152,7 +1165,6 @@ public class PlayerListener implements Listener {
                             }
                         }
                         e.getInventory().setMatrix(matrix);
-                        
                         Player p = (Player) e.getWhoClicked();
                         p.setItemOnCursor(res);
                     }
@@ -1160,13 +1172,9 @@ public class PlayerListener implements Listener {
 
                 if (res.getItemMeta().hasDisplayName() && res.getItemMeta().getDisplayName().contains(TextUtils.format("&6Hyper Golden Apple +")) || res.getItemMeta().getDisplayName().contains(TextUtils.format("&6Super Golden Apple +"))) {
                     if (e.getWhoClicked() instanceof Player) {
-
                         e.getInventory().setMatrix(clearMatrix());
-
                         Player p = (Player) e.getWhoClicked();
-
                         p.setItemOnCursor(res);
-
                     }
                 }
             }
@@ -1176,19 +1184,14 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent e) {
         Player p = e.getPlayer();
-        
-        // Restore Accessory Menu
         ItemStack menu = PermadeathItems.createAccessoryTrigger();
         if (!p.getInventory().contains(menu)) {
             p.getInventory().setItem(8, menu);
         }
-        
-        // Update slots immediately
         runTaskLaterEntity(p, () -> PermadeathItems.slotBlock(p), 5L);
     }
 
     public ItemStack[] clearMatrix() {
-
         return new ItemStack[]{
                 new ItemStack(Material.AIR), new ItemStack(Material.AIR), new ItemStack(Material.AIR),
                 new ItemStack(Material.AIR), new ItemStack(Material.AIR), new ItemStack(Material.AIR),
@@ -1196,7 +1199,6 @@ public class PlayerListener implements Listener {
     }
 
     private class CraftPrepareManager {
-
         private PrepareItemCraftEvent e;
         private ItemStack result;
 
@@ -1206,68 +1208,45 @@ public class PlayerListener implements Listener {
         }
 
         public void runCheckForBeginningRelic() {
-
             if (result == null) return;
-
             if (result.isSimilar(PermadeathItems.createBeginningRelic())) {
                 int diamondBlocks = 0;
                 int r = 0;
                 for (ItemStack s : e.getInventory().getMatrix()) {
                     if (s != null) {
                         if (s.getType() == Material.DIAMOND_BLOCK) {
-                            if (s.getAmount() >= 32) {
-                                diamondBlocks++;
-                            } else {
-                                // Bukkit.getConsoleSender().sendMessage("[Permadeath-Debug] Diamond Block stack too small: " + s.getAmount());
-                            }
+                            if (s.getAmount() >= 32) diamondBlocks++;
                         }
-                        if (PermadeathItems.isEndRelic(s)) {
-                            r++;
-                        }
+                        if (PermadeathItems.isEndRelic(s)) r++;
                     }
                 }
-
-                // Bukkit.getConsoleSender().sendMessage("[Permadeath-Debug] Checking Beginning Relic Craft: Diamonds=" + diamondBlocks + " (Req 4 stacks of 32), Relic=" + r);
-
-                if (diamondBlocks < 4 || r < 1) {
-                    e.getInventory().setResult(null);
-                }
-
-                if (diamondBlocks >= 4 && r >= 1) {
-                    e.getInventory().setResult(PermadeathItems.createBeginningRelic());
-                }
+                if (diamondBlocks < 4 || r < 1) e.getInventory().setResult(null);
+                if (diamondBlocks >= 4 && r >= 1) e.getInventory().setResult(PermadeathItems.createBeginningRelic());
             }
         }
 
         public void runCheckForAbyssalMask() {
             if (result == null) return;
-            
-            // 1. Validar crafteo del Corazón y el Filtro (Disponibles en Dia 60)
-            if (result.isSimilar(PermadeathItems.createAbyssalHeart()) || result.isSimilar(PermadeathItems.createAbyssalFilter())) {
+            if (PermadeathItems.isAbyssalHeart(result) || PermadeathItems.isAbyssalFilter(result)) {
                 if (Main.instance.getDay() < 60 || !Main.instance.getConfig().getBoolean("Toggles.ExtendToDay90")) {
                     e.getInventory().setResult(null);
                 }
                 return;
             }
-
-            // 2. Validar crafteo de la Máscara (Requiere Corazón DESPERTADO)
             if (PermadeathItems.isAbyssalMask(result)) {
                 if (!Main.instance.isExtendedDifficulty()) {
                     e.getInventory().setResult(null);
                     return;
                 }
-                
                 int filters = 0;
                 int shards = 0;
                 for (ItemStack s : e.getInventory().getMatrix()) {
                     if (s != null) {
-                        if (s.isSimilar(PermadeathItems.createAbyssalFilter())) filters++;
-                        if (s.isSimilar(PermadeathItems.createVoidShard())) shards++;
+                        if (PermadeathItems.isAbyssalFilter(s)) filters++;
+                        if (s.getType() == Material.AMETHYST_SHARD) shards++;
                     }
                 }
-                if (filters < 2 || shards < 4) {
-                    e.getInventory().setResult(null);
-                }
+                if (filters < 2 || shards < 4) e.getInventory().setResult(null);
             }
         }
 
@@ -1277,46 +1256,20 @@ public class PlayerListener implements Listener {
                 if (result.getType() == Material.ELYTRA) return;
                 int diamondsFound = 0;
                 boolean foundPiece = false;
-
                 for (ItemStack item : e.getInventory().getMatrix()) {
-                    if (item != null) {
-                        if (item.hasItemMeta()) {
-                            ItemMeta meta = item.getItemMeta();
-                            if (item.getType() == Material.DIAMOND) {
-                                if (meta.isUnbreakable() && ChatColor.stripColor(item.getItemMeta().getDisplayName()).contains("Infernal")) {
-                                    diamondsFound = diamondsFound + 1;
-                                }
-                            }
-                            if (NetheriteArmor.isNetheritePiece(item)) {
-                                foundPiece = true;
-                            }
-                        }
+                    if (item != null && item.hasItemMeta()) {
+                        ItemMeta meta = item.getItemMeta();
+                        if (item.getType() == Material.DIAMOND && meta.isUnbreakable() && ChatColor.stripColor(meta.getDisplayName()).contains("Infernal")) diamondsFound++;
+                        if (NetheriteArmor.isNetheritePiece(item)) foundPiece = true;
                     }
                 }
-
-                if (diamondsFound < 5 || !foundPiece) {
-                    e.getInventory().setResult(null);
-                }
-
+                if (diamondsFound < 5 || !foundPiece) e.getInventory().setResult(null);
                 if (diamondsFound >= 4 && foundPiece) {
-
                     Material mat = result.getType();
-
-                    if (mat == Material.LEATHER_HELMET) {
-                        e.getInventory().setResult(InfernalNetherite.craftNetheriteHelmet());
-                    }
-
-                    if (mat == Material.LEATHER_CHESTPLATE) {
-                        e.getInventory().setResult(InfernalNetherite.craftNetheriteChest());
-                    }
-
-                    if (mat == Material.LEATHER_LEGGINGS) {
-                        e.getInventory().setResult(InfernalNetherite.craftNetheriteLegs());
-                    }
-
-                    if (mat == Material.LEATHER_BOOTS) {
-                        e.getInventory().setResult(InfernalNetherite.craftNetheriteBoots());
-                    }
+                    if (mat == Material.LEATHER_HELMET) e.getInventory().setResult(InfernalNetherite.craftNetheriteHelmet());
+                    if (mat == Material.LEATHER_CHESTPLATE) e.getInventory().setResult(InfernalNetherite.craftNetheriteChest());
+                    if (mat == Material.LEATHER_LEGGINGS) e.getInventory().setResult(InfernalNetherite.craftNetheriteLegs());
+                    if (mat == Material.LEATHER_BOOTS) e.getInventory().setResult(InfernalNetherite.craftNetheriteBoots());
                 }
             }
         }
@@ -1324,99 +1277,48 @@ public class PlayerListener implements Listener {
         public void runCheckForInfernalElytra() {
             if (result == null) return;
             if (result.getType() == Material.ELYTRA) {
-
                 int diamondsFound = 0;
-
                 for (ItemStack item : e.getInventory().getMatrix()) {
-                    if (item != null) {
-                        if (item.hasItemMeta()) {
-                            ItemMeta meta = item.getItemMeta();
-                            if (item.getType() == Material.DIAMOND) {
-                                if (meta.isUnbreakable() && ChatColor.stripColor(item.getItemMeta().getDisplayName()).contains("Infernal")) {
-                                    diamondsFound = diamondsFound + 1;
-                                }
-                            }
-                        }
+                    if (item != null && item.hasItemMeta()) {
+                        ItemMeta meta = item.getItemMeta();
+                        if (item.getType() == Material.DIAMOND && meta.isUnbreakable() && ChatColor.stripColor(meta.getDisplayName()).contains("Infernal")) diamondsFound++;
                     }
                 }
-
-                if (diamondsFound >= 8) {
-                    e.getInventory().setResult(PermadeathItems.craftInfernalElytra());
-                } else {
-                    e.getInventory().setResult(null);
-                }
+                if (diamondsFound >= 8) e.getInventory().setResult(PermadeathItems.craftInfernalElytra());
+                else e.getInventory().setResult(null);
             }
         }
 
         public void runCheckForGaps() {
             if (result == null) return;
             if (result.getItemMeta().getDisplayName().startsWith(TextUtils.format("&6Hyper"))) {
-
                 if (Main.instance.getDay() < 60) {
                     int found = 0;
-
                     for (ItemStack item : e.getInventory().getMatrix()) {
-                        if (item != null) {
-                            if (item.getType() == Material.GOLD_BLOCK) {
-                                if (item.getAmount() >= 8) {
-                                    found = found + 1;
-                                }
-                            }
-                        }
+                        if (item != null && item.getType() == Material.GOLD_BLOCK && item.getAmount() >= 8) found++;
                     }
-
-                    if (found >= 8) {
-                        e.getInventory().setResult(new ItemBuilder(Material.GOLDEN_APPLE, 1).setDisplayName(TextUtils.format("&6Hyper Golden Apple +")).addEnchant(Enchantment.INFINITY, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS).build());
-                    } else {
-
-                        e.getInventory().setResult(null);
-                    }
+                    if (found >= 8) e.getInventory().setResult(new ItemBuilder(Material.GOLDEN_APPLE, 1).setDisplayName(TextUtils.format("&6Hyper Golden Apple +")).addEnchant(Enchantment.INFINITY, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS).build());
+                    else e.getInventory().setResult(null);
                 } else {
                     int found = 0;
                     boolean enoughGaps = false;
-
                     for (ItemStack item : e.getInventory().getMatrix()) {
                         if (item != null) {
-                            if (item.getType() == Material.GOLD_BLOCK) {
-                                if (item.getAmount() >= 8) {
-                                    found = found + 1;
-                                }
-                            }
-
-                            if (item.getType() == Material.GOLDEN_APPLE && item.getAmount() == 64) {
-                                enoughGaps = true;
-                            }
+                            if (item.getType() == Material.GOLD_BLOCK && item.getAmount() >= 8) found++;
+                            if (item.getType() == Material.GOLDEN_APPLE && item.getAmount() == 64) enoughGaps = true;
                         }
                     }
-
-                    if (found >= 8 && enoughGaps) {
-                        e.getInventory().setResult(new ItemBuilder(Material.GOLDEN_APPLE, 1).setDisplayName(TextUtils.format("&6Hyper Golden Apple +")).addEnchant(Enchantment.INFINITY, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS).build());
-                    } else {
-
-                        e.getInventory().setResult(null);
-                    }
+                    if (found >= 8 && enoughGaps) e.getInventory().setResult(new ItemBuilder(Material.GOLDEN_APPLE, 1).setDisplayName(TextUtils.format("&6Hyper Golden Apple +")).addEnchant(Enchantment.INFINITY, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS).build());
+                    else e.getInventory().setResult(null);
                 }
             }
-
             if (result.getItemMeta().getDisplayName().startsWith(TextUtils.format("&6Super"))) {
-
                 int found = 0;
                 for (ItemStack item : e.getInventory().getMatrix()) {
-                    if (item != null) {
-                        if (item.getType() == Material.GOLD_INGOT) {
-                            if (item.getAmount() >= 8) {
-                                found++;
-                            }
-                        }
-                    }
+                    if (item != null && item.getType() == Material.GOLD_INGOT && item.getAmount() >= 8) found++;
                 }
-                if (found < 8) {
-                    e.getInventory().setResult(null);
-                    return;
-                }
-                if (found >= 8) {
-                    e.getInventory().setResult(new ItemBuilder(Material.GOLDEN_APPLE, 1).setDisplayName(TextUtils.format("&6Super Golden Apple +")).addEnchant(Enchantment.INFINITY, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS).build());
-                }
+                if (found < 8) e.getInventory().setResult(null);
+                else e.getInventory().setResult(new ItemBuilder(Material.GOLDEN_APPLE, 1).setDisplayName(TextUtils.format("&6Super Golden Apple +")).addEnchant(Enchantment.INFINITY, 1).addItemFlag(ItemFlag.HIDE_ENCHANTS).build());
             }
         }
 
@@ -1425,24 +1327,14 @@ public class PlayerListener implements Listener {
             if (!result.isSimilar(PermadeathItems.createLifeOrb())) return;
             if (!Main.instance.getOrbEvent().isRunning()) return;
             int items = 0;
-
             for (ItemStack s : e.getInventory().getMatrix()) {
                 if (s != null) {
-                    if (s.getType() == Material.HEART_OF_THE_SEA) {
-                        items++;
-                    } else {
-                        if (s.getAmount() >= 64) {
-                            items++;
-                        }
-                    }
+                    if (s.getType() == Material.HEART_OF_THE_SEA) items++;
+                    else if (s.getAmount() >= 64) items++;
                 }
             }
-            if (items < 9) {
-                e.getInventory().setResult(null);
-            }
-            if (items >= 9) {
-                e.getInventory().setResult(PermadeathItems.createLifeOrb());
-            }
+            if (items < 9) e.getInventory().setResult(null);
+            else e.getInventory().setResult(PermadeathItems.createLifeOrb());
         }
 
         public void runCheckForWaterMedal() {
@@ -1456,43 +1348,18 @@ public class PlayerListener implements Listener {
                         if (s.getType() == Material.TRIDENT) tridents++;
                     }
                 }
-                if (goldSlots < 6 || tridents < 2) {
-                    e.getInventory().setResult(null);
-                }
+                if (goldSlots < 6 || tridents < 2) e.getInventory().setResult(null);
             }
         }
     }
 
     private void runTaskLater(Runnable runnable, long ticks) {
-        if (Main.isRunningFolia()) {
-            Bukkit.getGlobalRegionScheduler().runDelayed(Main.getInstance(), t -> runnable.run(), ticks);
-        } else {
-            Bukkit.getScheduler().runTaskLater(Main.getInstance(), runnable, ticks);
-        }
+        if (Main.isRunningFolia()) Bukkit.getGlobalRegionScheduler().runDelayed(Main.getInstance(), t -> runnable.run(), ticks);
+        else Bukkit.getScheduler().runTaskLater(Main.getInstance(), runnable, ticks);
     }
 
     private void runTaskLaterEntity(Entity entity, Runnable runnable, long ticks) {
-        if (Main.isRunningFolia()) {
-            entity.getScheduler().runDelayed(Main.getInstance(), t -> runnable.run(), null, ticks);
-        } else {
-            Bukkit.getScheduler().runTaskLater(Main.getInstance(), runnable, ticks);
-        }
+        if (Main.isRunningFolia()) entity.getScheduler().runDelayed(Main.getInstance(), t -> runnable.run(), null, ticks);
+        else Bukkit.getScheduler().runTaskLater(Main.getInstance(), runnable, ticks);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

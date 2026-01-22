@@ -1,11 +1,9 @@
 package tech.sebazcrc.permadeath.world.abyss.generator;
 
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.WorldInfo;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.noise.SimplexOctaveGenerator;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,13 +18,12 @@ public class DeepDarkAbyssGenerator extends ChunkGenerator {
         List<org.bukkit.generator.BlockPopulator> populators = new ArrayList<>();
         populators.add(new org.bukkit.generator.BlockPopulator() {
             @Override
-            public void populate(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull org.bukkit.generator.LimitedRegion limitedRegion) {
+            public void populate(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull org.bukkit.generator.LimitedRegion region) {
                 if (random.nextInt(100) < 5) {
                     int x = (chunkX << 4) + random.nextInt(16);
                     int z = (chunkZ << 4) + random.nextInt(16);
                     int y = random.nextInt(60) + 20;
-
-                    generateCapsule(limitedRegion, x, y, z, random);
+                    generateCapsule(region, x, y, z, random);
                 }
             }
 
@@ -36,22 +33,16 @@ public class DeepDarkAbyssGenerator extends ChunkGenerator {
                     for (int y = -radius; y <= radius; y++) {
                         for (int z = -radius; z <= radius; z++) {
                             double dist = x * x + y * y + z * z;
-                            
                             if (dist < radius * radius) {
-                                if (dist > (radius - 1) * (radius - 1)) {
-                                    region.setType(cx + x, cy + y, cz + z, Material.REINFORCED_DEEPSLATE);
-                                } else {
-                                    region.setType(cx + x, cy + y, cz + z, Material.AIR);
-                                }
+                                if (dist > (radius - 1) * (radius - 1)) region.setType(cx + x, cy + y, cz + z, Material.REINFORCED_DEEPSLATE);
+                                else region.setType(cx + x, cy + y, cz + z, Material.AIR);
                             }
                         }
                     }
                 }
-                
                 region.setType(cx, cy, cz, Material.CHEST);
                 if (region.getBlockState(cx, cy, cz) instanceof org.bukkit.block.Chest chest) {
-                    org.bukkit.inventory.Inventory inv = chest.getInventory();
-                    tech.sebazcrc.permadeath.Main.getInstance().getLootManager().generateAbyssLoot().forEach(inv::addItem);
+                    tech.sebazcrc.permadeath.Main.getInstance().getLootManager().generateAbyssLoot().forEach(chest.getInventory()::addItem);
                 }
             }
         });
@@ -59,12 +50,14 @@ public class DeepDarkAbyssGenerator extends ChunkGenerator {
     }
 
     @Override
+    public boolean shouldGenerateStructures() { return false; }
+
+    @Override
     public void generateNoise(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) {
         SimplexOctaveGenerator generator = new SimplexOctaveGenerator(worldInfo.getSeed(), 8);
-        generator.setScale(0.02D); // Escala ajustada para cuevas menos anchas
+        generator.setScale(0.02D);
 
         int minHeight = worldInfo.getMinHeight();
-        int maxHeight = worldInfo.getMaxHeight();
 
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
@@ -73,28 +66,25 @@ public class DeepDarkAbyssGenerator extends ChunkGenerator {
 
                 chunkData.setBlock(x, minHeight, z, Material.BEDROCK);
                 
-                // Techo de 10 capas de Bedrock (119 a 128)
+                // 10 capas de Sculk sobre la Bedrock del suelo
+                for (int sy = minHeight + 1; sy <= minHeight + 11; sy++) {
+                    chunkData.setBlock(x, sy, z, Material.SCULK);
+                }
+                
+                // Techo de 10 capas de Bedrock
                 for (int ty = 119; ty <= 128; ty++) {
                     chunkData.setBlock(x, ty, z, Material.BEDROCK);
                 }
 
-                for (int y = minHeight + 1; y < 119; y++) {
-                    // Capa solida de Deepslate hasta la capa 19 (Suelo masivo)
+                for (int y = minHeight + 12; y < 119; y++) {
                     if (y <= 19) {
                         chunkData.setBlock(x, y, z, Material.DEEPSLATE);
                         continue; 
                     }
 
-                    // Generación de cuevas conectadas (Y=20 a Y=118)
                     double noise = generator.noise(realX, y, realZ, 0.5D, 0.5D, true);
-                    
                     if (Math.abs(noise) >= 0.12D) { 
-                        // Probabilidad de ser Abyssal Ore (1%)
-                        if (random.nextInt(100) == 0) {
-                            chunkData.setBlock(x, y, z, Material.DEEPSLATE_EMERALD_ORE);
-                        } else {
-                            chunkData.setBlock(x, y, z, Material.DEEPSLATE);
-                        }
+                        chunkData.setBlock(x, y, z, Material.DEEPSLATE);
                     }
                 }
             }
@@ -106,35 +96,61 @@ public class DeepDarkAbyssGenerator extends ChunkGenerator {
         SimplexOctaveGenerator sculkNoise = new SimplexOctaveGenerator(worldInfo.getSeed() + 1, 4);
         sculkNoise.setScale(0.05D);
 
+        int minHeight = worldInfo.getMinHeight();
+
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 int realX = (chunkX << 4) + x;
                 int realZ = (chunkZ << 4) + z;
 
-                // Rango extendido hasta 128 (límite del techo)
-                for (int y = worldInfo.getMinHeight() + 1; y < 128; y++) {
+                // 1. Decoración sobre el suelo de Sculk (Y = minHeight + 11)
+                if (random.nextInt(100) < 20) { // 20% de probabilidad de decoración en el suelo por chunk-column
+                    applyDecoration(chunkData, x, minHeight + 12, z, random, false);
+                }
+
+                // 2. Decoración en cuevas
+                for (int y = minHeight + 12; y < 119; y++) {
                     Material current = chunkData.getType(x, y, z);
-                    
-                    if (current == Material.DEEPSLATE) {
-                        if (isExposed(chunkData, x, y, z)) {
-                            double noise = sculkNoise.noise(realX, y, realZ, 0.5D, 0.5D, true);
-                            // Más Sculk: umbral reducido de 0.4 a -0.2
-                            if (noise > -0.2D) {
-                                chunkData.setBlock(x, y, z, Material.SCULK);
-                                
-                                // Decoración
-                                if (random.nextInt(100) < 5) { // 5% Catalizadores
-                                    chunkData.setBlock(x, y + 1, z, Material.SCULK_CATALYST);
-                                } else if (random.nextInt(200) < 1) { // Reducido a 0.5% (1 en 200)
-                                    chunkData.setBlock(x, y + 1, z, Material.SCULK_SHRIEKER);
-                                } else if (random.nextInt(100) < 10) {
-                                    chunkData.setBlock(x, y + 1, z, Material.SCULK_SENSOR);
-                                }
+                    if (current == Material.DEEPSLATE && isExposed(chunkData, x, y, z)) {
+                        double noise = sculkNoise.noise(realX, y, realZ, 0.5D, 0.5D, true);
+                        
+                        boolean placeSculk = false;
+                        boolean isHighLayer = y > 50;
+
+                        if (isHighLayer) {
+                            // Capas altas: Pequeños parches dispersos (Umbral más alto)
+                            if (noise > 0.45D) placeSculk = true;
+                        } else {
+                            // Capas bajas: Cobertura densa (Umbral estándar)
+                            if (noise > -0.2D) placeSculk = true;
+                        }
+
+                        if (placeSculk) {
+                            chunkData.setBlock(x, y, z, Material.SCULK);
+                            if (y < 118 && chunkData.getType(x, y + 1, z) == Material.AIR) {
+                                applyDecoration(chunkData, x, y + 1, z, random, isHighLayer);
                             }
                         }
                     }
                 }
             }
+        }
+    }
+
+    private void applyDecoration(ChunkData chunkData, int x, int y, int z, Random random, boolean isHighLayer) {
+        if (y >= 128) return;
+        int roll = random.nextInt(100);
+        
+        if (isHighLayer) {
+            // Mayor probabilidad de trampas en los parches altos
+            if (roll < 10) chunkData.setBlock(x, y, z, Material.SCULK_CATALYST); // 10%
+            else if (roll < 15) chunkData.setBlock(x, y, z, Material.SCULK_SHRIEKER); // 5% Chilladores
+            else if (roll < 35) chunkData.setBlock(x, y, z, Material.SCULK_SENSOR); // 20% Sensores
+        } else {
+            // Probabilidad estándar en el fondo
+            if (roll < 5) chunkData.setBlock(x, y, z, Material.SCULK_CATALYST);
+            else if (roll < 6) chunkData.setBlock(x, y, z, Material.SCULK_SHRIEKER); // 1% Chilladores
+            else if (roll < 15) chunkData.setBlock(x, y, z, Material.SCULK_SENSOR);
         }
     }
 
@@ -151,12 +167,3 @@ public class DeepDarkAbyssGenerator extends ChunkGenerator {
     @Override
     public boolean shouldGenerateCaves() { return true; }
 }
-
-
-
-
-
-
-
-
-

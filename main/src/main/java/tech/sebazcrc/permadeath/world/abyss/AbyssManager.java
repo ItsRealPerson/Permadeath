@@ -4,12 +4,14 @@ import org.bukkit.*;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockReceiveGameEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.persistence.PersistentDataType;
 import tech.sebazcrc.permadeath.Main;
@@ -41,7 +43,6 @@ public class AbyssManager implements Listener {
             for (Player p : abyssWorld.getPlayers()) {
                 if (p.getGameMode() == GameMode.SPECTATOR || !p.isOnline()) continue;
                 
-                // En Folia, debemos ejecutar el chequeo en el hilo de la región del jugador
                 if (Main.isRunningFolia()) {
                     p.getScheduler().run(plugin, t -> {
                         checkAndSpawnAbyssMobs(p);
@@ -53,20 +54,19 @@ public class AbyssManager implements Listener {
         };
 
         if (Main.isRunningFolia()) {
-            Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, t -> task.run(), 60L, 60L); // Cada 3s
+            Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, t -> task.run(), 200L, 200L);
         } else {
-            Bukkit.getScheduler().runTaskTimer(plugin, task, 60L, 60L);
+            Bukkit.getScheduler().runTaskTimer(plugin, task, 200L, 200L);
         }
     }
 
     private void checkAndSpawnAbyssMobs(Player p) {
-        // Cap local de mobs cerca del jugador aumentado a 70
         long nearbyMobs = p.getNearbyEntities(64, 64, 64).stream()
                 .filter(e -> e instanceof org.bukkit.entity.Monster || e instanceof org.bukkit.entity.Bat)
                 .count();
         
         if (nearbyMobs < 70) {
-            int toSpawn = 4 + new java.util.Random().nextInt(5);
+            int toSpawn = 2 + new java.util.Random().nextInt(3);
             for (int i = 0; i < toSpawn; i++) {
                 Location loc = findAbyssSpawnLocation(p.getLocation());
                 if (loc != null) {
@@ -78,7 +78,6 @@ public class AbyssManager implements Listener {
 
     private Location findAbyssSpawnLocation(Location base) {
         java.util.Random random = new java.util.Random();
-        // Aumentar intentos y rango vertical para encontrar islas
         for (int i = 0; i < 30; i++) {
             int x = base.getBlockX() + random.nextInt(41) - 20;
             int z = base.getBlockZ() + random.nextInt(41) - 20;
@@ -120,12 +119,9 @@ public class AbyssManager implements Listener {
         String name = event.getWorld().getName();
         if (name.endsWith("permadeath_abyss") || name.endsWith("permadeath/abyss")) {
             this.abyssWorld = event.getWorld();
-            
-            // Fallback por si WorldInit no se disparó
             if (this.abyssWorld.getPopulators().stream().noneMatch(p -> p instanceof AbyssPopulator)) {
                 this.abyssWorld.getPopulators().add(new AbyssPopulator());
             }
-
             hideDragonBar(this.abyssWorld);
         }
     }
@@ -144,8 +140,6 @@ public class AbyssManager implements Listener {
 
     public void loadWorld() {
         this.abyssWorld = Bukkit.getWorld(WORLD_NAME);
-        
-        // Si no se encuentra por el nombre estándar, buscar en la lista de mundos cargados
         if (this.abyssWorld == null) {
             for (World w : Bukkit.getWorlds()) {
                 if (w.getName().endsWith("permadeath_abyss") || w.getName().endsWith("permadeath/abyss")) {
@@ -164,19 +158,15 @@ public class AbyssManager implements Listener {
                 this.abyssWorld = Bukkit.createWorld(creator);
                 
                 if (this.abyssWorld != null) {
-                    // Registrar el poblador inmediatamente si no está
                     if (this.abyssWorld.getPopulators().stream().noneMatch(p -> p instanceof AbyssPopulator)) {
                         this.abyssWorld.getPopulators().add(new AbyssPopulator());
                     }
-                    
                     Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] Dimensión Abisal cargada correctamente.");
                     hideDragonBar(this.abyssWorld);
                 }
             } catch (Exception e) {
                 String error = e.getMessage() != null ? e.getMessage() : e.toString();
                 Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[Permadeath] ERROR al cargar el Abismo: " + error);
-                Bukkit.getConsoleSender().sendMessage(ChatColor.GRAY + "Mundos detectados: " + 
-                    Bukkit.getWorlds().stream().map(World::getName).collect(java.util.stream.Collectors.joining(", ")));
             }
         }
     }
@@ -186,13 +176,9 @@ public class AbyssManager implements Listener {
             player.sendMessage(ChatColor.RED + "El Abismo está sellado. Necesitas despertar el Corazón del Abismo para entrar.");
             return;
         }
-
         if (abyssWorld == null) loadWorld();
-
         if (abyssWorld != null) {
-            // Buscar un lugar seguro (Y=60 es donde el poblador genera las islas)
             Location spawn = new Location(abyssWorld, 8, 62, 8);
-            
             if (Main.isRunningFolia()) {
                 player.teleportAsync(spawn).thenAccept(success -> {
                     if (success) playAbyssSound(player);
@@ -202,7 +188,7 @@ public class AbyssManager implements Listener {
                 playAbyssSound(player);
             }
         } else {
-            player.sendMessage(ChatColor.RED + "Error: La dimensión permadeath:abyss no está cargada. ¿Instalaste el datapack?");
+            player.sendMessage(ChatColor.RED + "Error: La dimensión permadeath:abyss no está cargada.");
         }
     }
 
@@ -211,7 +197,6 @@ public class AbyssManager implements Listener {
         ItemStack item = e.getItem();
         if (item.getType() == Material.POTION && item.hasItemMeta() && item.getItemMeta().getDisplayName().contains("Respiración Abisal")) {
             Player p = e.getPlayer();
-            // Establecer tiempo de inmunidad (120 segundos)
             long expiry = System.currentTimeMillis() + (120 * 1000);
             p.getPersistentDataContainer().set(new NamespacedKey(plugin, "abyss_potion_expiry"), PersistentDataType.LONG, expiry);
             p.sendMessage(ChatColor.AQUA + "Has ganado inmunidad a la presión abisal por 2 minutos.");
@@ -253,7 +238,6 @@ public class AbyssManager implements Listener {
             bar.setVisible(true);
         }
 
-        // --- Chequeo de Poción ---
         long now = System.currentTimeMillis();
         long expiry = player.getPersistentDataContainer().getOrDefault(new NamespacedKey(plugin, "abyss_potion_expiry"), PersistentDataType.LONG, 0L);
         boolean hasPotionEffect = now < expiry;
@@ -261,17 +245,13 @@ public class AbyssManager implements Listener {
         if (hasPotionEffect) {
             long remaining = expiry - now;
             double progress = (double) remaining / (120 * 1000);
-            
             bar.setTitle(ChatColor.LIGHT_PURPLE + "Respiración Abisal (" + (remaining / 1000) + "s)");
             bar.setColor(BarColor.PURPLE);
             bar.setProgress(Math.max(0.0, Math.min(1.0, progress)));
-            
-            // Limpiar borde si tiene poción
             if (player.getWorldBorder() != null) player.setWorldBorder(null);
             return;
         }
 
-        // --- Lógica de la Máscara en Accesorios ---
         ItemStack mask = null;
         int maskIndex = -1;
         ItemStack[] acc = tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.load(player);
@@ -290,13 +270,9 @@ public class AbyssManager implements Listener {
 
         if (mask != null && mask.getItemMeta() instanceof org.bukkit.inventory.meta.Damageable damageable) {
             player.getPersistentDataContainer().remove(new NamespacedKey(plugin, "abyss_grace_ticks"));
-            
             short maxDurability = mask.getType().getMaxDurability();
             int currentDamage = damageable.getDamage();
-            
-            // Sincronizar presión con durabilidad
-            double durabilityPercent = 1.0 - ((double) currentDamage / maxDurability);
-            currentPressure = durabilityPercent;
+            currentPressure = 1.0 - ((double) currentDamage / maxDurability);
 
             int enchantLevel = 0;
             try {
@@ -305,35 +281,34 @@ public class AbyssManager implements Listener {
             } catch (Exception ignored) {}
 
             int chance = 5 + (enchantLevel * 5);
-
             if (new java.util.Random().nextInt(chance) == 0) { 
                 damageable.setDamage(currentDamage + 1);
                 mask.setItemMeta(damageable);
-                
                 if (acc != null && maskIndex != -1) {
                     acc[maskIndex] = mask;
                     tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.saveFromItems(player, acc);
+                    org.bukkit.inventory.InventoryView openInv = player.getOpenInventory();
+                    if (openInv.getTitle().contains("Accesorios")) {
+                        int visualSlot = tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.ACCESSORY_SLOTS[maskIndex];
+                        openInv.getTopInventory().setItem(visualSlot, mask);
+                    }
                 }
                 currentPressure = 1.0 - ((double) (currentDamage + 1) / maxDurability);
             }
-            
             bar.setTitle(ChatColor.AQUA + "Oxígeno de la Máscara");
             bar.setColor(currentPressure > 0.3 ? BarColor.BLUE : BarColor.YELLOW);
         } else {
-            // Sin máscara: Tiempo de Gracia
             int grace = player.getPersistentDataContainer().getOrDefault(new NamespacedKey(plugin, "abyss_grace_ticks"), PersistentDataType.INTEGER, 30);
-            
             if (grace > 0) {
                 grace--;
                 player.getPersistentDataContainer().set(new NamespacedKey(plugin, "abyss_grace_ticks"), PersistentDataType.INTEGER, grace);
                 bar.setTitle(ChatColor.DARK_AQUA + "Presión del Abismo (" + grace + "s)");
                 bar.setProgress((double) grace / 30.0);
                 bar.setColor(BarColor.YELLOW);
-                
-                if (player.getWorldBorder() != null) player.setWorldBorder(null);
+                currentPressure = 1.0; 
+                player.getPersistentDataContainer().set(new NamespacedKey(plugin, "abyss_pressure"), PersistentDataType.DOUBLE, 1.0);
                 return;
             }
-
             currentPressure -= 0.005;
             bar.setTitle(ChatColor.DARK_AQUA + "Presión del Abismo");
             bar.setColor(BarColor.BLUE);
@@ -350,7 +325,6 @@ public class AbyssManager implements Listener {
         bar.setProgress(Math.max(0.0, Math.min(1.0, currentPressure)));
         player.getPersistentDataContainer().set(new NamespacedKey(plugin, "abyss_pressure"), PersistentDataType.DOUBLE, currentPressure);
 
-        // Efecto visual de borde rojo
         if (currentPressure < 0.2 && currentPressure > 0) {
             WorldBorder wb = player.getWorldBorder();
             if (wb == null || wb.getSize() > 50000) {
@@ -368,7 +342,6 @@ public class AbyssManager implements Listener {
 
         Location loc = player.getLocation();
         player.spawnParticle(Particle.ASH, loc, 50, 8, 4, 8, 0.02);
-        
         if (new java.util.Random().nextInt(40) == 0) {
             Sound[] abyssSounds = {Sound.BLOCK_SCULK_SHRIEKER_SHRIEK, Sound.ENTITY_WARDEN_HEARTBEAT, Sound.AMBIENT_CAVE, Sound.BLOCK_SCULK_CATALYST_BLOOM};
             player.playSound(loc, abyssSounds[new java.util.Random().nextInt(abyssSounds.length)], 0.4f, 0.5f);
@@ -381,11 +354,7 @@ public class AbyssManager implements Listener {
             bar.setVisible(false);
             bar.removeAll();
         }
-        
-        if (player.getWorldBorder() != null) {
-            player.setWorldBorder(null);
-        }
-        
+        if (player.getWorldBorder() != null) player.setWorldBorder(null);
         player.getPersistentDataContainer().remove(new NamespacedKey(plugin, "abyss_grace_ticks"));
     }
 
@@ -395,54 +364,82 @@ public class AbyssManager implements Listener {
         AdvancementManager.grantAdvancement(player, AdvancementManager.PDA.VOID_EXPLORER);
     }
 
-    private ItemStack findAbyssalMask(Player player) {
-        // Solo buscar en accesorios
-        ItemStack[] acc = tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.load(player);
-        if (acc != null) {
-            for (ItemStack item : acc) {
-                if (PermadeathItems.isAbyssalMask(item)) return item;
-            }
-        }
-        return null;
-    }
-
     public World getAbyssWorld() { return abyssWorld; }
+
+    @EventHandler
+    public void onShriekerShriek(org.bukkit.event.world.GenericGameEvent event) {
+        if (abyssWorld == null) return;
+        if (!event.getLocation().getWorld().equals(abyssWorld)) return;
+        if (event.getEvent() != GameEvent.SHRIEK) return;
+
+        Location loc = event.getLocation();
+        
+        Runnable spawnTask = () -> {
+            java.util.Random random = new java.util.Random();
+            int amount = 5 + random.nextInt(4);
+            for (int i = 0; i < amount; i++) {
+                int offsetX = random.nextInt(7) - 3;
+                int offsetZ = random.nextInt(7) - 3;
+                Location spawnLoc = loc.clone().add(offsetX + 0.5, 0, offsetZ + 0.5);
+                for (int y = 2; y >= -2; y--) {
+                    Location check = spawnLoc.clone().add(0, y, 0);
+                    if (check.getBlock().getType().isAir() && check.clone().add(0, -1, 0).getBlock().getType().isSolid()) {
+                        spawnAbyssMob(check);
+                        break;
+                    }
+                }
+            }
+            loc.getWorld().spawnParticle(Particle.SCULK_SOUL, loc.clone().add(0, 1, 0), 20, 0.5, 0.5, 0.5, 0.1);
+        };
+
+        if (Main.isRunningFolia()) {
+            Bukkit.getRegionScheduler().runDelayed(plugin, loc, t -> spawnTask.run(), 60L);
+        } else {
+            Bukkit.getScheduler().runTaskLater(plugin, spawnTask, 60L);
+        }
+    }
 
     public void onAbyssSpawn(org.bukkit.event.entity.CreatureSpawnEvent event) {
         if (abyssWorld == null || !event.getLocation().getWorld().equals(abyssWorld)) return;
-        
-        // --- Permitir Wardens Vanilla ---
         if (event.getEntityType() == EntityType.WARDEN) {
             long wardenCount = event.getLocation().getWorld().getNearbyEntities(event.getLocation(), 100, 100, 100).stream()
                     .filter(e -> e.getType() == EntityType.WARDEN)
                     .count();
-            
-            if (wardenCount >= 10) {
-                event.setCancelled(true);
-            }
-            return; // No cancelar si cumple el límite
+            if (wardenCount >= 10) event.setCancelled(true);
+            return;
         }
 
-        // Bloquear todos los spawns naturales que no sean nuestros custom
         if (event.getSpawnReason() != org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM) {
             event.setCancelled(true);
             Location loc = event.getLocation();
             java.util.Random random = new java.util.Random();
-            
             if (random.nextInt(100) < 35) {
                 String[] deepDarkMobs = {"SilentSeeker", "SculkParasite", "EchoArcher", "HollowGuard", "TwistedWarden"};
                 String selected = deepDarkMobs[random.nextInt(deepDarkMobs.length)];
-                
-                if (selected.equals("TwistedWarden") && random.nextInt(10) != 0) {
-                    selected = "SilentSeeker";
-                }
-                
+                if (selected.equals("TwistedWarden") && random.nextInt(10) != 0) selected = "SilentSeeker";
                 org.bukkit.entity.Entity e = plugin.getNmsHandler().spawnNMSCustomEntity(selected, null, loc, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM);
                 if (e instanceof org.bukkit.entity.LivingEntity liv) {
                     liv.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.STRENGTH, Integer.MAX_VALUE, 2));
                     liv.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.RESISTANCE, Integer.MAX_VALUE, 1));
                 }
             }
+        }
+    }
+
+    @EventHandler
+    public void onSculkDetect(BlockReceiveGameEvent e) {
+        if (e.getEntity() == null) return;
+        
+        String name = e.getEntity().getCustomName();
+        if (name == null) return;
+        
+        if (name.equals("§1Buscador Silencioso") || 
+            name.equals("§3Parásito de Sculk") || 
+            name.equals("§3Guardián del Vacío") || 
+            name.equals("§bArquero del Eco") ||
+            name.equals("§3Warden Retorcido")) {
+            
+            e.setCancelled(true);
         }
     }
 }
