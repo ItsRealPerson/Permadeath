@@ -1,0 +1,17 @@
+{
+  "type": "permadeath:abyss_type",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "layers": [
+        { "block": "minecraft:air", "height": 1 }
+      ],
+      "biome": "minecraft:deep_dark",
+      "lakes": false,
+      "features": false,
+      "structures": {
+        "structures": {}
+      }
+    }
+  }
+}

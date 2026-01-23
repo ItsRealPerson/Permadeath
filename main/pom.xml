@@ -6,11 +6,11 @@
     <parent>
         <groupId>tech.sebazcrc.permadeath</groupId>
         <artifactId>Permadeath</artifactId>
-        <version>1.4</version>
+        <version>1.4-PRE2</version>
     </parent>
 
     <artifactId>main</artifactId>
-    <version>1.4</version>
+    <version>1.4-PRE2</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>

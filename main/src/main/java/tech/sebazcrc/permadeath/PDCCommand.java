@@ -73,10 +73,24 @@ public class PDCCommand implements CommandExecutor {
             case "abyss" -> handleAbyss(sender, args);
             case "recipes" -> handleRecipes(sender);
             case "backup" -> handleBackup(sender);
+            case "resetall" -> handleResetAll(sender, args);
             default -> sendHelp(sender);
         }
 
         return true;
+    }
+
+    private void handleResetAll(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("permadeathcore.admin")) {
+            sender.sendMessage(ChatColor.RED + "No tienes permiso.");
+            return;
+        }
+        if (args.length < 2 || !args[1].equalsIgnoreCase("confirm")) {
+            sender.sendMessage(instance.prefix + ChatColor.RED + "¡ADVERTENCIA! Este comando borrará los datos de jugadores, desbaneará a todos y volverá al Día 1.");
+            sender.sendMessage(instance.prefix + ChatColor.YELLOW + "Usa: " + ChatColor.WHITE + "/pdc resetall confirm" + ChatColor.YELLOW + " para proceder.");
+            return;
+        }
+        instance.resetManager.resetAll(sender);
     }
 
     private void handleBackup(CommandSender sender) {
@@ -433,6 +447,7 @@ public class PDCCommand implements CommandExecutor {
             sender.sendMessage(ChatColor.YELLOW + "/pdc storm <add/remove> <h> " + ChatColor.GRAY + "(Gestionar tormentas)");
             sender.sendMessage(ChatColor.YELLOW + "/pdc cambiarDia <d> " + ChatColor.GRAY + "(Cambiar el día)");
             sender.sendMessage(ChatColor.YELLOW + "/pdc backup " + ChatColor.GRAY + "(Crear respaldo del mundo)");
+            sender.sendMessage(ChatColor.YELLOW + "/pdc resetall " + ChatColor.GRAY + "(Reiniciar TODO el plugin)");
             sender.sendMessage(ChatColor.YELLOW + "/pdc reload/debug/afk/boss/event/speedrun/beginning/setupBeginning");
         }
     }

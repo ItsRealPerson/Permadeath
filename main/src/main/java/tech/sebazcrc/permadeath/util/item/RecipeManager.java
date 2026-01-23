@@ -208,11 +208,8 @@ public class RecipeManager {
     }
 
     private void registerShulkerUnCraft() {
-
-        for (Material m : Material.values()) {
-            if (m.name().toLowerCase().contains("shulker_box")) {
-                Bukkit.addRecipe(new ShapelessRecipe(new NamespacedKey(instance, m.name() + "_uncraft"), new ItemStack(Material.SHULKER_SHELL, 2)).addIngredient(m));
-            }
+        for (Material m : org.bukkit.Tag.SHULKER_BOXES.getValues()) {
+            Bukkit.addRecipe(new ShapelessRecipe(new NamespacedKey(instance, m.name().toLowerCase() + "_uncraft"), new ItemStack(Material.SHULKER_SHELL, 2)).addIngredient(m));
         }
     }
 

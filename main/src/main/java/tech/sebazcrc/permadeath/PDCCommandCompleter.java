@@ -16,7 +16,7 @@ public class PDCCommandCompleter implements TabCompleter {
     private static final List<String> SUBCOMMANDS = Arrays.asList(
             "awake", "duracion", "idioma", "cambiarDia", "reload", "debug", 
             "mensaje", "dias", "info", "discord", "cambios", "beginning", 
-            "speedrun", "event", "locate", "give", "afk", "storm", "spawn", "boss", "backup"
+            "speedrun", "event", "locate", "give", "afk", "storm", "spawn", "boss", "backup", "resetall"
     );
 
     private static final List<String> GIVE_ITEMS = Arrays.asList(
@@ -85,6 +85,9 @@ public class PDCCommandCompleter implements TabCompleter {
                     break;
                 case "abyss":
                     if (sender.isOp()) StringUtil.copyPartialMatches(args[1], Collections.singletonList("force"), completions);
+                    break;
+                case "resetall":
+                    StringUtil.copyPartialMatches(args[1], Collections.singletonList("confirm"), completions);
                     break;
             }
         } else if (args.length == 3) {

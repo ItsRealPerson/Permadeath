@@ -85,7 +85,8 @@ public class NMSAccessorImpl implements NMSAccessor {
                 Object goalSelector = goalSelectorField.get(nmsEntity);
                 Object targetSelector = targetSelectorField.get(nmsEntity);
 
-                if (pathfinderMobClass.isInstance(nmsEntity)) {
+                // Solo inyectar MeleeAttackGoal si tiene daño de ataque
+                if (pathfinderMobClass.isInstance(nmsEntity) && entity.getAttribute(Attribute.ATTACK_DAMAGE) != null) {
                     // Añadir MeleeAttackGoal(mob, speed, pauseWhenMobIdle)
                     Object meleeGoal = meleeAttackGoalClass.getConstructor(pathfinderMobClass, double.class, boolean.class)
                             .newInstance(nmsEntity, 1.0D, true);

@@ -55,7 +55,14 @@ public class HostileEntityListener implements Listener {
     }
 
     private void injectHostileBehavior(LivingEntity entity) {
-        if (entity.getPersistentDataContainer().has(hostileKey, PersistentDataType.BYTE)) return;
+        // Usamos Metadata (temporal) para asegurar que la tarea se inicie en cada reinicio del servidor
+        if (entity.hasMetadata("pdc_hostile_active")) return;
+        entity.setMetadata("pdc_hostile_active", new org.bukkit.metadata.FixedMetadataValue(instance, true));
+        
+        // Marcamos persistente solo para identificar que DEBE ser hostil, aunque la lógica activa sea temporal
+        if (!entity.getPersistentDataContainer().has(hostileKey, PersistentDataType.BYTE)) {
+            entity.getPersistentDataContainer().set(hostileKey, PersistentDataType.BYTE, (byte) 1);
+        }
         
         instance.getNmsAccessor().injectHostilePathfinders(entity);
         if (entity.getAttribute(Attribute.ATTACK_DAMAGE) == null) {
@@ -63,26 +70,40 @@ public class HostileEntityListener implements Listener {
         }
 
         // Tarea de IA manual para asegurar agresividad
-        entity.getPersistentDataContainer().set(hostileKey, PersistentDataType.BYTE, (byte) 1);
         
         Runnable aiTask = () -> {
             if (entity.isDead() || !entity.isValid()) return;
             
             Player target = MobUtils.getNearestPlayer(entity, 20.0);
-            if (target != null) {
+            
+            // Si el objetivo está muy lejos (> 30 bloques) o desconectado, dejar de seguir
+            if (target == null || target.getLocation().distanceSquared(entity.getLocation()) > 900) {
                 if (entity instanceof Mob mob) {
-                    mob.setTarget(target);
+                    mob.setTarget(null);
                 }
-                
-                // Si es un mob que normalmente no es hostil (como Piglins zombis neutrales), forzamos movimiento
-                if (entity instanceof PigZombie || entity instanceof Bee || entity instanceof IronGolem) {
-                    TeleportUtils.lookAt(entity, target.getLocation());
-                    TeleportUtils.moveTowards(entity, target.getLocation(), 0.35, 0.2);
-                    
-                    if (entity.getLocation().distanceSquared(target.getLocation()) < 4.0) {
-                        entity.attack(target);
-                    }
-                }
+                return;
+            }
+
+            if (entity instanceof Mob mob) {
+                mob.setTarget(target);
+            }
+            
+            // Forzamos movimiento y ataque para TODOS los mobs pacíficos que ahora son hostiles
+            // Esto compensa la falta de MeleeAttackGoal y atributos de daño en animales
+            TeleportUtils.lookAt(entity, target.getLocation());
+            
+            // Usar navegación si es posible, sino empuje simple
+            if (entity instanceof Mob) {
+                ((Mob) entity).getPathfinder().moveTo(target, 1.25);
+            } else {
+                TeleportUtils.moveTowards(entity, target.getLocation(), 0.35, 0.2);
+            }
+            
+            if (entity.getLocation().distanceSquared(target.getLocation()) < 2.5) {
+                // Usamos damage directo en lugar de attack() porque attack() requiere atributos que estos mobs no tienen
+                target.damage(8.0, entity);
+                // Efecto visual de golpe
+                entity.swingMainHand();
             }
         };
 

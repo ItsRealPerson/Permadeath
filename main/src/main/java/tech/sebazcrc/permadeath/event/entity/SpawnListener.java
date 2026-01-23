@@ -802,11 +802,16 @@ public class SpawnListener implements Listener {
             String[] s = effectList.get(random.nextInt(effectList.size())).split(";");
 
             PotionEffectType type = PotionEffectType.getByName(s[0]);
+            
+            if (type == null) {
+                continue;
+            }
+            
             int lvl = Integer.parseInt(s[1]);
 
             if (entity.hasPotionEffect(type)) {
                 i--;
-                return;
+                continue;
             }
 
             entity.addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, lvl));
@@ -1105,15 +1110,24 @@ public class SpawnListener implements Listener {
 
     public void explodeCat(LivingEntity cat) {
         if (this.gatosSupernova.contains(cat)) return;
+        
+        // Verificación de seguridad para evitar duplicados en la lista si se llama múltiples veces
+        if (cat.hasMetadata("pdc_supernova_processing")) return;
+        cat.setMetadata("pdc_supernova_processing", new org.bukkit.metadata.FixedMetadataValue(plugin, true));
+
         this.gatosSupernova.add(cat);
 
         boolean canContinue = true;
 
         if (Bukkit.getOnlinePlayers().size() == 0) canContinue = false;
-        if (gatosSupernova.size() > 2) canContinue = false;
+        // Aumentamos el límite para evitar despawns masivos en granjas de lobos/gatos
+        if (gatosSupernova.size() > 50) canContinue = false;
 
         if (!canContinue) {
-            cat.remove();
+            // Si no puede explotar, lo sacamos de la lista pero NO lo borramos.
+            // Se quedará como un gato normal.
+            gatosSupernova.remove(cat);
+            cat.setCustomName(null); // Quitar nombre para no confundir
             return;
         }
 

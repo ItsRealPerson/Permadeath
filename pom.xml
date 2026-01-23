@@ -6,7 +6,7 @@
 
     <groupId>tech.sebazcrc.permadeath</groupId>
     <artifactId>Permadeath</artifactId>
-    <version>1.4</version>
+    <version>1.4-PRE2</version>
     <packaging>pom</packaging>
     <modules>
         <module>api</module>
@@ -15,7 +15,7 @@
     </modules>
 
     <properties>
-        <PERMADEATH_VERSION>1.4</PERMADEATH_VERSION>
+        <PERMADEATH_VERSION>1.4-PRE2</PERMADEATH_VERSION>
         <maven-assembly-plugin.version>3.6.0</maven-assembly-plugin.version>
         <maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
         <maven.compiler.source>21</maven.compiler.source>

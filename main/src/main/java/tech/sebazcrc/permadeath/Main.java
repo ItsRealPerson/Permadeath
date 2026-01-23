@@ -23,6 +23,8 @@ import org.bukkit.potion.PotionEffectType;
 import tech.sebazcrc.permadeath.api.interfaces.InfernalNetheriteBlock;
 import tech.sebazcrc.permadeath.api.interfaces.NMSAccessor;
 import tech.sebazcrc.permadeath.api.interfaces.NMSHandler;
+import tech.sebazcrc.permadeath.api.PermadeathAPI;
+import tech.sebazcrc.permadeath.api.PermadeathAPIProvider;
 import tech.sebazcrc.permadeath.data.*;
 import tech.sebazcrc.permadeath.discord.DiscordPortal;
 import tech.sebazcrc.permadeath.end.EndManager;
@@ -45,20 +47,26 @@ import tech.sebazcrc.permadeath.util.item.NetheriteArmor;
 import tech.sebazcrc.permadeath.util.item.PermadeathItems;
 import tech.sebazcrc.permadeath.util.item.RecipeManager;
 import tech.sebazcrc.permadeath.util.lib.FileAPI;
+import tech.sebazcrc.permadeath.util.lib.HiddenStringUtils;
 import tech.sebazcrc.permadeath.util.lib.UpdateChecker;
-import tech.sebazcrc.permadeath.util.log.Log4JFilter;
-import tech.sebazcrc.permadeath.util.log.PDCLog;
-import tech.sebazcrc.permadeath.util.mob.CustomSkeletons;
-import tech.sebazcrc.permadeath.api.PermadeathAPI;
-import tech.sebazcrc.permadeath.api.PermadeathAPIProvider;
 import tech.sebazcrc.permadeath.world.abyss.AbyssManager;
+import tech.sebazcrc.permadeath.util.log.PDCLog;
+import tech.sebazcrc.permadeath.util.log.Log4JFilter;
+import tech.sebazcrc.permadeath.util.mob.CustomSkeletons;
 import tech.sebazcrc.permadeath.world.beginning.BeginningManager;
 
 import tech.sebazcrc.permadeath.util.inventory.AccessoryListener;
 
+import org.bukkit.util.Vector;
+import java.util.logging.Level;
+
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.logging.Filter;
 import java.util.logging.Logger;
@@ -91,6 +99,8 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     public EndDataManager endData;
     public AbyssManager abyssManager;
     public tech.sebazcrc.permadeath.util.BackupManager backupManager;
+    public tech.sebazcrc.permadeath.util.ResetManager resetManager;
+    public tech.sebazcrc.permadeath.util.GameRuleManager gameRuleManager;
     private Map<Integer, Boolean> registeredDays = new HashMap<>();
     private ArrayList<Player> doneEffectPlayers = new ArrayList<>();
     private boolean loaded = false;
@@ -164,6 +174,8 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         instance = this;
         
         this.backupManager = new tech.sebazcrc.permadeath.util.BackupManager(this);
+        this.resetManager = new tech.sebazcrc.permadeath.util.ResetManager(this);
+        this.gameRuleManager = new tech.sebazcrc.permadeath.util.GameRuleManager(this);
         runningFolia = isRunningFolia();
         this.lootManager = new tech.sebazcrc.permadeath.util.LootManager(this);
         
@@ -172,13 +184,62 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
         this.saveDefaultConfig();
         setupConsoleFilter();
+        
+        // Configurar mundos y reglas
+        String worldState = setupWorld(); // Detectar mundos
+        checkDatapackInstallation(); // Instalar datapack si falta (Fallback)
+        this.gameRuleManager.applyRules(); // Aplicar gamerules (Hard, etc)
+        
+        // Registrar comandos en el hilo principal
+        setupCommands();
 
         prefix = TextUtils.format((getConfig().contains("Prefix") ? getConfig().getString("Prefix") : "&c&lPERMADEATH&4&l &7➤ &f"));
 
-        tickAll();
+        // Cargar mundos si existen en la configuración
+        if (getConfig().contains("Worlds")) {
+            for (String s : getConfig().getStringList("Worlds")) {
+                org.bukkit.Bukkit.createWorld(new org.bukkit.WorldCreator(s));
+            }
+        }
 
         this.playTime = getConfig().getInt("DontTouch.PlayTime");
         this.abyssManager.startSpawnerTask();
+
+        tickAll();
+    }
+
+    private void checkDatapackInstallation() {
+        if (world == null) return;
+        
+        File datapackDir = new File(world.getWorldFolder(), "datapacks/Permadeath");
+        if (new File(datapackDir, "pack.mcmeta").exists()) return;
+
+        getLogger().info("Detectado que falta el Datapack (Probablemente servidor Legacy o primer inicio). Instalando...");
+        
+        try {
+            String[] files = {
+                "pack.mcmeta",
+                "data/permadeath/dimension/abyss.json",
+                "data/permadeath/dimension/beginning.json",
+                "data/permadeath/dimension_type/abyss_type.json",
+                "data/permadeath/enchantment/abyssal_breathing.json"
+            };
+
+            for (String filePath : files) {
+                InputStream in = getResource("internal_datapack/" + filePath);
+                if (in == null) {
+                    getLogger().warning("No se encontró " + filePath + " en el JAR.");
+                    continue;
+                }
+
+                File outFile = new File(datapackDir, filePath);
+                outFile.getParentFile().mkdirs();
+                Files.copy(in, outFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+            getLogger().info("Datapack instalado correctamente. ¡Es posible que necesites reiniciar el servidor para cargar las dimensiones!");
+        } catch (Exception e) {
+            getLogger().severe("Error al instalar Datapack: " + e.getMessage());
+        }
     }
 
     @Override
@@ -260,10 +321,14 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
             public void run() {
                 if (!getFile().exists()) saveDefaultConfig();
                 if (!loaded) {
-                    startPlugin();
-                    setupConfig();
-                    registerListeners();
-                    loaded = true;
+                    loaded = true; // Marcar como cargado primero para evitar bucles si startPlugin falla
+                    try {
+                        startPlugin();
+                        setupConfig();
+                        registerListeners();
+                    } catch (Exception e) {
+                        getLogger().log(Level.SEVERE, "Error crítico durante la carga del plugin:", e);
+                    }
                 }
                 DateManager.getInstance().tick();
 
@@ -737,7 +802,6 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         }
 
         setupListeners();
-        setupCommands();
         checkSpigotConfig();
 
         new UpdateChecker(this).getVersion(version -> {
@@ -850,41 +914,40 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
     protected String setupWorld() {
 
-        if (Bukkit.getWorld(Objects.requireNonNull(instance.getConfig().getString("Worlds.MainWorld"))) == null) {
+        String mainWorldName = instance.getConfig().getString("Worlds.MainWorld");
+        String endWorldName = instance.getConfig().getString("Worlds.EndWorld");
 
+        if (mainWorldName != null && Bukkit.getWorld(mainWorldName) != null) {
+            this.world = Bukkit.getWorld(mainWorldName);
+        } else {
             for (World w : Bukkit.getWorlds()) {
                 if (w.getEnvironment() == World.Environment.NORMAL) {
                     this.world = w;
+                    instance.getConfig().set("Worlds.MainWorld", w.getName());
+                    saveConfig();
                     break;
                 }
             }
-
-            PDCLog.getInstance().log("[ERROR] Error al cargar el mundo principal, esto hará que los Death Train no se presenten.", true);
-            PDCLog.getInstance().log("[ERROR] Abre el archivo config.yml y establece el mundo principal en la opción: MainWorld", true);
-            if (world != null) {
-                PDCLog.getInstance().log("[INFO] El plugin utilizará el mundo " + world.getName() + " como mundo principal.", true);
-            }
-            PDCLog.getInstance().log("[INFO] Si deseas utilizar otro mundo, configura en el archivo config.yml.", true);
-
-        } else {
-            world = Bukkit.getWorld(Objects.requireNonNull(instance.getConfig().getString("Worlds.MainWorld")));
         }
 
-        if (Bukkit.getWorld(Objects.requireNonNull(instance.getConfig().getString("Worlds.EndWorld"))) == null) {
-
-            PDCLog.getInstance().log("[ERROR] Error al cargar el mundo del end, esto hará que el end no funcione como debe.", true);
-            PDCLog.getInstance().log("[ERROR] Abre el archivo config.yml y establece el mundo del end en la opción: EndWorld", true);
-
+        if (endWorldName != null && Bukkit.getWorld(endWorldName) != null) {
+            this.endWorld = Bukkit.getWorld(endWorldName);
+        } else {
             for (World w : Bukkit.getWorlds()) {
                 if (w.getEnvironment() == World.Environment.THE_END) {
                     this.endWorld = w;
-                    PDCLog.getInstance().log("[INFO] El plugin utilizará el mundo " + w.getName() + " como mundo del End.", true);
+                    instance.getConfig().set("Worlds.EndWorld", w.getName());
+                    saveConfig();
                     break;
                 }
             }
+        }
 
-        } else {
-            endWorld = Bukkit.getWorld(Objects.requireNonNull(instance.getConfig().getString("Worlds.EndWorld")));
+        if (this.world == null) {
+            PDCLog.getInstance().log("[ERROR] No se pudo encontrar un mundo principal (OVERWORLD).", true);
+        }
+        if (this.endWorld == null) {
+            PDCLog.getInstance().log("[ERROR] No se pudo encontrar un mundo del End (THE_END).", true);
         }
 
         boolean dobleCap = getConfig().getBoolean("Toggles.Doble-Mob-Cap") && getDay() >= 10;
@@ -980,8 +1043,27 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     }
 
     private void setupCommands() {
-        Objects.requireNonNull(getCommand("pdc")).setExecutor(new PDCCommand(instance));
-        Objects.requireNonNull(getCommand("pdc")).setTabCompleter(new PDCCommandCompleter());
+        try {
+            java.lang.reflect.Field commandMapField = Bukkit.getServer().getClass().getDeclaredField("commandMap");
+            commandMapField.setAccessible(true);
+            org.bukkit.command.CommandMap commandMap = (org.bukkit.command.CommandMap) commandMapField.get(Bukkit.getServer());
+
+            java.lang.reflect.Constructor<org.bukkit.command.PluginCommand> constructor = 
+                org.bukkit.command.PluginCommand.class.getDeclaredConstructor(String.class, org.bukkit.plugin.Plugin.class);
+            constructor.setAccessible(true);
+
+            org.bukkit.command.PluginCommand command = constructor.newInstance("pdc", this);
+            
+            command.setExecutor(new PDCCommand(instance));
+            command.setTabCompleter(new PDCCommandCompleter());
+            command.setDescription("Comando principal de Permadeath");
+            command.setAliases(java.util.Arrays.asList("permadeath"));
+            
+            commandMap.register("permadeath", command);
+            getLogger().info("Comando /pdc registrado correctamente vía reflexión.");
+        } catch (Exception e) {
+            getLogger().log(Level.SEVERE, "Error al registrar comandos:", e);
+        }
     }
 
     private void setupConfig() {
