@@ -1,8 +1,8 @@
 name: Permadeath
 version: 1.4
-main: tech.sebazcrc.permadeath.Main
-bootstrapper: tech.sebazcrc.permadeath.PermadeathBootstrap
-loader: tech.sebazcrc.permadeath.PermadeathLoader
+main: dev.itsrealperson.permadeath.Main
+bootstrapper: dev.itsrealperson.permadeath.PermadeathBootstrap
+loader: dev.itsrealperson.permadeath.PermadeathLoader
 api-version: 1.21
 folia-supported: true
 authors: [ SebazCRC, vo1d_dev, ItsRealPerson ]

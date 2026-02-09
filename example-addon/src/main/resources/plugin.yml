@@ -1,0 +1,7 @@
+name: Permadeath-Expansion-Example
+version: 1.0
+main: dev.itsrealperson.permadeath.addon.ExpansionAddon
+api-version: 1.21
+depend: [Permadeath]
+author: ItsRealPerson
+description: Un ejemplo de cómo expandir Permadeath sin tocar el código base.

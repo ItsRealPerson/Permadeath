@@ -1,6 +1,6 @@
 name: Permadeath
 version: 1.4-PRE2
-main: tech.sebazcrc.permadeath.Main
+main: dev.itsrealperson.permadeath.Main
 softdepend: [ WorldEdit, ProtocolLib ]
 load: STARTUP
 api-version: 1.21

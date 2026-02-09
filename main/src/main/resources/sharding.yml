@@ -1,0 +1,25 @@
+# Configuración de Sharding (Mundo Distribuido)
+# Permite dividir el Overworld en múltiples servidores.
+
+# ID de este servidor en la configuración de abajo.
+CurrentShardID: "shard-1"
+
+# Servidor por defecto (si un jugador está en tierra de nadie).
+FallbackServer: "shard-1"
+
+# Definición de zonas
+Shards:
+  shard-1:
+    ProxyName: "survival-1"  # Nombre en el Proxy (Velocity/Bungee)
+    Bounds:
+      MinX: -10000
+      MaxX: -1
+      MinZ: -10000
+      MaxZ: 10000
+  shard-2:
+    ProxyName: "survival-2"
+    Bounds:
+      MinX: 0
+      MaxX: 10000
+      MinZ: -10000
+      MaxZ: 10000

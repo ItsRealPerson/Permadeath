@@ -186,6 +186,43 @@ TheBeginning:
   # Este número también cuenta como negativo.
   X-Limit: 3000
   Z-Limit: 3000
+# Configuración de Almacenamiento
+# Tipos disponibles: YAML, SQLITE, MYSQL
+Storage:
+  Type: SQLITE
+  MySQL:
+    Host: "localhost"
+    Port: 3306
+    Database: "permadeath"
+    Username: "root"
+    Password: ""
+    UseSSL: false
+
+# Configuración de Red (v1.5)
+# Permite sincronizar múltiples servidores de Permadeath.
+Network:
+  # STANDALONE o NETWORK
+  Mode: STANDALONE
+  ServerID: "overworld-1"
+  Redis:
+    Host: "localhost"
+    Port: 6379
+    Password: ""
+    Channel: "permadeath_sync"
+
+# Configuración de Progresión (Milestones)
+# Puedes cambiar el día en que se activan ciertas mecánicas.
+Progression:
+  BeginningStartDay: 40
+  BeginningAccessDay: 50
+  AbyssStartDay: 60
+  AcidWaterStartDay: 30
+  NetherPigZombieStartDay: 50
+  MiningFatigueStartDay: 50
+  WeatherEffectsStartDay: 40
+  WitherSpawnStartDay: 60
+  PhantomBombingStartDay: 70
+
 # NO TOCAR
 DontTouch:
   PlayTime: 0

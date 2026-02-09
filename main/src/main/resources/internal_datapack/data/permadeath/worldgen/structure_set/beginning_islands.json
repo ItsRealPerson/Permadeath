@@ -1,0 +1,15 @@
+{
+  "structures": [
+    {
+      "structure": "permadeath:beginning_island",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 16,
+    "separation": 8,
+    "salt": 16102026,
+    "spread_type": "linear"
+  }
+}
