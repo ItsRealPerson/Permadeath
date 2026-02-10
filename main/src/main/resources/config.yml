@@ -59,8 +59,8 @@ Toggles:
       DisplayName: "&6&lPERMADEATH DEMON"
       DisplayNameEnraged: "&6&lENRAGED PERMADEATH DEMON"
       # ¿Cuánta vida deseas que tenga? (en HP)
-      Health: 2000
-      EnragedHealth: 600
+      Health: 1350
+      EnragedHealth: 1350
       # ¿Quieres optimizar la TNT del PermadeathDemon?
       Optimizar-TNT: false
   # Configuración de The Beginning
@@ -81,6 +81,8 @@ Toggles:
   # ¿Deseas activar el cambio polémico de Mikecrack en el día 60?
   # Aparecerán Creepers a cualquier nivel de luz
   Mike-Creeper-Spawn: true
+  # ¿Deseas extender la dificultad hasta el día 90?
+  ExtendToDay90: false
   # Esta opción reduce un poco la mob-cap producida por el plugin (recomendado si tienes muchos jugadores
   # o tienes la mob cap muy alta, o se presentan bugs de spawn).
   Optimizar-Mob-Spawns: false
@@ -104,7 +106,7 @@ Toggles:
     # false: No Destruir
     Destruir-Bloques: true
     # ¿Quieres que dejen fuego? (provoca lag)
-    Fuego: false
+    Fuego: true
     # Esta opción indica el poder de explosión de los gatos, recomiendo 10 para servers poco potentes, pero lo normal en Permadeath es 200
     Explosion-Power: 200
 # Mensajes generales
@@ -125,9 +127,17 @@ Worlds:
   MainWorld: 'world'
   EndWorld: 'world_the_end'
 #
+# Alquimia Abisal (Día 60+)
+# Configura el caldero abisal
+Alquimia:
+  Tiempo-Segundos: 120
+  Ingrediente-Principal: "ECHO_SHARD"
+  Dia-Requerido: 60
+#
 # TOTEM CON PROBABILIDAD DE FALLAR
-# La probabilidad necesitarás definirla por día, por ejemplo quieres un 1% en el día 25, colocas 25: 1
-# Y así, si el plugin no detecta un día la probabilidad, el tótem no fallará
+# La probabilidad ahora funciona por hitos (Milestones).
+# El plugin buscará el hito más alto menor o igual al día actual.
+# Ejemplo: Si pones 30: 1 y 35: 2, del día 30 al 34 será 1%, y en el 35 subirá a 2%.
 TotemFail:
   # ¿Deseas activar la probabilidad? | Sí: true | No: false
   Enable: true
@@ -137,47 +147,13 @@ TotemFail:
   NotEnoughTotems: '&7¡%player% no tenía suficientes tótems en el inventario!'
   PlayerUsedTotemMessage: '&7El jugador %player% ha consumido un tótem (Probabilidad: %totem_fail% %porcent% %number%)'
   PlayerUsedTotemsMessage: '&7El jugador %player% ha consumido {ammount} tótems (Probabilidad: %totem_fail% %porcent% %number%)'
+  # Probabilidades por hitos (Milestones)
+  # El plugin buscará el hito más alto menor o igual al día actual.
   FailProbs:
     30: 1
-    31: 1
-    32: 1
-    33: 1
-    34: 1
-    35: 1
-    36: 1
-    37: 1
-    38: 1
-    39: 1
     40: 3
-    41: 3
-    42: 3
-    43: 3
-    44: 3
-    45: 3
-    46: 3
-    47: 3
-    48: 3
-    49: 3
     50: 5
-    51: 5
-    52: 5
-    53: 5
-    54: 5
-    55: 5
-    56: 5
-    57: 5
-    58: 5
-    59: 5
     60: 7
-    61: 7
-    62: 7
-    63: 7
-    64: 7
-    65: 7
-    66: 7
-    67: 7
-    68: 7
-    69: 7
     70: 15
 # Configuración de la dimensióon
 TheBeginning:
@@ -226,5 +202,6 @@ Progression:
 # NO TOCAR
 DontTouch:
   PlayTime: 0
+  ExtendedDifficultyActive: false
   Event:
     LifeOrbEnded: false

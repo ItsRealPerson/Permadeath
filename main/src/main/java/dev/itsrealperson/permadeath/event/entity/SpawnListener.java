@@ -1144,6 +1144,12 @@ public class SpawnListener implements Listener {
             boolean breakBlocks = plugin.getConfig().getBoolean("Toggles.Gatos-Supernova.Destruir-Bloques");
             boolean placeFire = plugin.getConfig().getBoolean("Toggles.Gatos-Supernova.Fuego");
 
+            // SEGURIDAD PARA FOLIA: Explosiones masivas bloquean los hilos de región
+            if (Main.isRunningFolia() && power > 50.0F) {
+                power = 50.0F; 
+                plugin.getLogger().warning("[Folia Safety] Limitada explosión de Gato Supernova a 50.0 para evitar crash.");
+            }
+
             w.createExplosion(loc, power, placeFire, breakBlocks, cat);
             
             gatosSupernova.remove(cat);
@@ -1352,11 +1358,10 @@ public class SpawnListener implements Listener {
 
         LivingEntity Mob = event.getEntity();
 
-        int hp = Integer.parseInt(Objects.requireNonNull(Main.instance.getConfig().getString("Toggles.Netherite.Helmet")));
-        int cp = Integer.parseInt(Objects.requireNonNull(Main.instance.getConfig().getString("Toggles.Netherite.Chestplate")));
-        int lp = Integer.parseInt(Objects.requireNonNull(Main.instance.getConfig().getString("Toggles.Netherite.Leggings")));
-        int bp = Integer.parseInt(Objects.requireNonNull(Main.instance.getConfig().getString("Toggles.Netherite.Boots")));
-
+                    int hp = Main.instance.getConfig().getInt("Toggles.Netherite.Helmet", 10);
+                    int cp = Main.instance.getConfig().getInt("Toggles.Netherite.Chestplate", 10);
+                    int lp = Main.instance.getConfig().getInt("Toggles.Netherite.Leggings", 10);
+                    int bp = Main.instance.getConfig().getInt("Toggles.Netherite.Boots", 10);
         int RandProb = ThreadLocalRandom.current().nextInt(1, 101);
 
         if (Mob instanceof CaveSpider && RandProb <= hp) {

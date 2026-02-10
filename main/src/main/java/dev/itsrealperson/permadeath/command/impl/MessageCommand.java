@@ -37,14 +37,14 @@ public class MessageCommand extends SubCommand {
             return;
         }
 
-        if (args.length < 2) {
+        if (args.length < 1) {
             sender.sendMessage(TextUtils.format(Main.prefix + "&cUsa: " + getUsage()));
             return;
         }
 
         StringBuilder msg = new StringBuilder();
-        for (int i = 1; i < args.length; i++) {
-            if (i > 1) msg.append(" ");
+        for (int i = 0; i < args.length; i++) {
+            if (i > 0) msg.append(" ");
             msg.append(args[i]);
         }
 

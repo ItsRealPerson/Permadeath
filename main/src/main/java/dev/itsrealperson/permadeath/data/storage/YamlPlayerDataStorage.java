@@ -23,7 +23,9 @@ public class YamlPlayerDataStorage implements PlayerDataStorage {
 
     @Override
     public void init() throws Exception {
-        this.file = new File(plugin.getDataFolder(), "jugadores.yml");
+        File dataFolder = new File(plugin.getDataFolder(), "data");
+        if (!dataFolder.exists()) dataFolder.mkdirs();
+        this.file = new File(dataFolder, "jugadores.yml");
         if (!file.exists()) {
             file.createNewFile();
         }
@@ -46,7 +48,7 @@ public class YamlPlayerDataStorage implements PlayerDataStorage {
 
     @Override
     public Optional<PlayerData> loadPlayer(String name) {
-        if (!config.contains("Players." + name)) {
+        if (config == null || !config.contains("Players." + name)) {
             return Optional.empty();
         }
 

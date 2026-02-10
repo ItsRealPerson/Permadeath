@@ -22,7 +22,10 @@ public class EndDataManager {
     public EndDataManager(Main instance) {
         this.instance = instance;
 
-        this.endFile = new File(instance.getDataFolder(), "endConfig.yml");
+        File dataFolder = new File(instance.getDataFolder(), "data");
+        if (!dataFolder.exists()) dataFolder.mkdirs();
+        
+        this.endFile = new File(dataFolder, "endConfig.yml");
         this.config = YamlConfiguration.loadConfiguration(endFile);
 
         if (!endFile.exists()) {

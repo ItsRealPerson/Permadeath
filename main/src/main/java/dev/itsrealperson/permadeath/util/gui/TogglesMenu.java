@@ -30,25 +30,26 @@ public class TogglesMenu extends AbstractMenu {
     public void setMenuItems(Player player) {
         inventory.clear();
 
-        // Los botones ahora son los iconos mismos para evitar solapamientos
+        // FILA 1
         addToggle(10, "ban-enabled", "Baneos al Morir", Material.IRON_DOOR);
         addToggle(11, "anti-afk-enabled", "Anti-AFK", Material.CLOCK);
         addToggle(12, "Toggles.Op-Ban", "Baneo a Operadores", Material.COMMAND_BLOCK);
+        addToggle(13, "Toggles.Player-Skulls", "Cabezas de Jugador", Material.PLAYER_HEAD);
         
+        // FILA 2
         addToggle(19, "Toggles.Hostile-Mobs", "Mobs Hostiles (Día 20+)", Material.ZOMBIE_HEAD);
-        addToggle(20, "Toggles.Player-Skulls", "Cabezas de Jugador", Material.PLAYER_HEAD);
-        addToggle(21, "Toggles.Spider-Effect", "Efectos en Arañas", Material.SPIDER_EYE);
+        addToggle(20, "Toggles.Spider-Effect", "Efectos en Arañas", Material.SPIDER_EYE);
+        addToggle(21, "Toggles.Mike-Creeper-Spawn", "Creepers en Luz (Día 60+)", Material.CREEPER_HEAD);
+        addToggle(22, "Toggles.Doble-Mob-Cap", "Doblar Mob-Cap", Material.SPAWNER);
         
-        addToggle(28, "Toggles.Mike-Creeper-Spawn", "Creepers en Luz (Día 60+)", Material.CREEPER_HEAD);
-        addToggle(29, "Toggles.Doble-Mob-Cap", "Doblar Mob-Cap", Material.SPAWNER);
-        addToggle(30, "Toggles.OptifineItems", "Ítems de Optifine", Material.SPYGLASS);
-        
-        addToggle(37, "Toggles.DefaultDeathSoundsEnabled", "Sonidos de Muerte", Material.NOTE_BLOCK);
-        addToggle(38, "Toggles.Optimizar-Mob-Spawns", "Optimizar Spawns", Material.REPEATER);
-        addToggle(39, "Toggles.Replace-Mobs-On-Chunk-Load", "Reemplazo de Mobs", Material.HOPPER);
+        // FILA 3
+        addToggle(28, "Toggles.OptifineItems", "Ítems de Optifine", Material.SPYGLASS);
+        addToggle(29, "Toggles.DefaultDeathSoundsEnabled", "Sonidos de Muerte", Material.NOTE_BLOCK);
+        addToggle(30, "Toggles.Optimizar-Mob-Spawns", "Optimizar Spawns", Material.REPEATER);
+        addToggle(31, "Toggles.Replace-Mobs-On-Chunk-Load", "Reemplazo de Mobs", Material.HOPPER);
 
         // Modo Debug
-        addToggle(43, "Toggles.Debug", "Modo Debug", Material.BLAZE_POWDER);
+        addToggle(40, "Toggles.Debug", "Modo Debug", Material.BLAZE_POWDER);
 
         // Volver
         inventory.setItem(49, new ItemBuilder(Material.ARROW)
@@ -75,8 +76,6 @@ public class TogglesMenu extends AbstractMenu {
         }
 
         ItemStack item = builder.build();
-
-        // Guardar el path en el ítem
         var meta = item.getItemMeta();
         meta.getPersistentDataContainer().set(PATH_KEY, PersistentDataType.STRING, path);
         item.setItemMeta(meta);
@@ -89,25 +88,26 @@ public class TogglesMenu extends AbstractMenu {
         Player player = (Player) event.getWhoClicked();
         ItemStack item = event.getCurrentItem();
         
+        if (item == null || item.getType() == Material.AIR) return;
+
         if (event.getSlot() == 49) {
             new ConfigMenu().open(player);
             return;
         }
 
-        if (item != null && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().has(PATH_KEY, PersistentDataType.STRING)) {
+        if (item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer().has(PATH_KEY, PersistentDataType.STRING)) {
             String path = item.getItemMeta().getPersistentDataContainer().get(PATH_KEY, PersistentDataType.STRING);
             boolean current = Main.instance.getConfig().getBoolean(path, false);
             
             Main.instance.getConfig().set(path, !current);
             Main.instance.saveConfig();
             
-            // Si es el toggle de Debug, actualizar la variable estática
             if (path.equalsIgnoreCase("Toggles.Debug")) {
                 Main.DEBUG = !current;
             }
             
             player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
-            setMenuItems(player); // Refrescar menú
+            setMenuItems(player); 
         }
     }
 }

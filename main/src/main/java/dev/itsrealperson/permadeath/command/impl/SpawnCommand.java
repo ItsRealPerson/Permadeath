@@ -48,19 +48,19 @@ public class SpawnCommand extends SubCommand {
             return;
         }
 
-        if (args.length < 2) {
+        if (args.length < 1) {
             sender.sendMessage(TextUtils.format(Main.prefix + "&cUsa: " + getUsage()));
             return;
         }
 
-        String mobName = args[1];
+        String mobName = args[0];
         plugin.getNmsHandler().spawnNMSCustomEntity(mobName, null, player.getLocation(), CreatureSpawnEvent.SpawnReason.CUSTOM);
         sender.sendMessage(TextUtils.format(Main.prefix + "&aIntentando spawnear mob: &f" + mobName));
     }
 
     @Override
     public List<String> tabComplete(CommandSender sender, String[] args) {
-        if (args.length == 2) {
+        if (args.length == 1) {
             return Arrays.asList("SilentSeeker", "SculkParasite", "EchoArcher", "HollowGuard", "TwistedWarden", "VoidSkeleton", "UltraRavager");
         }
         return Collections.emptyList();

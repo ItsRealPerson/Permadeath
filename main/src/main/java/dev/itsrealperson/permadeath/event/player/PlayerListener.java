@@ -37,6 +37,7 @@ import dev.itsrealperson.permadeath.util.inventory.AccessoryInventory;
 import dev.itsrealperson.permadeath.util.lib.HiddenStringUtils;
 import dev.itsrealperson.permadeath.util.lib.ItemBuilder;
 import dev.itsrealperson.permadeath.util.lib.UpdateChecker;
+import dev.itsrealperson.permadeath.data.DateManager;
 import dev.itsrealperson.permadeath.data.EndDataManager;
 import dev.itsrealperson.permadeath.data.PlayerDataManager;
 import dev.itsrealperson.permadeath.util.TextUtils;
@@ -320,16 +321,24 @@ public class PlayerListener implements Listener {
         boolean wasThundering = Main.instance.world.hasStorm();
         long totalTicks = (wasThundering ? currentTicks : 0) + (this.stormTicks * 20);
 
-        boolean doEnableOP = Main.instance.getConfig().getBoolean("Toggles.OP-Ban");
-        boolean causingProblems = true;
+        // Intentar leer la versión normalizada
+        boolean doEnableOP = Main.instance.getConfig().getBoolean("Toggles.Op-Ban", true);
+        
+        final boolean[] isProtected = {false};
 
-        if (!doEnableOP) {
-            if (p.hasPermission("permadeathcore.banoverride")) {
-                causingProblems = false;
-            }
+        // Si es OP y NO queremos banear OPs, está protegido del BAN, pero no necesariamente de activar el Death Train si es una prueba
+        if (!doEnableOP && p.isOp()) {
+            isProtected[0] = true;
+        }
+        
+        if (p.hasPermission("permadeathcore.banoverride") || p.hasPermission("permadeath.admin")) {
+            isProtected[0] = true;
         }
 
-        if (causingProblems) {
+        // Permitir que OPs activen el Death Train para pruebas incluso si están "protegidos" del ban
+        boolean forceDeathTrain = p.isOp();
+
+        if (!isProtected[0] || forceDeathTrain) {
             if (Main.isRunningFolia()) {
                 Bukkit.getGlobalRegionScheduler().execute(Main.instance, () -> {
                     Main.instance.world.setStorm(true);
@@ -404,7 +413,9 @@ public class PlayerListener implements Listener {
         man.setDeathDay();
         man.setDeathCoords(e.getEntity().getPlayer().getLocation());
         
-        DiscordPortal.banPlayer(off, false);
+        if (!isProtected[0]) {
+            DiscordPortal.banPlayer(off, false);
+        }
 
         if (Main.instance.getConfig().contains("Server-Messages.CustomDeathMessages." + p.getName())) {
             String msg = Main.instance.getConfig().getString("Server-Messages.CustomDeathMessages." + p.getName()).replace("%player%", p.getName());
@@ -423,8 +434,7 @@ public class PlayerListener implements Listener {
 
         p.setGameMode(GameMode.SPECTATOR);
         runTaskLater(() -> {
-            boolean isban = (doEnableOP ? !p.hasPermission("permadeathcore.banoverride") : true);
-            if (Main.instance.getConfig().getBoolean("ban-enabled") && isban) {
+            if (Main.instance.getConfig().getBoolean("ban-enabled") && !isProtected[0]) {
                 if (off.isOnline()) {
                     ((Player) off).kickPlayer(ChatColor.RED + "Has sido PERMABANEADO");
                 }
@@ -715,31 +725,32 @@ public class PlayerListener implements Listener {
         
         player.getInventory().setItem(8, menu);
 
-        if (Main.instance.getBeginningManager() != null && Main.instance.getBeginningManager().getBeginningWorld() != null) {
-            if (Main.instance.getBeginningManager().isClosed() && e.getPlayer().getWorld().getName().equalsIgnoreCase(Main.instance.getBeginningManager().getBeginningWorld().getName())) {
-                if (Main.isRunningFolia()) {
-                    e.getPlayer().teleportAsync(Main.instance.world.getSpawnLocation());
-                } else {
-                    e.getPlayer().teleport(Main.instance.world.getSpawnLocation());
+        if (Main.instance.getBeginningManager() != null) {
+            // Generación automática del portal del Overworld (Día 40+)
+            if (!Main.instance.getBeData().generatedOverWorldBeginningPortal()) {
+                if (Main.instance.getDay() >= DateManager.getInstance().getBeginningDay()) {
+                    if (Main.isRunningFolia()) {
+                        Bukkit.getGlobalRegionScheduler().runDelayed(Main.instance, t -> {
+                            Main.instance.getBeginningManager().generatePortal(true, null);
+                        }, 20L);
+                    } else {
+                        Main.instance.getBeginningManager().generatePortal(true, null);
+                    }
                 }
             }
 
-            if (Main.worldEditFound) {
-                if (!Main.instance.getBeData().generatedOverWorldBeginningPortal()) {
-                    if (Main.instance.getDay() >= 40) {
-                        if (Main.isRunningFolia()) {
-                            Bukkit.getGlobalRegionScheduler().runDelayed(Main.instance, t -> {
-                                Main.instance.getBeginningManager().generatePortal(true, null);
-                            }, 20L);
-                        } else {
-                            Main.instance.getBeginningManager().generatePortal(true, null);
-                        }
+            if (Main.instance.getBeginningManager().getBeginningWorld() != null) {
+                if (Main.instance.getBeginningManager().isClosed() && e.getPlayer().getWorld().getName().equalsIgnoreCase(Main.instance.getBeginningManager().getBeginningWorld().getName())) {
+                    if (Main.isRunningFolia()) {
+                        e.getPlayer().teleportAsync(Main.instance.world.getSpawnLocation());
+                    } else {
+                        e.getPlayer().teleport(Main.instance.world.getSpawnLocation());
                     }
                 }
 
                 if (!Main.instance.getBeData().generatedBeginningPortal()) {
-                    Main.instance.getBeginningManager().generatePortal(false, new Location(Main.instance.getBeginningManager().getBeginningWorld(), 0, 100, 0));
-                    Main.instance.getBeginningManager().getBeginningWorld().setSpawnLocation(new Location(Main.instance.getBeginningManager().getBeginningWorld(), 0, 100, 0));
+                    Main.instance.getBeginningManager().generatePortal(false, new Location(Main.instance.getBeginningManager().getBeginningWorld(), 0, 150, 0));
+                    Main.instance.getBeginningManager().getBeginningWorld().setSpawnLocation(new Location(Main.instance.getBeginningManager().getBeginningWorld(), 0, 150, 0));
                 }
             }
         }

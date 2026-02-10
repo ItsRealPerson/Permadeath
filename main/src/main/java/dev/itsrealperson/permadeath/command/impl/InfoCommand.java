@@ -9,6 +9,12 @@ import org.bukkit.entity.Player;
 
 public class InfoCommand extends SubCommand {
 
+    private final Main plugin;
+
+    public InfoCommand(Main plugin) {
+        this.plugin = plugin;
+    }
+
     @Override
     public String getName() {
         return "info";
@@ -16,7 +22,7 @@ public class InfoCommand extends SubCommand {
 
     @Override
     public String getDescription() {
-        return "Muestra información sobre el estado del juego.";
+        return "Muestra información de estado del jugador.";
     }
 
     @Override
@@ -26,10 +32,13 @@ public class InfoCommand extends SubCommand {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage(ChatColor.RED + "Solo jugadores pueden ejecutar este comando.");
-            return;
+        if (sender instanceof Player p) {
+            InfoGUI.open(p);
+        } else {
+            sender.sendMessage(Main.prefix + ChatColor.RED + "Version Info:");
+            sender.sendMessage(ChatColor.GRAY + "- Plugin: " + ChatColor.GREEN + "PermaDeathCore.jar v" + plugin.getDescription().getVersion());
+            sender.sendMessage(ChatColor.GRAY + "- Dificultad: " + ChatColor.GREEN + "Días 1-60");
+            sender.sendMessage(ChatColor.GRAY + "- Autor: " + ChatColor.GREEN + "ItsRealPerson");
         }
-        InfoGUI.open(player);
     }
 }

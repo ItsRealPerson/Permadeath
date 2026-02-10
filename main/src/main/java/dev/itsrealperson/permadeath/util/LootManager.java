@@ -44,11 +44,18 @@ public class LootManager implements LootManagerAPI {
     private static record DynamicLootEntry(ItemStack item, int chance) {}
 
     private void setup() {
-        file = new File(plugin.getDataFolder(), "loot.yml");
+        File dataFolder = new File(plugin.getDataFolder(), "data");
+        if (!dataFolder.exists()) dataFolder.mkdirs();
+        
+        file = new File(dataFolder, "loot.yml");
         if (!file.exists()) {
             try {
                 plugin.saveResource("loot.yml", false);
-            } catch (IllegalArgumentException e) {
+                File temp = new File(plugin.getDataFolder(), "loot.yml");
+                if (temp.exists()) {
+                    java.nio.file.Files.move(temp.toPath(), file.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+            } catch (Exception e) {
                 try { file.createNewFile(); } catch (IOException ex) { ex.printStackTrace(); }
             }
         }

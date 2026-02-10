@@ -2,6 +2,7 @@ package dev.itsrealperson.permadeath.util.log;
 
 import org.bukkit.Bukkit;
 import dev.itsrealperson.permadeath.Main;
+import dev.itsrealperson.permadeath.util.TextUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -41,11 +42,32 @@ public class PDCLog {
     public void log(String log, boolean print) {
         LocalDate date = LocalDate.now();
         LocalDateTime time = LocalDateTime.now();
-        String message = String.format("[%02d/%02d/%02d] ", date.getDayOfMonth(), date.getMonthValue(), date.getYear()) + String.format("%02d:%02d:%02d ", time.getHour(), time.getMinute(), time.getSecond()) + log + "\n";
+        String message = String.format("[%02d/%02d/%02d] ", date.getDayOfMonth(), date.getMonthValue(), date.getYear()) + String.format("%02d:%02d:%02d ", time.getHour(), time.getMinute(), time.getSecond()) + log;
 
-        add(message);
+        add(message + "\n");
         if (print) {
-            Bukkit.getConsoleSender().sendMessage(message);
+            Bukkit.getConsoleSender().sendMessage(TextUtils.format(Main.prefix + "&7[LOG] " + message));
+        }
+    }
+
+    public void printRecentLogs(org.bukkit.command.CommandSender sender, int lines) {
+        if (!file.exists()) {
+            sender.sendMessage(TextUtils.format(Main.prefix + "&cNo hay logs registrados todavía."));
+            return;
+        }
+
+        try {
+            java.util.List<String> allLines = java.nio.file.Files.readAllLines(file.toPath());
+            int start = Math.max(0, allLines.size() - lines);
+            
+            sender.sendMessage(TextUtils.format("&8&m------------------------------------------"));
+            sender.sendMessage(TextUtils.format("         &e&lÚLTIMOS LOGS PDC"));
+            for (int i = start; i < allLines.size(); i++) {
+                sender.sendMessage(TextUtils.format("&7> " + allLines.get(i)));
+            }
+            sender.sendMessage(TextUtils.format("&8&m------------------------------------------"));
+        } catch (IOException e) {
+            sender.sendMessage(TextUtils.format(Main.prefix + "&cError al leer los logs: " + e.getMessage()));
         }
     }
 

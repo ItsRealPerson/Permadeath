@@ -33,11 +33,11 @@ public class DayChangeCommand extends SubCommand {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length < 2) {
+        if (args.length < 1) {
             sender.sendMessage(TextUtils.format(Main.prefix + "&cUsa: " + getUsage()));
             return;
         }
         
-        DateManager.getInstance().setDay(sender, args[1]);
+        DateManager.getInstance().setDay(sender, args[0]);
     }
 }

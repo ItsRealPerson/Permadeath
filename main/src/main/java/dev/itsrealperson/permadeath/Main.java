@@ -1,5 +1,6 @@
 package dev.itsrealperson.permadeath;
 
+import com.github.retrooper.packetevents.PacketEvents;
 import dev.itsrealperson.permadeath.api.PermadeathAPI;
 import dev.itsrealperson.permadeath.api.PermadeathAPIProvider;
 import dev.itsrealperson.permadeath.api.interfaces.InfernalNetheriteBlock;
@@ -25,14 +26,12 @@ import dev.itsrealperson.permadeath.util.events.LifeOrbEvent;
 import dev.itsrealperson.permadeath.util.events.ShellEvent;
 import dev.itsrealperson.permadeath.util.inventory.AccessoryListener;
 import dev.itsrealperson.permadeath.util.item.RecipeManager;
-import dev.itsrealperson.permadeath.util.lib.FileAPI;
 import dev.itsrealperson.permadeath.util.lib.UpdateChecker;
 import dev.itsrealperson.permadeath.util.log.Log4JFilter;
 import dev.itsrealperson.permadeath.util.log.PDCLog;
 import dev.itsrealperson.permadeath.util.mob.CustomSkeletons;
 import dev.itsrealperson.permadeath.world.abyss.AbyssManager;
 import dev.itsrealperson.permadeath.world.beginning.BeginningManager;
-import com.github.retrooper.packetevents.PacketEvents;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.bukkit.*;
@@ -52,7 +51,10 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Filter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -68,7 +70,6 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     public static String prefix = "";
     public static boolean runningPaperSpigot = false;
     public static boolean runningFolia = false;
-    public static boolean worldEditFound;
     public World world = null;
     public World endWorld = null;
     private int playTime = 0;
@@ -99,6 +100,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     private FileConfiguration abyssConfig;
     private File abyssFile;
     private ModuleManager moduleManager;
+    private dev.itsrealperson.permadeath.util.ConfigManager configManager;
     private dev.itsrealperson.permadeath.api.storage.PlayerDataStorage playerStorage;
     private dev.itsrealperson.permadeath.command.CommandManager commandManager;
     private dev.itsrealperson.permadeath.api.EventManagerAPI eventManager;
@@ -106,6 +108,10 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     private dev.itsrealperson.permadeath.util.item.ItemRegistryImpl itemRegistry;
     private dev.itsrealperson.permadeath.util.entity.EntityRegistryImpl entityRegistry;
     private dev.itsrealperson.permadeath.util.placeholder.PlaceholderManager placeholderManager;
+
+    public dev.itsrealperson.permadeath.util.ConfigManager getPdcConfigManager() {
+        return configManager;
+    }
 
     @Override
     public dev.itsrealperson.permadeath.api.storage.PlayerDataStorage getPlayerStorage() {
@@ -138,7 +144,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     }
 
     public FileConfiguration getAbyssConfig() {
-        return abyssConfig;
+        return configManager.getConfig("data/abyss.yml");
     }
     private long weatherDurationCache = 0;
 
@@ -165,6 +171,18 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     @Override
     public long getDay() {
         return DateManager.getInstance().getDay();
+    }
+
+    public void setupFoliaWorldConfig(org.bukkit.command.CommandSender sender) {
+        if (!runningFolia) {
+            sender.sendMessage(ChatColor.RED + "Este comando solo es necesario en Folia.");
+            return;
+        }
+        sender.sendMessage(ChatColor.YELLOW + "Configurando parámetros de mundo para Folia...");
+        for (World world : Bukkit.getWorlds()) {
+            world.setGameRule(GameRule.MOB_GRIEFING, false);
+            sender.sendMessage(ChatColor.GREEN + "Mundo " + world.getName() + " configurado.");
+        }
     }
 
     @Override
@@ -197,6 +215,20 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     @Override
     public void onEnable() {
         instance = this;
+        
+        // 1. Asegurar carpeta y config base (Imprescindible para que nada sea null)
+        if (!getDataFolder().exists()) getDataFolder().mkdirs();
+        
+        // Inicializar Gestor de Configuraciones
+        this.configManager = new dev.itsrealperson.permadeath.util.ConfigManager(this);
+        configManager.registerConfig("data/abyss.yml");
+        configManager.registerConfig("data/discord.yml");
+        configManager.registerConfig("data/loot.yml");
+        configManager.registerConfig("data/sharding.yml");
+        
+        this.saveDefaultConfig();
+        setupConsoleFilter();
+        
         PacketEvents.getAPI().init();
 
         this.moduleManager = new ModuleManager(this);
@@ -205,15 +237,19 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         this.entityRegistry = new dev.itsrealperson.permadeath.util.entity.EntityRegistryImpl();
         this.placeholderManager = new dev.itsrealperson.permadeath.util.placeholder.PlaceholderManager(this);
 
+        // 2. Inicializar almacenamiento
         setupStorage();
 
-        // Inicializar datos
+        // 3. Inicializar gestores de datos
         this.beData = new BeginningDataManager(this);
         this.endData = new EndDataManager(this);
 
-        // Registrar módulos
-        this.abyssManager = new AbyssManager(this);
-        this.moduleManager.registerModule(this.abyssManager);
+        // 4. Registrar módulos
+        // Solo puede estar activa si el toggle global está en true Y el corazón ha sido usado
+        if (getConfig().getBoolean("Toggles.Abyss-World-Active") && getConfig().getBoolean("DontTouch.HeartUsed")) {
+            this.abyssManager = new AbyssManager(this);
+            this.moduleManager.registerModule(this.abyssManager);
+        }
 
         this.begginingManager = new BeginningManager(this);
         this.moduleManager.registerModule(this.begginingManager);
@@ -225,6 +261,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         this.moduleManager.registerModule(new dev.itsrealperson.permadeath.world.MobModule(this));
         this.moduleManager.registerModule(new dev.itsrealperson.permadeath.world.EventModule(this));
 
+        // 5. Gestores de utilidad
         this.backupManager = new dev.itsrealperson.permadeath.util.BackupManager(this);
         this.resetManager = new dev.itsrealperson.permadeath.util.ResetManager(this);
         this.gameRuleManager = new dev.itsrealperson.permadeath.util.GameRuleManager(this);
@@ -246,20 +283,16 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         runningFolia = isRunningFolia();
         this.lootManager = new dev.itsrealperson.permadeath.util.LootManager(this);
 
-        // Registrar proveedor de API
+        // 6. Registrar proveedor de API
         PermadeathAPI.setProvider(this);
-
-        this.saveDefaultConfig();
-        setupConsoleFilter();
         
         DEBUG = getConfig().getBoolean("Toggles.Debug", false);
 
-        // Configurar mundos y reglas
+        // 7. Configurar mundos y reglas
         String worldState = setupWorld(); // Detectar mundos
-        checkDatapackInstallation(); // Instalar datapack si falta (Fallback)
         this.gameRuleManager.applyRules(); // Aplicar gamerules (Hard, etc)
 
-        // Registrar comandos en el hilo principal
+        // 8. Registrar comandos
         setupCommands();
 
         prefix = TextUtils.format((getConfig().contains("Prefix") ? getConfig().getString("Prefix") : "&c&lPERMADEATH&4&l &7âž¤ &f"));
@@ -275,40 +308,6 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
         DiscordPortal.onEnable();
         tickAll();
-    }
-
-    private void checkDatapackInstallation() {
-        if (world == null) return;
-
-        File datapackDir = new File(world.getWorldFolder(), "datapacks/Permadeath");
-        if (new File(datapackDir, "pack.mcmeta").exists()) return;
-
-        getLogger().info("Detectado que falta el Datapack (Probablemente servidor Legacy o primer inicio). Instalando...");
-
-        try {
-            String[] files = {
-                "pack.mcmeta",
-                "data/permadeath/dimension/abyss.json",
-                "data/permadeath/dimension/beginning.json",
-                "data/permadeath/dimension_type/abyss_type.json",
-                "data/permadeath/enchantment/abyssal_breathing.json"
-            };
-
-            for (String filePath : files) {
-                InputStream in = getResource("internal_datapack/" + filePath);
-                if (in == null) {
-                    getLogger().warning("No se encontró " + filePath + " en el JAR.");
-                    continue;
-                }
-
-                File outFile = new File(datapackDir, filePath);
-                outFile.getParentFile().mkdirs();
-                Files.copy(in, outFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            }
-            getLogger().info("Datapack instalado correctamente. Â¡Es posible que necesites reiniciar el servidor para cargar las dimensiones!");
-        } catch (Exception e) {
-            getLogger().severe("Error al instalar Datapack: " + e.getMessage());
-        }
     }
 
     @Override
@@ -352,6 +351,14 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     public SpawnListener getSpawnListener() { return spawnListener; }
     public NMSHandler getNmsHandler() { return NMS.getHandler(); }
     public NMSAccessor getNmsAccessor() { return NMS.getAccessor(); }
+
+    @Override
+    public File getAddonDataFolder(String addonName) {
+        File folder = new File(getDataFolder(), "addons/" + addonName);
+        if (!folder.exists()) folder.mkdirs();
+        return folder;
+    }
+
     public InfernalNetheriteBlock getNetheriteBlock() { return NMS.getNetheriteBlock(); }
     public EndTask getTask() { return task; }
     public void setTask(EndTask task) { this.task = task; }
@@ -484,39 +491,17 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     private void startPlugin() {
         this.messages = new Messages(this);
 
-        this.abyssFile = new File(getDataFolder(), "abyss.yml");
-        if (!abyssFile.exists()) {
-            saveResource("abyss.yml", false);
-        }
-        this.abyssConfig = YamlConfiguration.loadConfiguration(abyssFile);
-
         this.shulkerEvent = new ShellEvent(this);
         this.orbEvent = new LifeOrbEvent(this);
         this.factory = new MobFactory(this);
 
-        if (VersionManager.getMinecraftVersion().isAboveOrEqual(MinecraftVersion.v1_20_R1)) {
-            // Schematics nuevas
-            new FileAPI.FileOut(instance, "updated_schematics/beginning_portal.schem", "schematics/", true);
-            new FileAPI.FileOut(instance, "updated_schematics/ytic.schem", "schematics/", true);
-            new FileAPI.FileOut(instance, "updated_schematics/island1.schem", "schematics/", true);
-            new FileAPI.FileOut(instance, "updated_schematics/island2.schem", "schematics/", true);
-            new FileAPI.FileOut(instance, "updated_schematics/island3.schem", "schematics/", true);
-            new FileAPI.FileOut(instance, "updated_schematics/island4.schem", "schematics/", true);
-            new FileAPI.FileOut(instance, "updated_schematics/island5.schem", "schematics/", true);
-        } else {
-            new FileAPI.FileOut(instance, "original_schematics/beginning_portal.schem", "schematics/", true);
-            new FileAPI.FileOut(instance, "original_schematics/ytic.schem", "schematics/", true);
-            new FileAPI.FileOut(instance, "original_schematics/island1.schem", "schematics/", true);
-            new FileAPI.FileOut(instance, "original_schematics/island2.schem", "schematics/", true);
-            new FileAPI.FileOut(instance, "original_schematics/island3.schem", "schematics/", true);
-            new FileAPI.FileOut(instance, "original_schematics/island4.schem", "schematics/", true);
-            new FileAPI.FileOut(instance, "original_schematics/island5.schem", "schematics/", true);
-        }
+        // Extraer estructuras NBT para el sistema de pegado manual (Portales)
+        extractStructures();
 
-        int HelmetValue = Integer.parseInt(Objects.requireNonNull(instance.getConfig().getString("Toggles.Netherite.Helmet")));
-        int ChestplateValue = Integer.parseInt(Objects.requireNonNull(instance.getConfig().getString("Toggles.Netherite.Chestplate")));
-        int LeggingsValue = Integer.parseInt(Objects.requireNonNull(instance.getConfig().getString("Toggles.Netherite.Leggings")));
-        int BootsValue = Integer.parseInt(Objects.requireNonNull(instance.getConfig().getString("Toggles.Netherite.Boots")));
+        int HelmetValue = instance.getConfig().getInt("Toggles.Netherite.Helmet", 10);
+        int ChestplateValue = instance.getConfig().getInt("Toggles.Netherite.Chestplate", 10);
+        int LeggingsValue = instance.getConfig().getInt("Toggles.Netherite.Leggings", 10);
+        int BootsValue = instance.getConfig().getInt("Toggles.Netherite.Boots", 10);
         if (HelmetValue > 100 || HelmetValue < 1) {
             PDCLog.getInstance().log("[ERROR] Error al cargar la probabilidad de 'Helmet' en 'config.yml', asegurate de introducir un numero valido del 1 al 100.", true);
             PDCLog.getInstance().log("[ERROR] Ha ocurrido un error al cargar el archivo config.yml, si este error persiste avisanos por discord.", true);
@@ -571,13 +556,6 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         Bukkit.getConsoleSender().sendMessage(TextUtils.format("&7> &bSoftware: " + software));
         Bukkit.getConsoleSender().sendMessage(TextUtils.format("&7> &b&lCambios:"));
         Bukkit.getConsoleSender().sendMessage(TextUtils.format("&7>   &aDías disponibles: &71-60"));
-
-        worldEditFound = (Bukkit.getPluginManager().getPlugin("WorldEdit") != null || Bukkit.getPluginManager().getPlugin("FastAsyncWorldEdit") != null);
-        if (!worldEditFound) {
-            Bukkit.getConsoleSender().sendMessage(TextUtils.format("&7> &4&lADVERTENCIA: &7No se ha encontrado el plugin &7World Edit"));
-            Bukkit.getConsoleSender().sendMessage(TextUtils.format("&7> &7Algunas funciones pueden no funcionar correctamente. Ten en cuenta que las estructuras de The Beginning no podrán ser generadas en días avanzados."));
-            PDCLog.getInstance().log("No se encontró WorldEdit");
-        }
 
         if (software.contains("Bukkit")) {
             Bukkit.broadcastMessage(TextUtils.format(prefix + "&7> &4&lADVERTENCIA&7: &eEl plugin NO es compatible con CraftBukkit, cambia a SpigotMC o PaperSpigot"));
@@ -806,11 +784,11 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     private void setupCommands() {
         this.commandManager = new dev.itsrealperson.permadeath.command.CommandManager(this);
 
+        // Registro único y ordenado de subcomandos
         commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.ConfigCommand(this));
         commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.ReloadCommand(this));
-        commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.DayCommand());
-        commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.InfoCommand());
-        commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.DiscordCommand());
+        commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.DayCommand(this));
+        commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.InfoCommand(this));
         commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.RecipesCommand());
         commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.MessageCommand(this));
         commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.AbyssCommand(this));
@@ -825,6 +803,14 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.ResetAllCommand(this));
         commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.LanguageCommand(this));
         commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.SpawnCommand(this));
+        commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.DebugCommand(this));
+        commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.BeginningCommand(this));
+        commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.BossCommand(this));
+        commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.EventCommand(this));
+        commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.DurationCommand(this));
+        commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.ChangesCommand());
+        commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.AFKCommand(this));
+        commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.SetupBeginningCommand(this));
 
         try {
             java.lang.reflect.Field commandMapField = Bukkit.getServer().getClass().getDeclaredField("commandMap");
@@ -850,65 +836,11 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     }
 
     private void setupConfig() {
+        // Aseguramos que los valores por defecto del JAR se copien si faltan
+        getConfig().options().copyDefaults(true);
+        saveConfig();
 
-        File f = new File(getDataFolder(), "config.yml");
-        FileConfiguration config = YamlConfiguration.loadConfiguration(f);
-
-        FileAPI.UtilFile c = FileAPI.select(instance, f, config);
-
-        c.set("config-version", 3);
-        c.set("Prefix", "&cPermadeath &7âž¤ &f");
-        c.set("ban-enabled", true);
-        c.set("anti-afk-enabled", false);
-        c.set("AntiAFK.DaysForBan", 7);
-        c.set("Toggles.OptifineItems", false);
-        c.set("Toggles.DefaultDeathSoundsEnabled", true);
-        c.set("Toggles.Netherite.Helmet", 10);
-        c.set("Toggles.Netherite.Chestplate", 10);
-        c.set("Toggles.Netherite.Leggings", 10);
-        c.set("Toggles.Netherite.Boots", 10);
-        c.set("Toggles.End.Mob-Spawn-Limit", 70);
-        c.set("Toggles.End.Ender-Ghast-Count", 170);
-        c.set("Toggles.End.Ender-Creeper-Count", 20);
-        c.set("Toggles.End.Protect-End-Spawn", false);
-        c.set("Toggles.End.Protect-Radius", 10);
-        c.set("Toggles.End.PermadeathDemon.DisplayName", "&6&lPERMADEATH DEMON");
-        c.set("Toggles.End.PermadeathDemon.DisplayNameEnraged", "&6&lENRAGED PERMADEATH DEMON");
-        c.set("Toggles.End.PermadeathDemon.Health", 1350);
-        c.set("Toggles.End.PermadeathDemon.EnragedHealth", 1350);
-        c.set("Toggles.End.PermadeathDemon.Optimizar-TNT", false);
-        c.set("Toggles.TheBeginning.YticGenerateChance", 100000);
-        c.set("Toggles.Spider-Effect", true);
-        c.set("Toggles.OP-Ban", true);
-        c.set("Toggles.Doble-Mob-Cap", false);
-        c.set("Toggles.Replace-Mobs-On-Chunk-Load", true);
-        c.set("Toggles.Quantum-Explosion-Power", 60);
-        c.set("Toggles.Mike-Creeper-Spawn", true);
-        c.set("Toggles.Optimizar-Mob-Spawns", false);
-        c.set("Toggles.Gatos-Supernova.Destruir-Bloques", true);
-        c.set("Toggles.Gatos-Supernova.Fuego", true);
-        c.set("Toggles.Gatos-Supernova.Explosion-Power", 200);
-        c.set("Toggles.ExtendToDay90", false);
-        c.set("Server-Messages.coords-msg-enable", true);
-        c.set("TotemFail.Enable", true);
-        c.set("TotemFail.Medalla", "&7¡El jugador %player% ha usado su medalla de superviviente!");
-        c.set("TotemFail.ChatMessage", "&7¡El tótem de &c%player% &7ha fallado!");
-        c.set("TotemFail.ChatMessageTotems", "&7¡Los tótems de &c%player% &7han fallado!");
-        c.set("TotemFail.NotEnoughTotems", "&7¡%player% no tenía suficientes tótems en el inventario!");
-        c.set("TotemFail.PlayerUsedTotemMessage", "&7El jugador %player% ha consumido un tótem (Probabilidad: %totem_fail% %porcent% %number%)");
-        c.set("TotemFail.PlayerUsedTotemsMessage", "&7El jugador %player% ha consumido {ammount} tótems (Probabilidad: %totem_fail% %porcent% %number%)");
-        c.set("Worlds.MainWorld", "world");
-        c.set("Worlds.EndWorld", "world_the_end");
-        c.set("Alquimia.Tiempo-Segundos", 120);
-        c.set("Alquimia.Ingrediente-Principal", "ECHO_SHARD");
-        c.set("Alquimia.Dia-Requerido", 60);
-        c.set("DontTouch.PlayTime", 0);
-        c.set("DontTouch.ExtendedDifficultyActive", false);
-
-        c.save();
-        c.load();
-
-        OPTIMIZE_SPAWNS = instance.getConfig().getBoolean("Toggles.Optimizar-Mob-Spawns");
+        OPTIMIZE_SPAWNS = getConfig().getBoolean("Toggles.Optimizar-Mob-Spawns");
     }
 
     public void checkSpigotConfig() {
@@ -925,6 +857,35 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
                     Bukkit.getConsoleSender().sendMessage(prefix + ChatColor.GREEN + "¡spigot.yml actualizado! Los cambios surtirán efecto tras el PRÓXIMO REINICIO.");
                 } catch (IOException e) {
                     Bukkit.getConsoleSender().sendMessage(prefix + ChatColor.RED + "No se pudo guardar spigot.yml automáticamente.");
+                }
+            }
+        }
+    }
+
+    private void extractStructures() {
+        File structuresDir = new File(getDataFolder(), "data/structures");
+        if (!structuresDir.exists()) structuresDir.mkdirs();
+
+        String[] structures = {
+            "beginning_portal.nbt",
+            "island1.nbt",
+            "island2.nbt",
+            "island3.nbt",
+            "island4.nbt",
+            "island5.nbt",
+            "ytic.nbt"
+        };
+
+        for (String name : structures) {
+            File outFile = new File(structuresDir, name);
+            if (!outFile.exists()) {
+                // Buscamos en la ruta del datapack interno
+                try (InputStream in = getResource("internal_datapack/data/permadeath/structures/" + name)) {
+                    if (in != null) {
+                        Files.copy(in, outFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } catch (IOException e) {
+                    getLogger().warning("No se pudo extraer la estructura: " + name);
                 }
             }
         }

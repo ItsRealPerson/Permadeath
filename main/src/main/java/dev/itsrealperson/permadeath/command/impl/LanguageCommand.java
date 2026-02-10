@@ -43,12 +43,12 @@ public class LanguageCommand extends SubCommand {
             return;
         }
 
-        if (args.length < 2) {
+        if (args.length < 1) {
             sender.sendMessage(TextUtils.format("&ePor favor ingresa un idioma. &7Ejemplo: &b/pdc idioma es &e<es, en>"));
             return;
         }
 
-        String lang = args[1].toLowerCase();
+        String lang = args[0].toLowerCase();
         PlayerDataManager data = new PlayerDataManager(player.getName(), plugin);
         
         if (lang.equals("es")) {
@@ -72,7 +72,7 @@ public class LanguageCommand extends SubCommand {
 
     @Override
     public List<String> tabComplete(CommandSender sender, String[] args) {
-        if (args.length == 2) {
+        if (args.length == 1) {
             return Arrays.asList("es", "en");
         }
         return Collections.emptyList();

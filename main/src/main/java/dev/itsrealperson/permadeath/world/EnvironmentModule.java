@@ -54,13 +54,28 @@ public class EnvironmentModule implements PermadeathModule {
                         applyWeatherEffects(player, day);
                         applyMiningFatigueFix(player, day);
                         applyNetherSpawns(player, day);
+                        applyBedrockLevitation(player, day);
                     }, null);
                 } else {
                     applyWeatherEffects(player, day);
                     applyMiningFatigueFix(player, day);
                     applyNetherSpawns(player, day);
+                    applyBedrockLevitation(player, day);
                 }
             }
+        }
+    }
+
+    private void applyBedrockLevitation(Player player, long day) {
+        if (day < 30) return;
+        
+        // Comprobar bloques adyacentes (abajo, actual, arriba) para detectar bedrock
+        Material down = player.getLocation().getBlock().getRelative(org.bukkit.block.BlockFace.DOWN).getType();
+        Material current = player.getLocation().getBlock().getType();
+        Material up = player.getLocation().getBlock().getRelative(org.bukkit.block.BlockFace.UP).getType();
+
+        if (down == Material.BEDROCK || current == Material.BEDROCK || up == Material.BEDROCK) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 10 * 20, 9));
         }
     }
 

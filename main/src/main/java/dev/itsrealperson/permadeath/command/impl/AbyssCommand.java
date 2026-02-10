@@ -39,7 +39,7 @@ public class AbyssCommand extends SubCommand {
             return;
         }
 
-        if (args.length > 1 && args[1].equalsIgnoreCase("force") && player.isOp()) {
+        if (args.length > 0 && args[0].equalsIgnoreCase("force") && player.isOp()) {
             player.sendMessage(ChatColor.YELLOW + "Forzando carga del Abismo...");
             plugin.getAbyssManager().loadWorld();
             return;
@@ -50,7 +50,7 @@ public class AbyssCommand extends SubCommand {
 
     @Override
     public List<String> tabComplete(CommandSender sender, String[] args) {
-        if (args.length == 2 && sender.isOp()) {
+        if (args.length == 1 && sender.isOp()) {
             return Collections.singletonList("force");
         }
         return super.tabComplete(sender, args);

@@ -51,14 +51,25 @@ public class CatastropheModule implements PermadeathModule {
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player.getGameMode() != GameMode.SURVIVAL) continue;
 
-            // Mecánicas de cada Tick (Agua Ácida)
-            applyAcidWater(player, day);
-
-            // Mecánicas cada segundo (20 Ticks)
-            if (tickCounter % 20 == 0) {
-                applyDay60Effects(player, day);
-                applyDay70Effects(player, day);
+            if (Main.isRunningFolia()) {
+                player.getScheduler().run(plugin, task -> {
+                    if (!player.isOnline()) return;
+                    tickPlayer(player, day);
+                }, null);
+            } else {
+                tickPlayer(player, day);
             }
+        }
+    }
+
+    private void tickPlayer(Player player, long day) {
+        // Mecánicas de cada Tick (Agua Ácida)
+        applyAcidWater(player, day);
+
+        // Mecánicas cada segundo (20 Ticks)
+        if (tickCounter % 20 == 0) {
+            applyDay60Effects(player, day);
+            applyDay70Effects(player, day);
         }
     }
 

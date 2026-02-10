@@ -50,6 +50,7 @@ public class TreePopulator extends BlockPopulator {
 
         if (y > 0 && y < 255) {
 
+            // Solo generar si el suelo está cerca de la altura de las islas (100)
             if (y >= 100 && y < 105) {
 
                 world.generateTree(chunk.getBlock(x, y + 1, z).getLocation(), TreeType.CHORUS_PLANT, new BlockChangeDelegate() {

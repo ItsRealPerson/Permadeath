@@ -23,9 +23,18 @@ public class ShardManager {
     }
 
     private void loadConfig() {
-        file = new File(plugin.getDataFolder(), "sharding.yml");
+        File dataFolder = new File(plugin.getDataFolder(), "data");
+        if (!dataFolder.exists()) dataFolder.mkdirs();
+        
+        file = new File(dataFolder, "sharding.yml");
         if (!file.exists()) {
             plugin.saveResource("sharding.yml", false);
+            File temp = new File(plugin.getDataFolder(), "sharding.yml");
+            if (temp.exists()) {
+                try {
+                    java.nio.file.Files.move(temp.toPath(), file.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                } catch (java.io.IOException ignored) {}
+            }
         }
         config = YamlConfiguration.loadConfiguration(file);
         

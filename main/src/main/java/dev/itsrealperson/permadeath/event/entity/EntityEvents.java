@@ -40,11 +40,6 @@ public class EntityEvents implements Listener {
     }
 
     @EventHandler
-    public void onDeath(EntityDeathEvent event) {
-        // Lógica de muerte si es necesaria
-    }
-
-    @EventHandler
     public void onTarget(EntityTargetLivingEntityEvent e) {
         if (e.getEntity().getPersistentDataContainer().has(new NamespacedKey(Main.getInstance(), "pale_paragon"), PersistentDataType.BYTE)) {
             if (!(e.getTarget() instanceof Player)) {
@@ -76,6 +71,47 @@ public class EntityEvents implements Listener {
     public void onVD(VehicleDestroyEvent e) {
         if (e.getVehicle().getPersistentDataContainer().has(new NamespacedKey(Main.getInstance(), "module_minecart"), PersistentDataType.BYTE)) {
             e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onShulkerTeleport(EntityTeleportEvent e) {
+        if (e.getEntity().getPersistentDataContainer().has(new NamespacedKey(Main.getInstance(), "death_module_part"), PersistentDataType.BYTE)) {
+            e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onDeath(EntityDeathEvent event) {
+        if (event.getEntity() instanceof Shulker) {
+            Shulker shulker = (Shulker) event.getEntity();
+            if (shulker.getPersistentDataContainer().has(new NamespacedKey(Main.getInstance(), "death_module_shulker"), PersistentDataType.BYTE)) {
+                TNTPrimed tnt = (TNTPrimed) shulker.getWorld().spawnEntity(shulker.getLocation(), EntityType.TNT);
+                tnt.setFuseTicks(40);
+                tnt.setCustomName("tnt_death_module");
+                tnt.setCustomNameVisible(false);
+                event.getDrops().clear();
+                event.setDroppedExp(0);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onShulkerBulletHit(ProjectileHitEvent e) {
+        if (e.getEntity() instanceof ShulkerBullet) {
+            ShulkerBullet bullet = (ShulkerBullet) e.getEntity();
+            if (bullet.getShooter() instanceof Shulker) {
+                Shulker shulker = (Shulker) bullet.getShooter();
+                if (shulker.getPersistentDataContainer().has(new NamespacedKey(Main.getInstance(), "death_module_shulker"), PersistentDataType.BYTE)) {
+                    Location loc = e.getHitEntity() != null ? e.getHitEntity().getLocation() : 
+                                 (e.getHitBlock() != null ? e.getHitBlock().getRelative(e.getHitBlockFace()).getLocation() : bullet.getLocation());
+                    
+                    TNTPrimed tnt = (TNTPrimed) loc.getWorld().spawnEntity(loc, EntityType.TNT);
+                    tnt.setFuseTicks(20);
+                    tnt.setCustomName("tnt_bullet");
+                    tnt.setCustomNameVisible(false);
+                }
+            }
         }
     }
 

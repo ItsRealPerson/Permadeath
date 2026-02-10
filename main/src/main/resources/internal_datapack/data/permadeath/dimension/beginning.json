@@ -1,17 +1,21 @@
 {
-  "type": "minecraft:the_end",
+  "type": "permadeath:beginning_type",
   "generator": {
     "type": "minecraft:flat",
     "settings": {
       "layers": [
-        { "block": "minecraft:air", "height": 1 }
+        {
+          "height": 1,
+          "block": "minecraft:air"
+        }
       ],
-      "biome": "minecraft:the_void",
+      "biome": "minecraft:the_end",
       "lakes": false,
-      "features": false,
-      "structures": {
-        "structures": {}
-      }
+      "features": true,
+      "structure_overrides": [
+        "permadeath:beginning_islands",
+        "permadeath:beginning_ytic"
+      ]
     }
   }
 }

@@ -1,114 +1,30 @@
 package dev.itsrealperson.permadeath.world;
 
-import com.sk89q.worldedit.EditSession;
-import com.sk89q.worldedit.WorldEdit;
-import com.sk89q.worldedit.WorldEditException;
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldedit.bukkit.BukkitWorld;
-import com.sk89q.worldedit.extent.clipboard.Clipboard;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
-import com.sk89q.worldedit.function.operation.Operation;
-import com.sk89q.worldedit.function.operation.Operations;
-import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.session.ClipboardHolder;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
+import org.bukkit.block.structure.UsageMode;
+import org.bukkit.structure.Structure;
+import org.bukkit.structure.StructureManager;
 import dev.itsrealperson.permadeath.Main;
 import dev.itsrealperson.permadeath.util.TextUtils;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Random;
-import java.util.SplittableRandom;
 
+/**
+ * Clase encargada de la generación de estructuras manuales (Portal Overworld).
+ * Ahora utiliza la API nativa de Bukkit (NBT) en lugar de WorldEdit.
+ */
 public class WorldEditPortal {
 
-    public static void generateIsland(World world, int x, int z, int height, SplittableRandom random) {
-        Clipboard clipboard;
-        File file;
-
-        switch (random.nextInt(6)) {
-            case 0:
-                file = new File(Main.getInstance().getDataFolder(), "schematics/island1.schem");
-                break;
-            case 1:
-                file = new File(Main.getInstance().getDataFolder(), "schematics/island2.schem");
-                break;
-            case 2:
-                file = new File(Main.getInstance().getDataFolder(), "schematics/island3.schem");
-                break;
-            case 3:
-                file = new File(Main.getInstance().getDataFolder(), "schematics/island4.schem");
-                break;
-            default:
-                file = new File(Main.getInstance().getDataFolder(), "schematics/island5.schem");
-                break;
-        }
-
-        ClipboardFormat format = ClipboardFormats.findByFile(file);
-
-        assert format != null;
-
-        try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
-            clipboard = reader.read();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(world), -1)) {
-            Operation operation = new ClipboardHolder(clipboard)
-                    .createPaste(editSession)
-                    .to(BlockVector3.at(x, height + 20, z))
-                    .ignoreAirBlocks(true)
-                    .build();
-            Operations.complete(operation);
-        } catch (WorldEditException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void generateYtic(World world, int x, int z, int height) {
-        Clipboard clipboard;
-        File file = new File(Main.getInstance().getDataFolder(), "schematics/ytic.schem");
-
-        ClipboardFormat format = ClipboardFormats.findByFile(file);
-
-        assert format != null;
-        try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
-            clipboard = reader.read();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(new BukkitWorld(world), -1)) {
-            ClipboardHolder clipboardHolder = new ClipboardHolder(clipboard);
-
-            Operation operation = clipboardHolder
-                    .createPaste(editSession)
-                    .to(BlockVector3.at(x, height + 34, z))
-                    .ignoreAirBlocks(true)
-                    .copyEntities(true)
-                    .build();
-
-            Operations.complete(operation);
-            //editSession.replaceBlocks(
-        } catch (WorldEditException e) {
-            e.printStackTrace();
-        }
-    }
     public static void generatePortal(boolean overworld, Location to) {
 
         if (!Main.getInstance().getBeData().generatedOverWorldBeginningPortal() && overworld) {
 
-            int x = Main.getInstance().getConfig().getInt("TheBeginning.X-Limit");
-            int z = Main.getInstance().getConfig().getInt("TheBeginning.Z-Limit");
+            int x = Main.getInstance().getConfig().getInt("TheBeginning.X-Limit", 3000);
+            int z = Main.getInstance().getConfig().getInt("TheBeginning.Z-Limit", 3000);
 
             int ranX = new Random().nextInt(x);
             int ranZ = new Random().nextInt(z);
@@ -116,83 +32,97 @@ public class WorldEditPortal {
             if (new Random().nextBoolean()) ranX *= -1;
             if (new Random().nextBoolean()) ranZ *= -1;
             
-            Location loc = new Location(Main.getInstance().world, ranX, 0, ranZ);
+            Location loc = new Location(Main.getInstance().world != null ? Main.getInstance().world : Bukkit.getWorlds().get(0), ranX, 0, ranZ);
 
-            // En Folia debemos ejecutar esto en el hilo que posee las coordenadas del portal
             if (Main.isRunningFolia()) {
                 Bukkit.getRegionScheduler().run(Main.instance, loc, task -> {
                     int highestY = loc.getWorld().getHighestBlockYAt(loc);
                     if (highestY <= 0) highestY = 50;
                     loc.setY(highestY + 15);
-                    pasteSchematic(loc, new File(Main.getInstance().getDataFolder().getAbsolutePath() + "/schematics/beginning_portal.schem"));
-                    Main.getInstance().getBeData().setOverWorldPortal(loc);
                     
-                    Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&e¡Se ha generado un portal a &b&lThe Beginning &een &b" + TextUtils.formatPosition(loc) + "&e!"));
+                    if (pasteStructure(loc, "beginning_portal")) {
+                        Main.getInstance().getBeData().setOverWorldPortal(loc);
+                        String msg = Main.instance.getMessages().getMsgForConsole("PortalGenerated").replace("%coords%", TextUtils.formatPosition(loc));
+                        Bukkit.broadcastMessage(TextUtils.format(Main.prefix + msg));
+                    } else {
+                        Main.instance.getLogger().severe("No se pudo generar el Portal del Overworld: Error al pegar la estructura NBT 'beginning_portal'.");
+                    }
                 });
             } else {
                 int highestY = loc.getWorld().getHighestBlockYAt(loc);
                 if (highestY <= 0) highestY = 50;
                 loc.setY(highestY + 15);
-                pasteSchematic(loc, new File(Main.getInstance().getDataFolder().getAbsolutePath() + "/schematics/beginning_portal.schem"));
-                Main.getInstance().getBeData().setOverWorldPortal(loc);
                 
-                Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&e¡Se ha generado un portal a &b&lThe Beginning &een &b" + TextUtils.formatPosition(loc) + "&e!"));
+                if (pasteStructure(loc, "beginning_portal")) {
+                    Main.getInstance().getBeData().setOverWorldPortal(loc);
+                    // Informamos de la posición exacta del bloque del portal (3, 2, 8)
+                    Location center = loc.clone().add(3, 2, 8);
+                    String msg = Main.instance.getMessages().getMsgForConsole("PortalGenerated").replace("%coords%", TextUtils.formatPosition(center));
+                    Bukkit.broadcastMessage(TextUtils.format(Main.prefix + msg));
+                } else {
+                    Main.instance.getLogger().severe("No se pudo generar el Portal del Overworld: Error al pegar la estructura NBT 'beginning_portal'.");
+                }
             }
         }
 
+        // El portal interno de The Beginning ahora lo maneja el Datapack, 
+        // pero mantenemos esto como fallback por si acaso se activa manualmente.
         if (!Main.getInstance().getBeData().generatedBeginningPortal() && !overworld) {
             if (Main.isRunningFolia()) {
                 Bukkit.getRegionScheduler().run(Main.instance, to, task -> {
-                    pasteSchematic(to, new File(Main.getInstance().getDataFolder().getAbsolutePath() + "/schematics/beginning_portal.schem"));
-                    Main.getInstance().getBeData().setBeginningPortal(to);
-                    Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&e¡Se ha generado un portal de salida en &b&lThe Beginning&e!"));
+                    if (pasteStructure(to, "beginning_portal")) {
+                        Main.getInstance().getBeData().setBeginningPortal(to);
+                        Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&e¡Se ha generado un portal de salida en &b&lThe Beginning&e!"));
+                    } else {
+                        Main.instance.getLogger().severe("Error al generar portal de salida en The Beginning.");
+                    }
                 });
             } else {
                 to.getWorld().loadChunk(to.getChunk());
-                pasteSchematic(to, new File(Main.getInstance().getDataFolder().getAbsolutePath() + "/schematics/beginning_portal.schem"));
-                Main.getInstance().getBeData().setBeginningPortal(to);
-                Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&e¡Se ha generado un portal de salida en &b&lThe Beginning&e!"));
-            }
-        }
-    }
-
-    public static void pasteSchematic(Location loc, File schematic) {
-        com.sk89q.worldedit.world.World adaptedWorld = BukkitAdapter.adapt(loc.getWorld());
-        ClipboardFormat format = ClipboardFormats.findByFile(schematic);
-        try (ClipboardReader reader = format.getReader(new FileInputStream(schematic))) {
-            Clipboard clipboard = reader.read();
-            try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(adaptedWorld,
-                    -1)) {
-                Operation operation = new ClipboardHolder(clipboard).createPaste(editSession)
-                        .to(BlockVector3.at(loc.getX(), loc.getY(), loc.getZ())).ignoreAirBlocks(true).build();
-                try {
-                    Operations.complete(operation);
-                    editSession.flushSession();
-                } catch (WorldEditException e) {
-                    e.printStackTrace();
+                if (pasteStructure(to, "beginning_portal")) {
+                    Main.getInstance().getBeData().setBeginningPortal(to);
+                    Bukkit.broadcastMessage(TextUtils.format(Main.prefix + "&e¡Se ha generado un portal de salida en &b&lThe Beginning&e!"));
+                } else {
+                    Main.instance.getLogger().severe("Error al generar portal de salida en The Beginning.");
                 }
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
+
+    /**
+     * Pega una estructura NBT usando la API de Bukkit.
+     * @param loc Ubicación donde pegar (será la esquina inferior)
+     * @param structureName Nombre de la estructura (ej: "island1")
+     * @return true si se pegó con éxito
+     */
+    public static boolean pasteStructure(Location loc, String structureName) {
+        StructureManager sm = Bukkit.getStructureManager();
+        
+        // Intentar cargar desde el archivo en data/structures
+        File structuresDir = new File(Main.instance.getDataFolder(), "data/structures");
+        File structureFile = new File(structuresDir, structureName + ".nbt");
+        
+        Structure structure = null;
+        if (structureFile.exists()) {
+            try {
+                structure = sm.loadStructure(structureFile);
+            } catch (Exception e) {
+                Main.instance.getLogger().severe("Error al cargar estructura NBT desde archivo: " + structureName);
+            }
+        }
+
+        // Si no se pudo cargar por archivo, intentar por NamespacedKey (Datapack)
+        if (structure == null) {
+            NamespacedKey key = new NamespacedKey("permadeath", structureName);
+            structure = sm.getStructure(key);
+        }
+
+        if (structure != null) {
+            // El orden correcto es: Location, entities (bool), Rotation, Mirror, paletteIndex (int), integrity (float), Random
+            structure.place(loc, true, org.bukkit.block.structure.StructureRotation.NONE, org.bukkit.block.structure.Mirror.NONE, 0, 1.0f, new Random());
+            return true;
+        }
+
+        return false;
+    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

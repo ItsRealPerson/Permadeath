@@ -2,28 +2,28 @@ package dev.itsrealperson.permadeath.command.impl;
 
 import dev.itsrealperson.permadeath.Main;
 import dev.itsrealperson.permadeath.command.SubCommand;
-import org.bukkit.ChatColor;
+import dev.itsrealperson.permadeath.util.TextUtils;
 import org.bukkit.command.CommandSender;
 
-public class DiscordCommand extends SubCommand {
+public class ChangesCommand extends SubCommand {
 
     @Override
     public String getName() {
-        return "discord";
+        return "cambios";
     }
 
     @Override
     public String getDescription() {
-        return "Muestra los enlaces de Discord de la comunidad.";
+        return "Enlace a la wiki de cambios de dificultad.";
     }
 
     @Override
     public String getUsage() {
-        return "/pdc discord";
+        return "/pdc cambios";
     }
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        sender.sendMessage(Main.prefix + ChatColor.BLUE + "https://discord.gg/w58wzrcJU8 | https://discord.gg/infernalcore");
+        sender.sendMessage(TextUtils.format("&eCambios de dificultad: &f&lhttps://permadeath.fandom.com/es/wiki/Cambios_de_dificultad"));
     }
 }

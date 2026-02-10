@@ -20,7 +20,9 @@ public class BeginningDataManager {
 
     public BeginningDataManager(Main instance) {
         this.instance = instance;
-        this.beginningFile = new File(instance.getDataFolder(), "theBeginning.yml");
+        File dataFolder = new File(instance.getDataFolder(), "data");
+        if (!dataFolder.exists()) dataFolder.mkdirs();
+        this.beginningFile = new File(dataFolder, "theBeginning.yml");
         this.config = YamlConfiguration.loadConfiguration(beginningFile);
 
         if (!beginningFile.exists()) {

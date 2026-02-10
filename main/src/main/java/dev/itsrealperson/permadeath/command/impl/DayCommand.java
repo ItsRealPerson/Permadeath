@@ -2,11 +2,16 @@ package dev.itsrealperson.permadeath.command.impl;
 
 import dev.itsrealperson.permadeath.Main;
 import dev.itsrealperson.permadeath.command.SubCommand;
-import dev.itsrealperson.permadeath.data.DateManager;
-import dev.itsrealperson.permadeath.util.TextUtils;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
 public class DayCommand extends SubCommand {
+
+    private final Main plugin;
+
+    public DayCommand(Main plugin) {
+        this.plugin = plugin;
+    }
 
     @Override
     public String getName() {
@@ -25,6 +30,10 @@ public class DayCommand extends SubCommand {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        sender.sendMessage(TextUtils.format(Main.prefix + "&eHoy es el día: &b" + DateManager.getInstance().getDay()));
+        if (plugin.getDay() < 1) {
+            sender.sendMessage(Main.prefix + "&cError al cargar el día.");
+        } else {
+            sender.sendMessage(Main.prefix + ChatColor.RED + (Main.SPEED_RUN_MODE ? "Hora: " : "Día: ") + ChatColor.GRAY + plugin.getDay());
+        }
     }
 }

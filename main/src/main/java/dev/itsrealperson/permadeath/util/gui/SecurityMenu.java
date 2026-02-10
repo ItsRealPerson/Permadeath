@@ -64,7 +64,11 @@ public class SecurityMenu extends AbstractMenu {
                 Main.instance.saveConfig();
                 player.sendMessage(TextUtils.format(Main.prefix + "&aConfiguración guardada y Snapshot simulado."));
             }
-            case 15 -> player.sendMessage(TextUtils.format(Main.prefix + "&eRevisa la consola para ver los logs detallados."));
+            case 15 -> {
+                dev.itsrealperson.permadeath.util.log.PDCLog.getInstance().printRecentLogs(player, 10);
+                dev.itsrealperson.permadeath.util.log.PDCLog.getInstance().printRecentLogs(Bukkit.getConsoleSender(), 10);
+                player.sendMessage(TextUtils.format(Main.prefix + "&eSe han enviado los últimos 10 logs a tu chat y a la consola."));
+            }
             case 16 -> {
                 Main.PANIC_MODE = !Main.PANIC_MODE;
                 player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 0.5f);

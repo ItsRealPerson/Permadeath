@@ -38,7 +38,7 @@ public class ResetAllCommand extends SubCommand {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length < 2 || !args[1].equalsIgnoreCase("confirm")) {
+        if (args.length < 1 || !args[0].equalsIgnoreCase("confirm")) {
             sender.sendMessage(Main.prefix + ChatColor.RED + "¡ADVERTENCIA! Este comando borrará los datos de jugadores, desbaneará a todos y volverá al Día 1.");
             sender.sendMessage(Main.prefix + ChatColor.YELLOW + "Usa: " + ChatColor.WHITE + "/pdc resetall confirm" + ChatColor.YELLOW + " para proceder.");
             return;
@@ -48,7 +48,7 @@ public class ResetAllCommand extends SubCommand {
 
     @Override
     public List<String> tabComplete(CommandSender sender, String[] args) {
-        if (args.length == 2) {
+        if (args.length == 1) {
             return Collections.singletonList("confirm");
         }
         return super.tabComplete(sender, args);

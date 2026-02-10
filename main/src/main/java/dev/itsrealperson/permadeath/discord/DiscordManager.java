@@ -35,12 +35,20 @@ public class DiscordManager {
 
     public DiscordManager() {
         this.plugin = Main.getInstance();
-        File file = new File(plugin.getDataFolder(), "discord.yml");
-        this.config = YamlConfiguration.loadConfiguration(file);
+        File dataFolder = new File(plugin.getDataFolder(), "data");
+        if (!dataFolder.exists()) dataFolder.mkdirs();
         
+        File file = new File(dataFolder, "discord.yml");
         if (!file.exists()) {
             plugin.saveResource("discord.yml", false);
+            File temp = new File(plugin.getDataFolder(), "discord.yml");
+            if (temp.exists()) {
+                try {
+                    java.nio.file.Files.move(temp.toPath(), file.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                } catch (java.io.IOException ignored) {}
+            }
         }
+        this.config = YamlConfiguration.loadConfiguration(file);
         
         this.enabled = config.getBoolean("Enable", false);
         

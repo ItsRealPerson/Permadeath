@@ -66,6 +66,36 @@ public class ModuleManager implements ModuleManagerAPI {
         modules.clear();
     }
 
+    /**
+     * Reinicia todos los módulos registrados.
+     */
+    public void reloadModules() {
+        plugin.getLogger().info("Reiniciando módulos...");
+        
+        // Creamos una copia para evitar ConcurrentModificationException si algún onEnable/onDisable intenta registrar algo
+        Map<String, PermadeathModule> copy = new LinkedHashMap<>(modules);
+        
+        copy.values().forEach(module -> {
+            try {
+                plugin.getLogger().info("Disabling Module: " + module.getName());
+                module.onDisable();
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Error al desactivar el módulo " + module.getName(), e);
+            }
+        });
+        
+        copy.values().forEach(module -> {
+            try {
+                plugin.getLogger().info("Enabling Module: " + module.getName());
+                module.onEnable();
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "Error al reactivar el módulo " + module.getName(), e);
+            }
+        });
+        
+        plugin.getLogger().info("¡Módulos reiniciados con éxito!");
+    }
+
     public Optional<PermadeathModule> getModule(String name) {
         return Optional.ofNullable(modules.get(name));
     }

@@ -1,19 +1,18 @@
 package dev.itsrealperson.permadeath.world.beginning;
 
+import dev.itsrealperson.permadeath.Main;
+import dev.itsrealperson.permadeath.util.TextUtils;
+import dev.itsrealperson.permadeath.util.item.PermadeathItems;
+import dev.itsrealperson.permadeath.util.lib.ItemBuilder;
+import dev.itsrealperson.permadeath.util.lib.LeatherArmorBuilder;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import dev.itsrealperson.permadeath.Main;
-import dev.itsrealperson.permadeath.util.TextUtils;
-import dev.itsrealperson.permadeath.util.item.PermadeathItems;
-import dev.itsrealperson.permadeath.util.lib.ItemBuilder;
-import dev.itsrealperson.permadeath.util.lib.LeatherArmorBuilder;
 
 import java.util.SplittableRandom;
 

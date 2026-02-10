@@ -37,6 +37,14 @@ public class ReloadCommand extends SubCommand {
     @Override
     public void execute(CommandSender sender, String[] args) {
         plugin.reloadConfig();
+        if (plugin.getPdcConfigManager() != null) {
+            plugin.getPdcConfigManager().reloadAll();
+        }
+        
+        if (plugin.getModuleManager() != null) {
+            ((dev.itsrealperson.permadeath.ModuleManager) plugin.getModuleManager()).reloadModules();
+        }
+        
         plugin.getMessages().reloadFiles();
         
         if (plugin.getBeginningManager() != null) {

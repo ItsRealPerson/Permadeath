@@ -43,12 +43,12 @@ public class LocateCommand extends SubCommand {
             return;
         }
 
-        if (args.length < 2) {
+        if (args.length < 1) {
             sender.sendMessage(TextUtils.format(Main.prefix + "&cUsa: " + getUsage()));
             return;
         }
 
-        if (args[1].equalsIgnoreCase("portal_beginning")) {
+        if (args[0].equalsIgnoreCase("portal_beginning")) {
             Location loc = plugin.getBeData().getOverWorldPortal();
             if (loc == null) {
                 sender.sendMessage(TextUtils.format(Main.prefix + "&cEl portal de The Beginning aún no ha sido generado."));

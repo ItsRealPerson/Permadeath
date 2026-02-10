@@ -1,22 +1,17 @@
 package dev.itsrealperson.permadeath.world.beginning;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.World;
+import dev.itsrealperson.permadeath.Main;
+import dev.itsrealperson.permadeath.world.WorldEditPortal;
+import org.bukkit.*;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.LimitedRegion;
 import org.bukkit.generator.WorldInfo;
 import org.bukkit.util.noise.SimplexOctaveGenerator;
 import org.jetbrains.annotations.NotNull;
-import dev.itsrealperson.permadeath.Main;
-import dev.itsrealperson.permadeath.world.WorldEditPortal;
 
 import java.util.Random;
 import java.util.SplittableRandom;
-
-import org.bukkit.BlockChangeDelegate;
-import org.bukkit.TreeType;
-import org.bukkit.block.data.BlockData;
 
 public class BeginningPopulator extends BlockPopulator {
 
@@ -46,64 +41,67 @@ public class BeginningPopulator extends BlockPopulator {
                 int noise = (int) (lowGenerator.noise(realX + offsetX, realZ + offsetZ, 0.5D, 0.5D) * 15);
 
                 if (noise <= 0) {
-                    if (Main.worldEditFound && Main.getInstance().isSmallIslandsEnabled() && x == 8 && z == 8) {
-                        if (splittableRandom.nextInt(20) == 0) {
-                            scheduleSchematic(worldInfo, realX, realZ, "island", splittableRandom);
-                        }
-                    }
                     continue;
-                }
-
-                int chance = Main.getInstance().getConfig().getInt("Toggles.TheBeginning.YticGenerateChance", 100000);
-                // Fix: Config comment says value is divided by 256. Code was using raw value.
-                if (chance >= 256) chance = chance / 256;
-                if (chance < 1) chance = 1;
-
-                if (splittableRandom.nextInt(chance) == 0 && x == 8 && z == 8) {
-                    // Bukkit.getConsoleSender().sendMessage("[Permadeath-Debug] Scheduling Ytic at " + realX + ", " + realZ);
-                    scheduleSchematic(worldInfo, realX, realZ, "ytic", null);
                 }
 
                 for (int i = 0; i < noise / 3; i++) limitedRegion.setType(realX, HEIGHT + i, realZ, Material.PURPUR_BLOCK);
                 for (int i = 0; i < noise; i++) limitedRegion.setType(realX, HEIGHT - i - 1, realZ, Material.PURPUR_BLOCK);
             
-                // 3. Arboles (Corrupted Chorus) - Logic imported from TreePopulator
-                // Check top block
-                int topY = HEIGHT + (noise / 3) - 1; 
-                // TreePopulator checks 100-105. HEIGHT is 100. noise/3 is max 5 (15/3). So range is 100-104. Perfect.
-                
-                if (x == 8 && z == 8) { // Try to spawn 1 tree per chunk center if valid
-                     if (splittableRandom.nextInt(5) == 0) { // 20% chance
-                         scheduleSchematic(worldInfo, realX, realZ, "tree", null);
-                     }
+                // 3. Generación de Estructuras NBT e Islas (Integrado)
+                if (x == 8 && z == 8) { // Centro del Chunk
+                    // Zona Segura para el Portal (Radio de 50 bloques)
+                    if (Math.abs(realX) < 50 && Math.abs(realZ) < 50) continue;
+
+                    // Probabilidad Ytic (1 cada 324 chunks aprox)
+                    if (splittableRandom.nextInt(324) == 0) {
+                        // Altura 4 para que con 96 bloques de base coincida con la capa 100
+                        scheduleStructure(worldInfo, realX, 7, realZ, "ytic");
+                    } 
+                    // Probabilidad Isla NBT (1 cada 25 chunks aprox)
+                    else if (splittableRandom.nextInt(25) == 0) {
+                        int id = splittableRandom.nextInt(5) + 1;
+                        // Altura 120 para que floten 20 bloques sobre el Purpur
+                        scheduleStructure(worldInfo, realX, 120, realZ, "island" + id);
+                    }
+                    
+                    // 4. Arboles (20% de probabilidad si no hubo estructura)
+                    else if (splittableRandom.nextInt(5) == 0) {
+                         scheduleTree(worldInfo, realX, realZ);
+                    }
                 }
             }
         }
     }
 
-    private void scheduleSchematic(WorldInfo worldInfo, int x, int z, String type, SplittableRandom random) {
-        // En Folia, no podemos usar Bukkit.getWorld durante la generación inicial del chunk de forma segura
-        // Programamos una tarea global para que espere a que el mundo esté cargado
+    private void scheduleStructure(WorldInfo worldInfo, int x, int y, int z, String name) {
         Bukkit.getGlobalRegionScheduler().runDelayed(Main.instance, t -> {
             World world = Bukkit.getWorld(worldInfo.getUID());
             if (world == null) return;
 
-            // Ahora que tenemos el mundo, usamos el region scheduler
-            Bukkit.getRegionScheduler().run(Main.instance, new org.bukkit.Location(world, x, HEIGHT, z), task -> {
-                if (type.equals("island")) {
-                    WorldEditPortal.generateIsland(world, x, z, HEIGHT, random);
-                } else if (type.equals("ytic")) {
-                    WorldEditPortal.generateYtic(world, x, z, HEIGHT);
-                } else if (type.equals("tree")) {
-                    generateTree(world, x, z);
-                }
+            Bukkit.getRegionScheduler().run(Main.instance, new org.bukkit.Location(world, x, y, z), task -> {
+                WorldEditPortal.pasteStructure(new org.bukkit.Location(world, x, y, z), name);
             });
-        }, 100L); // Esperar 5 segundos para asegurar que el mundo esté listo
+        }, 100L);
+    }
+
+    private void scheduleTree(WorldInfo worldInfo, int x, int z) {
+        // En Folia, no podemos usar Bukkit.getWorld durante la generación inicial del chunk de forma segura
+        Bukkit.getGlobalRegionScheduler().runDelayed(Main.instance, t -> {
+            World world = Bukkit.getWorld(worldInfo.getUID());
+            if (world == null) return;
+
+            Bukkit.getRegionScheduler().run(Main.instance, new org.bukkit.Location(world, x, HEIGHT, z), task -> {
+                generateTree(world, x, z);
+            });
+        }, 100L);
     }
 
     private void generateTree(World world, int x, int z) {
         int y = world.getHighestBlockYAt(x, z);
-        if (y < HEIGHT) return; 
+        
+        // Solo generar si el suelo está cerca de la altura de las islas (100)
+        // Esto evita que se generen árboles sobre el portal (150)
+        if (y < 95 || y > 110) return; 
 
         world.generateTree(new org.bukkit.Location(world, x, y + 1, z), TreeType.CHORUS_PLANT, new BlockChangeDelegate() {
             @Override

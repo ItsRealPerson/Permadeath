@@ -19,6 +19,9 @@ import dev.itsrealperson.permadeath.util.TextUtils;
 import dev.itsrealperson.permadeath.world.WorldEditPortal;
 import dev.itsrealperson.permadeath.world.beginning.generator.BeginningLootTable;
 
+import java.io.File;
+import java.util.Arrays;
+
 public class BeginningManager implements Listener, PermadeathModule {
 
     private static final String WORLD_NAME = "permadeath/beginning";
@@ -48,10 +51,6 @@ public class BeginningManager implements Listener, PermadeathModule {
         
         DateManager dm = DateManager.getInstance();
         if (main.getDay() >= dm.getBeginningDay()) {
-            if (Bukkit.getPluginManager().getPlugin("WorldEdit") == null && Bukkit.getPluginManager().getPlugin("FastAsyncWorldEdit") == null) {
-                Bukkit.broadcastMessage(TextUtils.format(main.getPrefix() + "&4&lNo se pudo registrar TheBeginning ya que no se ha encontrado el plugin &7WorldEdit"));
-                return;
-            }
             loadWorld();
             startSpawnerTask();
             Bukkit.getConsoleSender().sendMessage(TextUtils.format(main.getPrefix() + "&eSe han registrado cambios de TheBeginning"));
@@ -68,13 +67,23 @@ public class BeginningManager implements Listener, PermadeathModule {
         if (main.getDay() < 30) return;
 
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (p.getWorld().getEnvironment() == World.Environment.THE_END) {
-                if (p.getLocation().getBlock().getRelative(BlockFace.DOWN).getType() == Material.BEDROCK) {
-                    p.addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.LEVITATION, 10 * 20, 9));
-                }
-                if (p.getWorld().getName().equalsIgnoreCase("pdc_the_beginning") || p.getWorld().getName().endsWith("permadeath_beginning")) {
-                    if (p.hasPotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY)) {
-                        p.removePotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY);
+            if (Main.isRunningFolia()) {
+                p.getScheduler().run(main, task -> {
+                    if (!p.isOnline()) return;
+                    if (p.getWorld().getEnvironment() == World.Environment.THE_END) {
+                        if (p.getWorld().getName().equalsIgnoreCase("pdc_the_beginning") || p.getWorld().getName().endsWith("permadeath_beginning")) {
+                            if (p.hasPotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY)) {
+                                p.removePotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY);
+                            }
+                        }
+                    }
+                }, null);
+            } else {
+                if (p.getWorld().getEnvironment() == World.Environment.THE_END) {
+                    if (p.getWorld().getName().equalsIgnoreCase("pdc_the_beginning") || p.getWorld().getName().endsWith("permadeath_beginning")) {
+                        if (p.hasPotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY)) {
+                            p.removePotionEffect(org.bukkit.potion.PotionEffectType.INVISIBILITY);
+                        }
                     }
                 }
             }
@@ -126,12 +135,12 @@ public class BeginningManager implements Listener, PermadeathModule {
         }
 
         if (this.beginningWorld != null) {
-            this.beginningWorld.setSpawnLocation(0, 100, 0);
+            this.beginningWorld.setSpawnLocation(0, 150, 0);
             setupWorldDefaults();
             
             // Forzar generación del portal de salida en los spawn chunks
             if (!data.generatedBeginningPortal()) {
-                generatePortal(false, new Location(beginningWorld, 0, 100, 0));
+                generatePortal(false, new Location(beginningWorld, 0, 150, 0));
             }
         }
     }
@@ -182,15 +191,7 @@ public class BeginningManager implements Listener, PermadeathModule {
         
         Block b = e.getTo().getBlock();
         if (b.getType() == Material.END_GATEWAY) {
-            Player p = e.getPlayer();
-            World w = p.getWorld();
-            
-            boolean isOverworld = w.getEnvironment() == World.Environment.NORMAL;
-            boolean isBeginning = w.getName().endsWith("permadeath_beginning") || w.getName().endsWith("permadeath/beginning");
-            
-            if (isOverworld || isBeginning) {
-                handlePortalTeleport(p, w, e);
-            }
+            handlePortalTeleport(e.getPlayer(), e.getPlayer().getWorld(), b.getLocation(), e);
         }
     }
 
@@ -198,24 +199,24 @@ public class BeginningManager implements Listener, PermadeathModule {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPaperGateway(PlayerTeleportEndGatewayEvent e) {
-        handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
+        handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e.getGateway().getLocation(), e);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onVanillaTeleport(PlayerTeleportEvent e) {
         if (e.getCause() == PlayerTeleportEvent.TeleportCause.END_GATEWAY) {
-            handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
+            handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e.getTo(), e);
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPortalEvent(PlayerPortalEvent e) {
         if (e.getCause() == PlayerTeleportEvent.TeleportCause.END_GATEWAY) {
-            handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
+            handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e.getTo(), e);
         }
     }
 
-    private void handlePortalTeleport(Player p, World fromWorld, org.bukkit.event.Cancellable event) {
+    private void handlePortalTeleport(Player p, World fromWorld, Location portalBlock, org.bukkit.event.Cancellable event) {
         if (beginningWorld == null) {
             Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[Permadeath-Debug] Abortado: beginningWorld es NULL");
             return;
@@ -238,7 +239,7 @@ public class BeginningManager implements Listener, PermadeathModule {
 
         if (!isOverworld && !isBeginning) return;
 
-        // 1. Verificaci\u00f3n de D\u00eda
+        // 1. Verificación de Día
         if (main.getDay() < DateManager.getInstance().getBeginningAccessDay()) {
             if (event != null) event.setCancelled(true);
             p.setNoDamageTicks(p.getMaximumNoDamageTicks());
@@ -254,15 +255,23 @@ public class BeginningManager implements Listener, PermadeathModule {
             return;
         }
 
-        Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[Permadeath-Debug] Intentando teleportar " + p.getName() + " desde " + fromWorld.getName());
+        // --- LÓGICA DE ORIENTACIÓN VECTORIAL ---
+        Location pLoc = p.getLocation();
+        double dx = pLoc.getX() - (portalBlock.getBlockX() + 0.5);
+        double dz = pLoc.getZ() - (portalBlock.getBlockZ() + 0.5);
+        
+        // Calculamos el ángulo hacia afuera del portal
+        float exitYaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
 
         // 3. Teletransporte al Beginning
         if (isOverworld) {
             if (event != null) event.setCancelled(true);
             
-            // Aparecer justo encima del portal en The Beginning (0, 100, 0)
-            Location to = new Location(beginningWorld, 0.5, 101, 0.5); 
-            to.setYaw(0f); 
+            // Usamos las coordenadas exactas del portal dentro del NBT (3, 152, 8)
+            // Sumamos 0.5 para centrar al jugador en el bloque
+            Location to = new Location(beginningWorld, 3.5, 152, 8.5); 
+            to.setYaw(exitYaw); 
+            to.setPitch(pLoc.getPitch());
 
             if (Main.isRunningFolia()) {
                 p.getScheduler().run(main, task -> {
@@ -285,8 +294,10 @@ public class BeginningManager implements Listener, PermadeathModule {
             Location target = data.getOverWorldPortal();
             if (target == null) target = main.world.getSpawnLocation();
             
-            // Aparecer justo encima del portal del Overworld
-            Location to = target.clone().add(0.5, 1, 0.5);
+            // Aplicamos el mismo offset relativo (3.5, 2, 8.5)
+            Location to = target.clone().add(3.5, 2, 8.5);
+            to.setYaw(exitYaw);
+            to.setPitch(pLoc.getPitch());
             
             if (Main.isRunningFolia()) {
                 p.getScheduler().run(main, task -> {
@@ -295,6 +306,93 @@ public class BeginningManager implements Listener, PermadeathModule {
             } else {
                 p.teleport(to);
             }
+        }
+    }
+
+    public void debugStructures(Player p) {
+        p.sendMessage(TextUtils.format("&b&l--- PDC Debug: Estructuras ---"));
+        String[] structures = {"beginning_portal", "island1", "island2", "island3", "island4", "island5", "ytic"};
+        
+        File structuresDir = new File(main.getDataFolder(), "data/structures");
+        p.sendMessage(TextUtils.format("&7Carpeta: &f" + (structuresDir.exists() ? "&aOK" : "&cNo existe")));
+
+        for (String name : structures) {
+            File f = new File(structuresDir, name + ".nbt");
+            boolean exists = f.exists();
+            
+            String status = "&cERROR";
+            if (exists) {
+                try {
+                    var struct = Bukkit.getStructureManager().loadStructure(f);
+                    if (struct != null) status = "&aCARGADO OK";
+                } catch (Exception e) {
+                    status = "&eERROR DE LECTURA: " + e.getMessage();
+                }
+            } else {
+                status = "&7ARCHIVO FALTANTE";
+            }
+            
+            p.sendMessage(TextUtils.format("&7- &f" + name + ": " + status));
+        }
+        
+        p.sendMessage(TextUtils.format("&7Bioma actual: &f" + p.getLocation().getBlock().getBiome().name()));
+        p.sendMessage(TextUtils.format("&7Mundo: &f" + p.getWorld().getName()));
+    }
+
+    @EventHandler
+    public void onSpawnerSpawn(org.bukkit.event.entity.SpawnerSpawnEvent e) {
+        if (beginningWorld == null) return;
+        if (e.getEntity().getWorld().equals(beginningWorld)) {
+            
+            // 1. Detectar si es un bloque técnico (Netherite Infernal / Bloques especiales)
+            CreatureSpawner spawner = e.getSpawner();
+            
+            // Si el spawner no tiene tipo o tiene delay negativo, es un bloque técnico. NO TOCAR.
+            if (spawner.getSpawnedType() == null || spawner.getDelay() < 0) {
+                return;
+            }
+
+            // 2. Auto-reparar spawners de cerdos (comunes en NBT mal configurados) a Ghasts
+            if (e.getEntityType() == EntityType.PIG) {
+                e.setCancelled(true);
+                spawner.setSpawnedType(EntityType.GHAST);
+                spawner.update();
+                spawnDefinitiveMob(e.getLocation(), EntityType.GHAST);
+                return;
+            } 
+            
+            // 3. Aplicar Atributos "Definitivos" según el tipo de mob
+            buffBeginningMob(e.getEntity());
+        }
+    }
+
+    private void spawnDefinitiveMob(Location loc, EntityType type) {
+        Entity entity = main.getNmsHandler().spawnNMSEntity(type.name(), type, loc, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER);
+        if (entity instanceof LivingEntity liv) buffBeginningMob(liv);
+    }
+
+    private void buffBeginningMob(Entity entity) {
+        if (!(entity instanceof LivingEntity liv)) return;
+
+        if (liv instanceof Wither) {
+            // Los Withers no tienen nombre. Solo aplicamos vida si el NBT no la definió (es menor a 300)
+            if (liv.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getBaseValue() <= 300.0) {
+                main.getNmsAccessor().setMaxHealth(liv, 500.0D, true);
+            }
+            return; // No aplicamos los atributos comunes de 100 HP a los Withers
+        }
+
+        // Atributos comunes para el resto de mobs de The Beginning (100 HP)
+        main.getNmsAccessor().setMaxHealth(liv, 100.0D, true);
+
+        if (liv instanceof Vex) {
+            liv.setCustomName(TextUtils.format("&6Vex Definitivo"));
+        } else if (liv instanceof Ghast) {
+            main.getNmsAccessor().setMaxHealth(liv, 150.0D, true);
+            liv.setCustomName(TextUtils.format("&6Ender Ghast Definitivo"));
+        } else if (liv instanceof Creeper c) {
+            c.setCustomName(TextUtils.format("&6Quantum Creeper"));
+            c.setExplosionRadius(7);
         }
     }
 
@@ -308,7 +406,10 @@ public class BeginningManager implements Listener, PermadeathModule {
 
     private void populateChest(Chest chest) {
         if (!data.hasPopulatedChest(chest.getLocation())) {
-            if (main.getDay() < 60) {
+            boolean hasItems = Arrays.stream(chest.getBlockInventory().getContents())
+                    .anyMatch(item -> item != null && item.getType() != Material.AIR);
+
+            if (!hasItems && main.getDay() < 60) {
                 new BeginningLootTable(this).populateChest(chest);
             }
             data.addPopulatedChest(chest.getLocation());
@@ -317,9 +418,9 @@ public class BeginningManager implements Listener, PermadeathModule {
 
     public void generatePortal(boolean overworld, Location location) {
         if (!overworld) {
-            // Force inner portal to spawn at 0, 100, 0
-            location = new Location(beginningWorld, 0, 100, 0);
-            beginningWorld.setSpawnLocation(0, 100, 0);
+            // Force inner portal to spawn at 0, 150, 0
+            location = new Location(beginningWorld, 0, 150, 0);
+            beginningWorld.setSpawnLocation(0, 150, 0);
         }
         WorldEditPortal.generatePortal(overworld, location);
     }
@@ -362,9 +463,9 @@ public class BeginningManager implements Listener, PermadeathModule {
                          }
                      }, null);
                 }
-            }, 100L, 100L);
+            }, 60L, 60L);
         } else {
-            Bukkit.getScheduler().runTaskTimer(main, spawner, 100L, 100L);
+            Bukkit.getScheduler().runTaskTimer(main, spawner, 60L, 60L);
         }
     }
 
@@ -377,8 +478,8 @@ public class BeginningManager implements Listener, PermadeathModule {
             
             Location loc = center.clone().add(x, y, z);
             
-            // Safe zone check: Don't spawn near portal (0, 100, 0)
-            if (loc.distanceSquared(new Location(beginningWorld, 0, 100, 0)) < 25 * 25) continue;
+            // Safe zone check: Don't spawn near portal (0, 150, 0)
+            if (loc.distanceSquared(new Location(beginningWorld, 0, 150, 0)) < 25 * 25) continue;
 
             if (loc.getBlock().getType() == Material.AIR && loc.clone().add(0, 1, 0).getBlock().getType() == Material.AIR) {
                 if (loc.clone().add(0, -1, 0).getBlock().getType().isSolid()) {

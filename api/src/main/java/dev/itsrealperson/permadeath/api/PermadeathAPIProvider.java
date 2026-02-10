@@ -46,4 +46,21 @@ public interface PermadeathAPIProvider {
      * @return El controlador de eventos globales.
      */
     EventManagerAPI getEventManager();
+
+    /**
+     * @return El gestor de lógica NMS para spawneo de entidades.
+     */
+    dev.itsrealperson.permadeath.api.interfaces.NMSHandler getNmsHandler();
+
+    /**
+     * @return El acceso a propiedades internas NMS de entidades.
+     */
+    dev.itsrealperson.permadeath.api.interfaces.NMSAccessor getNmsAccessor();
+
+    /**
+     * Obtiene una carpeta dedicada para un addon dentro de Permadeath/addons/
+     * @param addonName Nombre del addon
+     * @return La carpeta del addon
+     */
+    java.io.File getAddonDataFolder(String addonName);
 }

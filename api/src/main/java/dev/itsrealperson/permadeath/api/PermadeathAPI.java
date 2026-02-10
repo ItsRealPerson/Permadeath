@@ -67,6 +67,26 @@ public class PermadeathAPI {
         return provider.getEventManager();
     }
 
+    public static dev.itsrealperson.permadeath.api.interfaces.NMSHandler getNmsHandler() {
+        if (provider == null) return null;
+        return provider.getNmsHandler();
+    }
+
+    public static dev.itsrealperson.permadeath.api.interfaces.NMSAccessor getNmsAccessor() {
+        if (provider == null) return null;
+        return provider.getNmsAccessor();
+    }
+
+    /**
+     * Obtiene una carpeta dedicada para un addon dentro de Permadeath/addons/
+     * @param addonName Nombre del addon
+     * @return La carpeta del addon
+     */
+    public static java.io.File getAddonDataFolder(String addonName) {
+        if (provider == null) return null;
+        return provider.getAddonDataFolder(addonName);
+    }
+
     public static void setProvider(PermadeathAPIProvider newProvider) {
         if (provider != null) {
             // To prevent multiple initializations, although not strictly necessary.

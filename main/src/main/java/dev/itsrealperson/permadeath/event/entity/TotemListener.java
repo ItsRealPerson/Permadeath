@@ -28,14 +28,26 @@ public class TotemListener implements Listener {
             String player = p.getName();
 
             int failProb = 0;
-            boolean containsDay;
+            boolean containsDay = false;
+            long currentDay = Main.getInstance().getDay();
 
-            if (Main.getInstance().getConfig().contains("TotemFail.FailProbs." + Main.getInstance().getDay())) {
-                failProb = Objects.requireNonNull(Objects.requireNonNull(Main.instance.getConfig().getInt("TotemFail.FailProbs." + Main.getInstance().getDay())));
-                containsDay = true;
-            } else {
-                System.out.println("[INFO] La probabilidad del tótem se encuentra desactivada para el día: " + Main.getInstance().getDay());
-                containsDay = false;
+            org.bukkit.configuration.ConfigurationSection section = Main.getInstance().getConfig().getConfigurationSection("TotemFail.FailProbs");
+            if (section != null) {
+                int highestMilestone = -1;
+                for (String key : section.getKeys(false)) {
+                    try {
+                        int milestone = Integer.parseInt(key);
+                        if (milestone <= currentDay && milestone > highestMilestone) {
+                            highestMilestone = milestone;
+                            failProb = section.getInt(key);
+                            containsDay = true;
+                        }
+                    } catch (NumberFormatException ignored) {}
+                }
+            }
+
+            if (!containsDay) {
+                return;
             }
 
             String totemFail = Objects.requireNonNull(Main.instance.getConfig().getString("TotemFail.ChatMessage"));
@@ -48,21 +60,6 @@ public class TotemListener implements Listener {
                     totemMessage = Objects.requireNonNull(Main.instance.getConfig().getString("TotemFail.PlayerUsedTotemsMessage").replace("{ammount}", "tres").replace("%player%", player));
                 }
             }
-
-
-            for (String k : Main.instance.getConfig().getConfigurationSection("TotemFail.FailProbs").getKeys(false)) {
-                try {
-                    int i = Integer.valueOf(k);
-                    if (i == Main.getInstance().getDay()) {
-                        containsDay = true;
-                    }
-
-                } catch (NumberFormatException e) {
-                    System.out.println("[ERROR] Ha ocurrido un error al cargar la probabilidad de tótem del día '" + k + "'");
-                }
-            }
-
-            if (!containsDay) return;
 
             if (failProb >= 101) failProb = 100;
             if (failProb < 0) failProb = 1;

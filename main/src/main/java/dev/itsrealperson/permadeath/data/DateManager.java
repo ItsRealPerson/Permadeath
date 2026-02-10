@@ -142,9 +142,10 @@ public class DateManager {
         LocalDate add = currentDate.minusDays(nD);
         String dateStr = String.format(add.getYear() + "-%02d-%02d", add.getMonthValue(), add.getDayOfMonth());
         
-        this.startDate = add; // ACTUALIZAR EN MEMORIA
+        this.startDate = add; 
         this.date = dateStr;
         setNewDate(dateStr);
+        reloadDate(); // RECARGAR TODO
         
         long newDay = getDay();
         
@@ -191,6 +192,7 @@ public class DateManager {
         this.c.set("Fecha", value);
         saveFile();
         reloadFile();
+        reloadDate(); // Actualizar variables internas y milestones
     }
 
     public void setDayNetwork(long days) {
@@ -211,21 +213,24 @@ public class DateManager {
     }
 
     private void prepareFile() {
-        this.f = new File(this.instance.getDataFolder(), "fecha.yml");
-        this.c = YamlConfiguration.loadConfiguration(f);
-
+        File dataFolder = new File(this.instance.getDataFolder(), "data");
+        if (!dataFolder.exists()) dataFolder.mkdirs();
+        
+        this.f = new File(dataFolder, "fecha.yml");
+        
         if (!f.exists()) {
-
             this.instance.saveResource("fecha.yml", false);
-
-            c.set("Fecha", getDateForDayOne());
-
-            saveFile();
-            reloadFile();
+            File temp = new File(this.instance.getDataFolder(), "fecha.yml");
+            if (temp.exists()) {
+                try {
+                    java.nio.file.Files.move(temp.toPath(), f.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException ignored) {}
+            }
         }
-
-        if (c.getString("Fecha").isEmpty()) {
-
+        
+        this.c = YamlConfiguration.loadConfiguration(f);
+        
+        if (c.getString("Fecha") == null || c.getString("Fecha").isEmpty()) {
             c.set("Fecha", getDateForDayOne());
             saveFile();
             reloadFile();

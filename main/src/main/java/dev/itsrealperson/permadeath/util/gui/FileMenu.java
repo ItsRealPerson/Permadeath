@@ -25,12 +25,12 @@ public class FileMenu extends AbstractMenu {
 
         // 1. config.yml
         addFileItem(10, "config.yml", Material.WRITABLE_BOOK);
-        // 2. mensajes_ES.yml
-        addFileItem(11, "mensajes_ES.yml", Material.PAPER);
+        // 2. mensajes_ES.yml (está en la carpeta lang/)
+        addFileItem(11, "lang/mensajes_ES.yml", Material.PAPER);
         // 3. loot.yml
-        addFileItem(12, "loot.yml", Material.CHEST);
+        addFileItem(12, "data/loot.yml", Material.CHEST);
         // 4. fecha.yml
-        addFileItem(13, "fecha.yml", Material.CLOCK);
+        addFileItem(13, "data/fecha.yml", Material.CLOCK);
 
         // Volver
         inventory.setItem(22, new ItemBuilder(Material.ARROW).setDisplayName("&aVolver").build());

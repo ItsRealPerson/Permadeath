@@ -42,7 +42,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        sub.execute(sender, args);
+        sub.execute(sender, Arrays.copyOfRange(args, 1, args.length));
         return true;
     }
 
@@ -59,7 +59,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         if (args.length > 1) {
             SubCommand sub = subCommands.get(args[0].toLowerCase());
             if (sub != null) {
-                return sub.tabComplete(sender, args);
+                return sub.tabComplete(sender, Arrays.copyOfRange(args, 1, args.length));
             }
         }
 
