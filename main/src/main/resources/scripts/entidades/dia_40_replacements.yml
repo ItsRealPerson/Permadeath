@@ -1,0 +1,19 @@
+Scripts:
+  - Id: "Core_Day_40_Wolf_Replacement"
+    Trigger: "ENTITY_SPAWN"
+    Conditions:
+      - "day_at_least{value=40}"
+      - "is_entity_type{type=WOLF}"
+    Actions:
+      - "cancel_event{}"
+      - "spawn_entity{type=CAT}"
+
+  - Id: "Core_Day_40_Chicken_Replacement"
+    Trigger: "ENTITY_SPAWN"
+    Conditions:
+      - "day_at_least{value=40}"
+      - "day_at_most{value=49}"
+      - "is_entity_type{type=CHICKEN}"
+    Actions:
+      - "cancel_event{}"
+      - "spawn_entity{type=RAVAGER}"

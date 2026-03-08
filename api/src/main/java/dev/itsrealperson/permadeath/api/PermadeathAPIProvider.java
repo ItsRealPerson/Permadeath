@@ -58,6 +58,11 @@ public interface PermadeathAPIProvider {
     dev.itsrealperson.permadeath.api.interfaces.NMSAccessor getNmsAccessor();
 
     /**
+     * @return El gestor del motor de scripts global.
+     */
+    dev.itsrealperson.permadeath.api.script.ScriptManagerAPI getScriptManager();
+
+    /**
      * Obtiene una carpeta dedicada para un addon dentro de Permadeath/addons/
      * @param addonName Nombre del addon
      * @return La carpeta del addon

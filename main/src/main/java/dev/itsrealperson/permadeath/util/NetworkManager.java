@@ -141,6 +141,16 @@ public class NetworkManager implements NetworkManagerAPI {
                     for (org.bukkit.entity.Player p : Bukkit.getOnlinePlayers()) {
                         sendMessage("PLAYER_JOIN", p.getUniqueId() + ";" + p.getName() + ";" + p.getWorld().getName());
                     }
+                    // Y enviamos la semilla si somos el servidor principal o la tenemos
+                    if (plugin.getConfig().contains("Network.GlobalSeed")) {
+                        sendMessage("SEED_SYNC", String.valueOf(plugin.getConfig().getLong("Network.GlobalSeed")));
+                    }
+                }
+                case "SEED_SYNC" -> {
+                    long seed = Long.parseLong(data);
+                    plugin.getConfig().set("Network.GlobalSeed", seed);
+                    plugin.saveConfig();
+                    PDCLog.getInstance().log("[RED] Semilla global recibida y guardada: " + seed, false);
                 }
                 default -> {
                     // Manejar listeners personalizados de Addons
@@ -165,6 +175,14 @@ public class NetworkManager implements NetworkManagerAPI {
     @Override
     public String getServerId() {
         return serverId;
+    }
+
+    @Override
+    public void syncGlobalSeed(long seed) {
+        if (!enabled) return;
+        sendMessage("SEED_SYNC", String.valueOf(seed));
+        plugin.getConfig().set("Network.GlobalSeed", seed);
+        plugin.saveConfig();
     }
 
     @Override

@@ -81,8 +81,30 @@ public class EntityEvents implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    public void onScriptDamage(EntityDamageEvent event) {
+        java.util.Map<String, Object> context = new java.util.HashMap<>();
+        context.put("damage_amount", event.getFinalDamage());
+        context.put("damage_cause", event.getCause().name());
+        
+        org.bukkit.entity.Entity caster = null;
+        if (event instanceof org.bukkit.event.entity.EntityDamageByEntityEvent ebe) {
+            caster = ebe.getDamager();
+        }
+        
+        dev.itsrealperson.permadeath.Main.instance.getScriptManager().fireTrigger(
+            dev.itsrealperson.permadeath.api.script.ScriptTrigger.ENTITY_DAMAGE, 
+            caster, event.getEntity(), context
+        );
+    }
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR)
     public void onDeath(EntityDeathEvent event) {
+        dev.itsrealperson.permadeath.Main.instance.getScriptManager().fireTrigger(
+            dev.itsrealperson.permadeath.api.script.ScriptTrigger.ENTITY_DEATH, 
+            event.getEntity().getKiller(), event.getEntity(), null
+        );
+
         if (event.getEntity() instanceof Shulker) {
             Shulker shulker = (Shulker) event.getEntity();
             if (shulker.getPersistentDataContainer().has(new NamespacedKey(Main.getInstance(), "death_module_shulker"), PersistentDataType.BYTE)) {

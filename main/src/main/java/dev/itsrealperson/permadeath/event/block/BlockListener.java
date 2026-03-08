@@ -104,8 +104,50 @@ public class BlockListener implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onScriptBreak(BlockBreakEvent event) {
+        java.util.Map<String, Object> context = new java.util.HashMap<>();
+        context.put("block_type", event.getBlock().getType().name());
+        context.put("block_location", event.getBlock().getLocation());
+        
+        Main.getInstance().getScriptManager().fireTrigger(dev.itsrealperson.permadeath.api.script.ScriptTrigger.BLOCK_BREAK, event.getPlayer(), null, context);
+        
+        if (event.getPlayer().hasMetadata(dev.itsrealperson.permadeath.util.script.CoreScriptRegistry.CANCEL_METADATA)) {
+            event.setCancelled(true);
+            event.getPlayer().removeMetadata(dev.itsrealperson.permadeath.util.script.CoreScriptRegistry.CANCEL_METADATA, Main.getInstance());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onScriptPlace(BlockPlaceEvent event) {
+        java.util.Map<String, Object> context = new java.util.HashMap<>();
+        context.put("block_type", event.getBlock().getType().name());
+        context.put("block_location", event.getBlock().getLocation());
+        
+        Main.getInstance().getScriptManager().fireTrigger(dev.itsrealperson.permadeath.api.script.ScriptTrigger.BLOCK_PLACE, event.getPlayer(), null, context);
+        
+        if (event.getPlayer().hasMetadata(dev.itsrealperson.permadeath.util.script.CoreScriptRegistry.CANCEL_METADATA)) {
+            event.setCancelled(true);
+            event.getPlayer().removeMetadata(dev.itsrealperson.permadeath.util.script.CoreScriptRegistry.CANCEL_METADATA, Main.getInstance());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onScriptBucket(PlayerBucketFillEvent event) {
+        java.util.Map<String, Object> context = new java.util.HashMap<>();
+        context.put("block_location", event.getBlockClicked().getRelative(event.getBlockFace()).getLocation());
+        
+        Main.getInstance().getScriptManager().fireTrigger(dev.itsrealperson.permadeath.api.script.ScriptTrigger.BUCKET_FILL, event.getPlayer(), null, context);
+        
+        if (event.getPlayer().hasMetadata(dev.itsrealperson.permadeath.util.script.CoreScriptRegistry.CANCEL_METADATA)) {
+            event.setCancelled(true);
+            event.getPlayer().removeMetadata(dev.itsrealperson.permadeath.util.script.CoreScriptRegistry.CANCEL_METADATA, Main.getInstance());
+        }
+    }
+
     @EventHandler
     public void onBreak(BlockBreakEvent e) {
+        if (Main.getInstance().getScriptManager().isLogicOverridden("CORE_BLOCK_DAMAGE")) return;
 
         if (Main.getInstance().getNetheriteBlock().isInfernalNetherite(e.getBlock().getLocation())) {
             Main.getInstance().getNetheriteBlock().onBlockBreak(e);
@@ -163,8 +205,25 @@ public class BlockListener implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onScriptSmelt(FurnaceSmeltEvent event) {
+        java.util.Map<String, Object> context = new java.util.HashMap<>();
+        context.put("item_type", event.getResult().getType().name());
+        context.put("block_location", event.getBlock().getLocation());
+        
+        Main.getInstance().getScriptManager().fireTrigger(dev.itsrealperson.permadeath.api.script.ScriptTrigger.FURNACE_SMELT, null, null, context);
+        
+        // El script puede cambiar el resultado guardándolo en la metadata
+        if (event.getBlock().hasMetadata("pdc_smelt_result")) {
+            String newMat = event.getBlock().getMetadata("pdc_smelt_result").get(0).asString();
+            event.getResult().setType(Material.valueOf(newMat));
+            event.getBlock().removeMetadata("pdc_smelt_result", Main.getInstance());
+        }
+    }
+
     @EventHandler
     public void onBlockFurnace(FurnaceSmeltEvent e) {
+        if (Main.getInstance().getScriptManager().isLogicOverridden("CORE_FURNACE_NERF")) return;
 
         if (Main.getInstance().getDay() >= 50) {
 

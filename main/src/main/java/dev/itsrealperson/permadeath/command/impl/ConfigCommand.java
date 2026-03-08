@@ -45,11 +45,23 @@ public class ConfigCommand extends SubCommand {
             return;
         }
 
+        if (args.length > 0 && args[0].equalsIgnoreCase("edit")) {
+            boolean current = dev.itsrealperson.permadeath.util.gui.AbstractMenu.isSafeMode();
+            dev.itsrealperson.permadeath.util.gui.AbstractMenu.setSafeMode(!current);
+            String status = (!current ? "&cACTIVADO (Solo Lectura)" : "&aDESACTIVADO (Edición Libre)");
+            player.sendMessage(TextUtils.format("&e&l[GUI] &fModo Seguro: " + status));
+            player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
+            return;
+        }
+
         new ConfigMenu().open(player);
     }
 
     @Override
     public List<String> tabComplete(CommandSender sender, String[] args) {
+        if (args.length == 1) {
+            return Collections.singletonList("edit");
+        }
         return Collections.emptyList();
     }
 }

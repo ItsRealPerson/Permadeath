@@ -1,0 +1,35 @@
+Scripts:
+  - Id: "Core_Totem_Fail_Day_1"
+    Trigger: "CUSTOM"
+    Conditions:
+      - "day_at_least{value=1}"
+      - "day_at_most{value=19}"
+      - "chance{value=1}"
+    Actions:
+      - "cancel_event{}"
+
+  - Id: "Core_Totem_Fail_Day_20"
+    Trigger: "CUSTOM"
+    Conditions:
+      - "day_at_least{value=20}"
+      - "day_at_most{value=39}"
+      - "chance{value=10}"
+    Actions:
+      - "cancel_event{}"
+
+  - Id: "Core_Totem_Fail_Day_40"
+    Trigger: "CUSTOM"
+    Conditions:
+      - "day_at_least{value=40}"
+      - "day_at_most{value=59}"
+      - "chance{value=25}"
+    Actions:
+      - "cancel_event{}"
+
+  - Id: "Core_Totem_Fail_Day_60"
+    Trigger: "CUSTOM"
+    Conditions:
+      - "day_at_least{value=60}"
+      - "chance{value=50}"
+    Actions:
+      - "cancel_event{}"

@@ -1,0 +1,7 @@
+Scripts:
+  - Id: "Core_Day_50_UHC_Mode"
+    Trigger: "DAY_CHANGE"
+    Conditions:
+      - "day_at_least{value=50}"
+    Actions:
+      - "set_gamerule{rule=naturalRegeneration;value=false}"

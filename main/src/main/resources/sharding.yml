@@ -7,7 +7,20 @@ CurrentShardID: "shard-1"
 # Servidor por defecto (si un jugador está en tierra de nadie).
 FallbackServer: "shard-1"
 
-# Definición de zonas
+# Protocolo de Semilla Global
+# Si está presente, el plugin verificará que la semilla del mundo coincida con esta.
+# Network.GlobalSeed: 123456789
+
+# Dimensional Hosting
+# Define qué servidor de la red hostea cada dimensión.
+# Si un jugador entra en un portal de una dimensión no hosteada localmente, 
+# será transferido automáticamente al servidor correspondiente.
+DimensionalHosting:
+  world_the_end: "shard-1"
+  pdc_the_beginning: "shard-1"
+  pdc_the_abyss: "shard-1"
+
+# Definición de zonas (Overworld Sharding)
 Shards:
   shard-1:
     ProxyName: "survival-1"  # Nombre en el Proxy (Velocity/Bungee)

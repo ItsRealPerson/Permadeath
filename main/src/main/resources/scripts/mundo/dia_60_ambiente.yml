@@ -1,0 +1,9 @@
+Scripts:
+  - Id: "Core_Day_60_Hunger_Atmosphere"
+    Trigger: "TICK_1S"
+    Conditions:
+      - "day_at_least{value=60}"
+      - "is_world{name='world'}"
+      - "chance{value=10}"
+    Actions:
+      - "apply_potion{type=HUNGER;duration=100;amplifier=1}"

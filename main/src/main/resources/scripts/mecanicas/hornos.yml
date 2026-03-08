@@ -1,0 +1,18 @@
+Scripts:
+  - Id: "Core_Day_50_Furnace_Gold"
+    Trigger: "FURNACE_SMELT"
+    Override: "CORE_FURNACE_NERF"
+    Conditions:
+      - "day_at_least{value=50}"
+      - "is_item_type{type=GOLD_INGOT}"
+    Actions:
+      - "set_metadata{key=pdc_smelt_result;value=GOLD_NUGGET}"
+
+  - Id: "Core_Day_50_Furnace_Iron"
+    Trigger: "FURNACE_SMELT"
+    Override: "CORE_FURNACE_NERF"
+    Conditions:
+      - "day_at_least{value=50}"
+      - "is_item_type{type=IRON_INGOT}"
+    Actions:
+      - "set_metadata{key=pdc_smelt_result;value=IRON_NUGGET}"

@@ -1,0 +1,10 @@
+Scripts:
+  - Id: "Core_Day_40_Nether_Spawns"
+    Trigger: "PLAYER_TICK"
+    Override: "CORE_NETHER_SPAWNS"
+    Conditions:
+      - "day_at_least{value=40}"
+      - "is_environment{type=NETHER}"
+      - "chance{value=5}"
+    Actions:
+      - "spawn_entity{type=ZOMBIFIED_PIGLIN}"

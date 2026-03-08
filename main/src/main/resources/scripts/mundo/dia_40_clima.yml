@@ -1,0 +1,9 @@
+Scripts:
+  - Id: "Core_Day_40_Storm_Control"
+    Trigger: "DAY_CHANGE"
+    Conditions:
+      - "day_at_least{value=40}"
+      - "chance{value=30}"
+    Actions:
+      - "set_weather{type=THUNDER}"
+      - "fake_lightning{}"

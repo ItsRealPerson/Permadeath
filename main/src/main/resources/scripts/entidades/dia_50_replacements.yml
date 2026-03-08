@@ -1,0 +1,10 @@
+Scripts:
+  - Id: "Core_Day_50_Passive_Replacement"
+    Trigger: "ENTITY_SPAWN"
+    Conditions:
+      - "day_at_least{value=50}"
+      - "is_passive{}"
+      - "is_world{name='world'}"
+    Actions:
+      - "cancel_event{}"
+      - "spawn_entity{type=RAVAGER}"

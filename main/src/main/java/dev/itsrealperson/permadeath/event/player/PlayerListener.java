@@ -59,6 +59,18 @@ public class PlayerListener implements Listener {
         loadTicks();
     }
 
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR)
+    public void onScriptJoin(PlayerJoinEvent event) {
+        Main.getInstance().getScriptManager().fireTrigger(dev.itsrealperson.permadeath.api.script.ScriptTrigger.PLAYER_JOIN, event.getPlayer(), null, null);
+    }
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    public void onScriptConsume(org.bukkit.event.player.PlayerItemConsumeEvent event) {
+        java.util.Map<String, Object> context = new java.util.HashMap<>();
+        context.put("item_type", event.getItem().getType().name());
+        Main.getInstance().getScriptManager().fireTrigger(dev.itsrealperson.permadeath.api.script.ScriptTrigger.ITEM_CONSUME, event.getPlayer(), null, context);
+    }
+
     public void loadTicks() {
         if (Main.getInstance().getDay() <= 24) {
 
@@ -338,19 +350,39 @@ public class PlayerListener implements Listener {
         // Permitir que OPs activen el Death Train para pruebas incluso si están "protegidos" del ban
         boolean forceDeathTrain = p.isOp();
 
+        // --- HOOK DE ADDONS: DeathEvent ---
+        boolean willBeBanned = Main.instance.getConfig().getBoolean("ban-enabled") && !isProtected[0];
+        dev.itsrealperson.permadeath.api.event.PermadeathPlayerDeathEvent pdcDeathEvent = 
+            new dev.itsrealperson.permadeath.api.event.PermadeathPlayerDeathEvent(p, Main.instance.getDay(), willBeBanned);
+        Bukkit.getPluginManager().callEvent(pdcDeathEvent);
+
+        if (pdcDeathEvent.isCancelled()) return;
+        boolean finalBan = pdcDeathEvent.isBanned();
+        // ----------------------------------
+
         if (!isProtected[0] || forceDeathTrain) {
+            // --- HOOK DE ADDONS: WeatherEvent ---
+            dev.itsrealperson.permadeath.api.event.PermadeathWeatherChangeEvent weatherEvent = 
+                new dev.itsrealperson.permadeath.api.event.PermadeathWeatherChangeEvent(Main.instance.world, 
+                dev.itsrealperson.permadeath.api.event.PermadeathWeatherChangeEvent.WeatherType.THUNDER, totalTicks);
+            Bukkit.getPluginManager().callEvent(weatherEvent);
+
+            if (weatherEvent.isCancelled()) return;
+            long finalDuration = weatherEvent.getDuration();
+            // ------------------------------------
+
             if (Main.isRunningFolia()) {
                 Bukkit.getGlobalRegionScheduler().execute(Main.instance, () -> {
                     Main.instance.world.setStorm(true);
                     Main.instance.world.setThundering(true);
-                    Main.instance.world.setThunderDuration((int) totalTicks);
-                    Main.instance.world.setWeatherDuration((int) totalTicks);
+                    Main.instance.world.setThunderDuration((int) finalDuration);
+                    Main.instance.world.setWeatherDuration((int) finalDuration);
                 });
             } else {
                 Main.instance.world.setStorm(true);
                 Main.instance.world.setThundering(true);
-                Main.instance.world.setThunderDuration((int) totalTicks);
-                Main.instance.world.setWeatherDuration((int) totalTicks);
+                Main.instance.world.setThunderDuration((int) finalDuration);
+                Main.instance.world.setWeatherDuration((int) finalDuration);
             }
 
             if (Main.instance.getDay() >= 25) {
@@ -434,7 +466,7 @@ public class PlayerListener implements Listener {
 
         p.setGameMode(GameMode.SPECTATOR);
         runTaskLater(() -> {
-            if (Main.instance.getConfig().getBoolean("ban-enabled") && !isProtected[0]) {
+            if (finalBan) {
                 if (off.isOnline()) {
                     ((Player) off).kickPlayer(ChatColor.RED + "Has sido PERMABANEADO");
                 }

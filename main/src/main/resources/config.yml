@@ -199,8 +199,15 @@ Progression:
   WitherSpawnStartDay: 60
   PhantomBombingStartDay: 70
 
+# CONFIGURACIÓN DE SCRIPTING
+# Permite personalizar la lógica del plugin mediante archivos YAML.
+Scripting:
+  Enabled: true           # Habilitar/Deshabilitar todo el motor de scripts.
+  EnableOverrides: true   # Si es true, los scripts pueden sobrescribir la lógica nativa del Core.
+
 # NO TOCAR
 DontTouch:
+  SafeModeEnabled: true
   PlayTime: 0
   ExtendedDifficultyActive: false
   Event:

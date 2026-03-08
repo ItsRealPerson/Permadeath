@@ -19,12 +19,20 @@ public class TotemListener implements Listener {
     public void totemNerf(EntityResurrectEvent event) {
 
         if (!(event.getEntity() instanceof Player)) return;
+        
+        Player p = (Player) event.getEntity();
+        Main.getInstance().getScriptManager().fireTrigger(dev.itsrealperson.permadeath.api.script.ScriptTrigger.CUSTOM, p, null, java.util.Map.of("custom_id", "TOTEM_USE"));
+        
+        if (p.hasMetadata(dev.itsrealperson.permadeath.util.script.CoreScriptRegistry.CANCEL_METADATA)) {
+            event.setCancelled(true);
+            p.removeMetadata(dev.itsrealperson.permadeath.util.script.CoreScriptRegistry.CANCEL_METADATA, Main.getInstance());
+            return;
+        }
 
         if (((Player) event.getEntity()).getInventory().getItemInMainHand().getType() == Material.TOTEM_OF_UNDYING || ((Player) event.getEntity()).getInventory().getItemInOffHand().getType() == Material.TOTEM_OF_UNDYING) {
 
             if (!Main.instance.getConfig().getBoolean("TotemFail.Enable")) return;
 
-            Player p = (Player) event.getEntity();
             String player = p.getName();
 
             int failProb = 0;

@@ -67,12 +67,54 @@ public class SpawnListener implements Listener {
     }
 
 
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    public void onScriptSpawn(CreatureSpawnEvent event) {
+        plugin.getScriptManager().fireTrigger(dev.itsrealperson.permadeath.api.script.ScriptTrigger.ENTITY_SPAWN, event.getEntity(), null, null);
+        
+        // Comprobar si el script pidió cancelar el spawn
+        if (event.getEntity().hasMetadata(dev.itsrealperson.permadeath.util.script.CoreScriptRegistry.CANCEL_METADATA)) {
+            event.setCancelled(true);
+            event.getEntity().removeMetadata(dev.itsrealperson.permadeath.util.script.CoreScriptRegistry.CANCEL_METADATA, plugin);
+        }
+    }
+
     @EventHandler
     public void onSpawn(CreatureSpawnEvent event) {
         if (plugin.getAbyssManager() != null) {
             plugin.getAbyssManager().onAbyssSpawn(event);
         }
         if (event.isCancelled()) return;
+
+        // --- HOOK DE ADDONS: SpawnProvider ---
+        var spawnProvider = dev.itsrealperson.permadeath.api.addons.AddonRegistry.getSpawnProvider();
+        if (spawnProvider.isPresent()) {
+            try {
+                var result = spawnProvider.get().handleSpawn(event.getEntityType(), event.getLocation(), event.getSpawnReason());
+                if (result != null) {
+                    switch (result.decision()) {
+                        case CANCEL -> {
+                            event.setCancelled(true);
+                            return;
+                        }
+                        case REPLACE -> {
+                            event.setCancelled(true);
+                            event.getLocation().getWorld().spawnEntity(event.getLocation(), result.fallbackType(), event.getSpawnReason());
+                            return;
+                        }
+                        case CUSTOM -> {
+                            event.setCancelled(true);
+                            plugin.getNmsHandler().spawnCustom(result.customMobId(), event.getLocation());
+                            return;
+                        }
+                        case IGNORE -> { /* Seguir con la lógica normal */ }
+                    }
+                }
+            } catch (Exception e) {
+                plugin.getLogger().severe("ERROR crítico en SpawnProvider de un Addon: " + e.getMessage());
+                // En caso de error, ignoramos al addon y seguimos con Permadeath
+            }
+        }
+        // ------------------------------------
         
         if (event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.CUSTOM || event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.SLIME_SPLIT) {
             return;
@@ -1283,7 +1325,19 @@ public class SpawnListener implements Listener {
                         int z = (int) l.getZ();
 
                         Bukkit.broadcastMessage(TextUtils.format("&cLa maldición de un Gato Galáctico ha comenzado en: " + x + ", " + y + ", " + z));
-                        new GatoGalacticoTask(event.getEntity().getLocation(), plugin).runTaskTimer(plugin, 0, 20L);
+                        
+                        GatoGalacticoTask task = new GatoGalacticoTask(event.getEntity().getLocation(), plugin);
+                        if (Main.isRunningFolia()) {
+                            Bukkit.getRegionScheduler().runAtFixedRate(plugin, event.getEntity().getLocation(), t -> {
+                                if (task.isFinished()) {
+                                    t.cancel();
+                                    return;
+                                }
+                                task.run();
+                            }, 1L, 20L);
+                        } else {
+                            task.runTaskTimer(plugin, 0, 20L);
+                        }
                     }
                 }
 

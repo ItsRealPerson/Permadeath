@@ -1,0 +1,10 @@
+Scripts:
+  - Id: "Core_Day_20_Passives"
+    Trigger: "ENTITY_SPAWN"
+    Override: "CORE_DAY_20_MOBS"
+    Conditions:
+      - "day_at_least{value=20}"
+      - "is_passive{}"
+    Actions:
+      - "core_make_hostile{}"
+      - "fake_lightning{}"

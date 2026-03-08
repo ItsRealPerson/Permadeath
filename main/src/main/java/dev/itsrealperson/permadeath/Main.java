@@ -2,7 +2,6 @@ package dev.itsrealperson.permadeath;
 
 import com.github.retrooper.packetevents.PacketEvents;
 import dev.itsrealperson.permadeath.api.PermadeathAPI;
-import dev.itsrealperson.permadeath.api.PermadeathAPIProvider;
 import dev.itsrealperson.permadeath.api.interfaces.InfernalNetheriteBlock;
 import dev.itsrealperson.permadeath.api.interfaces.NMSAccessor;
 import dev.itsrealperson.permadeath.api.interfaces.NMSHandler;
@@ -59,7 +58,7 @@ import java.util.logging.Filter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public final class Main extends JavaPlugin implements Listener, PermadeathAPIProvider {
+public final class Main extends JavaPlugin implements Listener, dev.itsrealperson.permadeath.api.PermadeathAPIProvider {
 
     private static final int CURRENT_CONFIG_VERSION = 3;
     public static boolean DEBUG = false;
@@ -97,6 +96,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     private dev.itsrealperson.permadeath.util.LootManager lootManager;
     private dev.itsrealperson.permadeath.util.NetworkManager networkManager;
     private dev.itsrealperson.permadeath.util.ShardManager shardManager;
+    private dev.itsrealperson.permadeath.util.script.ScriptManager scriptManager;
     private FileConfiguration abyssConfig;
     private File abyssFile;
     private ModuleManager moduleManager;
@@ -232,6 +232,9 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         PacketEvents.getAPI().init();
 
         this.moduleManager = new ModuleManager(this);
+        this.scriptManager = new dev.itsrealperson.permadeath.util.script.ScriptManager(this);
+        dev.itsrealperson.permadeath.util.script.CoreScriptRegistry.registerNativeActions(this);
+        this.scriptManager.loadScripts();
         this.eventManager = new dev.itsrealperson.permadeath.event.impl.EventManagerImpl(this);
         this.itemRegistry = new dev.itsrealperson.permadeath.util.item.ItemRegistryImpl();
         this.entityRegistry = new dev.itsrealperson.permadeath.util.entity.EntityRegistryImpl();
@@ -247,12 +250,20 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         // 4. Registrar módulos
         // Solo puede estar activa si el toggle global está en true Y el corazón ha sido usado
         if (getConfig().getBoolean("Toggles.Abyss-World-Active") && getConfig().getBoolean("DontTouch.HeartUsed")) {
-            this.abyssManager = new AbyssManager(this);
-            this.moduleManager.registerModule(this.abyssManager);
+            if (this.shardManager.isWorldHostedLocally("pdc_the_abyss")) {
+                this.abyssManager = new AbyssManager(this);
+                this.moduleManager.registerModule(this.abyssManager);
+            } else {
+                getLogger().info("[RED] El Abismo es hosteado por otro servidor. Saltando carga local.");
+            }
         }
 
-        this.begginingManager = new BeginningManager(this);
-        this.moduleManager.registerModule(this.begginingManager);
+        if (this.shardManager.isWorldHostedLocally("pdc_the_beginning")) {
+            this.begginingManager = new BeginningManager(this);
+            this.moduleManager.registerModule(this.begginingManager);
+        } else {
+            getLogger().info("[RED] The Beginning es hosteado por otro servidor. Saltando carga local.");
+        }
 
         this.moduleManager.registerModule(new dev.itsrealperson.permadeath.world.EnvironmentModule(this));
         this.moduleManager.registerModule(new dev.itsrealperson.permadeath.world.CatastropheModule(this));
@@ -269,6 +280,10 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         this.networkManager.init();
         this.shardManager = new dev.itsrealperson.permadeath.util.ShardManager(this);
         
+        // --- CARGAR ADDONS EXTERNOS ---
+        new dev.itsrealperson.permadeath.addon.AddonManager(this).loadAddons();
+        // ------------------------------
+
         getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
 
         if (this.networkManager.isNetworkActive()) {
@@ -282,6 +297,27 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         
         runningFolia = isRunningFolia();
         this.lootManager = new dev.itsrealperson.permadeath.util.LootManager(this);
+
+        // Tarea de 1 segundo para scripts y otros procesos
+        Bukkit.getAsyncScheduler().runAtFixedRate(this, (task) -> {
+            // Trigger Global
+            Bukkit.getGlobalRegionScheduler().execute(this, () -> {
+                scriptManager.fireTrigger(dev.itsrealperson.permadeath.api.script.ScriptTrigger.TICK_1S, null, null, null);
+            });
+            
+            // Trigger por Jugador (Respetando hilos regionales)
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (runningFolia) {
+                    p.getScheduler().run(this, (t) -> {
+                        scriptManager.fireTrigger(dev.itsrealperson.permadeath.api.script.ScriptTrigger.PLAYER_TICK, p, null, null);
+                    }, null);
+                } else {
+                    Bukkit.getScheduler().runTask(this, () -> {
+                        scriptManager.fireTrigger(dev.itsrealperson.permadeath.api.script.ScriptTrigger.PLAYER_TICK, p, null, null);
+                    });
+                }
+            }
+        }, 1, 1, java.util.concurrent.TimeUnit.SECONDS);
 
         // 6. Registrar proveedor de API
         PermadeathAPI.setProvider(this);
@@ -308,6 +344,18 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
         DiscordPortal.onEnable();
         tickAll();
+
+        // --- RESUMEN DE ADDONS ---
+        var loadedAddons = dev.itsrealperson.permadeath.api.addons.AddonRegistry.getRegisteredAddons();
+        if (!loadedAddons.isEmpty()) {
+            Bukkit.getConsoleSender().sendMessage(TextUtils.format("&7&m------------------------------------------"));
+            Bukkit.getConsoleSender().sendMessage(TextUtils.format(" [Permadeath] &b&lAddons Cargados (&f" + loadedAddons.size() + "&b&l):"));
+            for (var addon : loadedAddons) {
+                Bukkit.getConsoleSender().sendMessage(TextUtils.format("  &7➤ &f" + addon.getName() + " &bv" + addon.getVersion()));
+            }
+            Bukkit.getConsoleSender().sendMessage(TextUtils.format("&7&m------------------------------------------"));
+        }
+        // -------------------------
     }
 
     @Override
@@ -346,7 +394,8 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     public EndDataManager getEndData() { return endData; }
     public BeginningManager getBeginningManager() { return begginingManager; }
     public AbyssManager getAbyssManager() { return abyssManager; }
-    public dev.itsrealperson.permadeath.api.NetworkManagerAPI getNetworkManager() { return networkManager; }
+    public dev.itsrealperson.permadeath.util.NetworkManager getNetworkManager() { return networkManager; }
+    public dev.itsrealperson.permadeath.util.script.ScriptManager getScriptManager() { return scriptManager; }
     public dev.itsrealperson.permadeath.util.ShardManager getShardManager() { return shardManager; }
     public SpawnListener getSpawnListener() { return spawnListener; }
     public NMSHandler getNmsHandler() { return NMS.getHandler(); }
@@ -698,6 +747,17 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
         if (this.world == null) {
             PDCLog.getInstance().log("[ERROR] No se pudo encontrar un mundo principal (OVERWORLD).", true);
+        } else {
+            // --- AUTOMATED SEED PROTOCOL ---
+            if (getConfig().contains("Network.GlobalSeed")) {
+                long globalSeed = getConfig().getLong("Network.GlobalSeed");
+                if (this.world.getSeed() != globalSeed) {
+                    PDCLog.getInstance().log("[ADVERTENCIA RED] La semilla local (" + this.world.getSeed() + ") NO COINCIDE con la global (" + globalSeed + ").", true);
+                    PDCLog.getInstance().log("[ADVERTENCIA RED] Esto puede causar errores de generación entre servidores.", true);
+                } else {
+                    PDCLog.getInstance().log("[RED] Semilla global verificada y coincidente.", false);
+                }
+            }
         }
         if (this.endWorld == null) {
             PDCLog.getInstance().log("[ERROR] No se pudo encontrar un mundo del End (THE_END).", true);
@@ -755,6 +815,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         getServer().getPluginManager().registerEvents(new CustomSkeletons(instance), instance);
         getServer().getPluginManager().registerEvents(new PlayerListener(), instance);
         getServer().getPluginManager().registerEvents(new BlockListener(), instance);
+        getServer().getPluginManager().registerEvents(new dev.itsrealperson.permadeath.event.world.WorldListener(), instance);
         getServer().getPluginManager().registerEvents(new EntityEvents(), instance);
         getServer().getPluginManager().registerEvents(new TotemListener(), instance);
         getServer().getPluginManager().registerEvents(new RaidEvents(), instance);
@@ -800,6 +861,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.LocateCommand(this));
         commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.DayChangeCommand());
         commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.BackupCommand(this));
+        commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.AddonsCommand());
         commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.ResetAllCommand(this));
         commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.LanguageCommand(this));
         commandManager.registerSubCommand(new dev.itsrealperson.permadeath.command.impl.SpawnCommand(this));

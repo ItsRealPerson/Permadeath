@@ -67,7 +67,7 @@ public class EnvironmentModule implements PermadeathModule {
     }
 
     private void applyBedrockLevitation(Player player, long day) {
-        if (day < 30) return;
+        if (day < 30 || plugin.getScriptManager().isLogicOverridden("CORE_BEDROCK_LEVITATION")) return;
         
         // Comprobar bloques adyacentes (abajo, actual, arriba) para detectar bedrock
         Material down = player.getLocation().getBlock().getRelative(org.bukkit.block.BlockFace.DOWN).getType();
@@ -81,7 +81,7 @@ public class EnvironmentModule implements PermadeathModule {
 
     private void applyWeatherEffects(Player player, long day) {
         DateManager dm = DateManager.getInstance();
-        if (day >= dm.getWeatherEffectsDay() && player.getWorld().hasStorm()) {
+        if (day >= dm.getWeatherEffectsDay() && player.getWorld().hasStorm() && !plugin.getScriptManager().isLogicOverridden("CORE_WEATHER_EFFECTS")) {
             Location blockLoc = player.getWorld().getHighestBlockAt(player.getLocation()).getLocation();
             if (blockLoc.getBlockY() < player.getLocation().getY()) {
                 
@@ -102,7 +102,7 @@ public class EnvironmentModule implements PermadeathModule {
     }
 
     private void applyMiningFatigueFix(Player player, long day) {
-        if (day >= DateManager.getInstance().getMiningFatigueDay()) {
+        if (day >= DateManager.getInstance().getMiningFatigueDay() && !plugin.getScriptManager().isLogicOverridden("CORE_MINING_FATIGUE_FIX")) {
             PotionEffect effect = player.getPotionEffect(PotionEffectType.MINING_FATIGUE);
             if (effect != null) {
                 if (effect.getDuration() >= 4 * 60 * 20 && !plugin.getDoneEffectPlayers().contains(player)) {
@@ -118,7 +118,7 @@ public class EnvironmentModule implements PermadeathModule {
 
     private void applyNetherSpawns(Player player, long day) {
         DateManager dm = DateManager.getInstance();
-        if (day >= dm.getNetherPigZombieDay() && day < dm.getAbyssDay() && player.getWorld().getEnvironment() == World.Environment.NETHER) {
+        if (day >= dm.getNetherPigZombieDay() && day < dm.getAbyssDay() && player.getWorld().getEnvironment() == World.Environment.NETHER && !plugin.getScriptManager().isLogicOverridden("CORE_NETHER_SPAWNS")) {
             // Probabilidad original 10/4500 por tick -> ~200/4500 por segundo
             if (random.nextInt(4500) < 200 && player.getWorld().getLivingEntities().size() < 110) {
                 Location ploc = player.getLocation().clone();

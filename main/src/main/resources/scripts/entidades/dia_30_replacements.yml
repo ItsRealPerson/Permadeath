@@ -1,0 +1,18 @@
+Scripts:
+  - Id: "Core_Day_30_Squid_Replacement"
+    Trigger: "ENTITY_SPAWN"
+    Conditions:
+      - "day_at_least{value=30}"
+      - "is_entity_type{type=SQUID}"
+    Actions:
+      - "cancel_event{}"
+      - "spawn_entity{type=GUARDIAN}"
+
+  - Id: "Core_Day_30_Bat_Replacement"
+    Trigger: "ENTITY_SPAWN"
+    Conditions:
+      - "day_at_least{value=30}"
+      - "is_entity_type{type=BAT}"
+    Actions:
+      - "cancel_event{}"
+      - "spawn_entity{type=BLAZE}"

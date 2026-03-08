@@ -1,0 +1,7 @@
+Scripts:
+  - Id: "Core_Day_25_Buffs"
+    Trigger: "ENTITY_SPAWN"
+    Conditions:
+      - "day_at_least{value=25}"
+    Actions:
+      - "core_apply_day_buffs{}"

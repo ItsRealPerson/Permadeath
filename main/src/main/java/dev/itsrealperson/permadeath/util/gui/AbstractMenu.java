@@ -19,6 +19,15 @@ public abstract class AbstractMenu implements InventoryHolder {
         this.inventory = Bukkit.createInventory(this, size, title);
     }
 
+    public static boolean isSafeMode() {
+        return dev.itsrealperson.permadeath.Main.instance.getConfig().getBoolean("DontTouch.SafeModeEnabled", true);
+    }
+
+    public static void setSafeMode(boolean safe) {
+        dev.itsrealperson.permadeath.Main.instance.getConfig().set("DontTouch.SafeModeEnabled", safe);
+        dev.itsrealperson.permadeath.Main.instance.saveConfig();
+    }
+
     /**
      * Define los ítems que tendrá el menú.
      */

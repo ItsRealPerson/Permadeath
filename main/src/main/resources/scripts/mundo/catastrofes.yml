@@ -1,0 +1,8 @@
+Scripts:
+  - Id: "Core_Day_60_Lightning_Wither"
+    Trigger: "LIGHTNING_STRIKE"
+    Conditions:
+      - "day_at_least{value=60}"
+      - "chance{value=5}"
+    Actions:
+      - "spawn_entity{type=WITHER}"

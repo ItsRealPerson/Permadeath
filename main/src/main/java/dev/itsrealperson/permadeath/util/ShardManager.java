@@ -15,6 +15,7 @@ public class ShardManager {
     private File file;
     private FileConfiguration config;
     private final Map<String, Shard> shards = new HashMap<>();
+    private final Map<String, String> worldHosts = new HashMap<>();
     private String currentShardId;
 
     public ShardManager(Main plugin) {
@@ -53,6 +54,29 @@ public class ShardManager {
                 shards.put(key, new Shard(key, proxyName, minX, maxX, minZ, maxZ));
             }
         }
+
+        // Cargar Dimensional Hosting
+        var hosting = config.getConfigurationSection("DimensionalHosting");
+        if (hosting != null) {
+            for (String worldName : hosting.getKeys(false)) {
+                worldHosts.put(worldName, hosting.getString(worldName));
+            }
+        }
+    }
+
+    public boolean isWorldHostedLocally(String worldName) {
+        if (!plugin.getNetworkManager().isNetworkActive()) return true;
+        if (!worldHosts.containsKey(worldName)) return true; // Por defecto lo hosteamos todos si no se dice nada
+        
+        return worldHosts.get(worldName).equals(currentShardId);
+    }
+
+    public String getProxyServerForWorld(String worldName) {
+        String hostId = worldHosts.get(worldName);
+        if (hostId == null) return null;
+        
+        Shard shard = shards.get(hostId);
+        return shard != null ? shard.proxyName : null;
     }
 
     public String getServerForLocation(Location loc) {

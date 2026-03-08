@@ -1,0 +1,9 @@
+Scripts:
+  - Id: "Core_Day_25_Acid_Water"
+    Trigger: "PLAYER_TICK"
+    Conditions:
+      - "day_at_least{value=25}"
+      - "is_in_water{}"
+      - "has_item{type=WATER_MEDAL;invert=true}"
+    Actions:
+      - "damage{amount=2.0}"

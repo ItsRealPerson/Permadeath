@@ -34,6 +34,12 @@ public interface NetworkManagerAPI {
     String getServerId();
 
     /**
+     * Sincroniza la semilla global con toda la red.
+     * @param seed La semilla a sincronizar.
+     */
+    void syncGlobalSeed(long seed);
+
+    /**
      * @return Una colección de todos los jugadores conectados a la red actualmente.
      */
     Collection<dev.itsrealperson.permadeath.api.storage.GlobalPlayer> getGlobalPlayers();

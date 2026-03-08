@@ -28,6 +28,8 @@ public class HostileEntityListener implements Listener {
     }
 
     public void initialize() {
+        if (instance.getScriptManager().isLogicOverridden("CORE_DAY_20_MOBS")) return;
+        
         if (instance.getDay() >= 20) {
             for (World w : Bukkit.getWorlds()) {
                 for (LivingEntity entity : w.getLivingEntities()) {
@@ -47,7 +49,7 @@ public class HostileEntityListener implements Listener {
 
     @EventHandler
     public void onSpawn(CreatureSpawnEvent e) {
-        if (e.isCancelled()) return;
+        if (e.isCancelled() || instance.getScriptManager().isLogicOverridden("CORE_DAY_20_MOBS")) return;
 
         if (instance.getDay() >= 20 && !Utils.isHostileMob(e.getEntityType()) && e.getEntityType() != EntityType.ARMOR_STAND && e.getEntityType() != EntityType.ENDERMAN && e.getEntityType() != EntityType.PLAYER) {
             injectHostileBehavior(e.getEntity());
@@ -122,7 +124,7 @@ public class HostileEntityListener implements Listener {
 
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent e) {
-        if (instance.getDay() < 20 || e.isNewChunk()) return;
+        if (instance.getDay() < 20 || e.isNewChunk() || instance.getScriptManager().isLogicOverridden("CORE_DAY_20_MOBS")) return;
 
         for (Entity entity : e.getChunk().getEntities()) {
             if (!entity.isValid() || entity.isDead()) continue;

@@ -1,0 +1,14 @@
+Scripts:
+  - Id: "Core_Day_1_Health"
+    Trigger: "PLAYER_JOIN"
+    Conditions:
+      - "day_at_least{value=1}"
+    Actions:
+      - "set_max_health{amount=20}"
+
+  - Id: "Core_Day_1_Death_Ban"
+    Trigger: "PLAYER_DEATH"
+    Conditions:
+      - "day_at_least{value=1}"
+    Actions:
+      - "ban_player{reason='&c&lPERMADEATH&r\n\n&7Has muerto permanentemente.'}"

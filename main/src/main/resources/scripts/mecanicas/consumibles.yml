@@ -1,0 +1,16 @@
+Scripts:
+  - Id: "Core_Day_40_Super_Apple"
+    Trigger: "ITEM_CONSUME"
+    Conditions:
+      - "day_at_least{value=40}"
+      - "is_item_name{name='Super Golden Apple +'}"
+    Actions:
+      - "apply_potion{type=HEALTH_BOOST;duration=6000;amplifier=0}"
+
+  - Id: "Core_Day_50_Raw_Food_Penalty"
+    Trigger: "ITEM_CONSUME"
+    Conditions:
+      - "day_at_least{value=50}"
+      - "is_item_type{type=ROTTEN_FLESH}"
+    Actions:
+      - "apply_potion{type=WEAKNESS;duration=1200;amplifier=1}"

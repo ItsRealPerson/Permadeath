@@ -73,11 +73,27 @@ public class DateManager {
 
         if (this.currentDate.isBefore(now)) {
             long oldDay = getDay();
-            this.currentDate = now;
-            long newDay = getDay();
+            long newDay = oldDay + 1; // Pre-calculamos el siguiente día
             
             // Disparar evento API
-            Bukkit.getPluginManager().callEvent(new dev.itsrealperson.permadeath.api.event.PermadeathDayChangeEvent(oldDay, newDay));
+            try {
+                dev.itsrealperson.permadeath.api.event.PermadeathDayChangeEvent event = 
+                    new dev.itsrealperson.permadeath.api.event.PermadeathDayChangeEvent(oldDay, newDay);
+                Bukkit.getPluginManager().callEvent(event);
+
+                if (event.isCancelled()) {
+                    // Si se cancela, retrocedemos la fecha interna un día para volver a intentarlo mañana
+                    this.startDate = this.startDate.plusDays(1);
+                    return;
+                }
+            } catch (Exception e) {
+                Bukkit.getLogger().severe("Error en addon al procesar PermadeathDayChangeEvent: " + e.getMessage());
+            }
+
+            this.currentDate = now;
+            
+            // Disparar Trigger de Scripting
+            instance.getScriptManager().fireTrigger(dev.itsrealperson.permadeath.api.script.ScriptTrigger.DAY_CHANGE, null, null, java.util.Map.of("day", getDay()));
             
             DiscordPortal.onDayChange();
             

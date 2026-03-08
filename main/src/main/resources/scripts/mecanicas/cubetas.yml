@@ -1,0 +1,7 @@
+Scripts:
+  - Id: "Core_Day_50_Bucket_Block"
+    Trigger: "BUCKET_FILL"
+    Conditions:
+      - "day_at_least{value=50}"
+    Actions:
+      - "cancel_event{}"
