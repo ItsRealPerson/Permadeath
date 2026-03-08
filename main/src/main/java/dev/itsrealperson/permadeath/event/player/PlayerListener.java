@@ -60,6 +60,21 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR)
+    public void onScriptInteract(org.bukkit.event.player.PlayerInteractEvent event) {
+        java.util.Map<String, Object> context = new java.util.HashMap<>();
+        context.put("action", event.getAction().name());
+        context.put("block_location", event.getClickedBlock() != null ? event.getClickedBlock().getLocation() : null);
+        context.put("item_type", event.getItem() != null ? event.getItem().getType().name() : "AIR");
+        
+        Main.getInstance().getScriptManager().fireTrigger(dev.itsrealperson.permadeath.api.script.ScriptTrigger.PLAYER_INTERACT, event.getPlayer(), null, context);
+        
+        if (event.getPlayer().hasMetadata(dev.itsrealperson.permadeath.util.script.CoreScriptRegistry.CANCEL_METADATA)) {
+            event.setCancelled(true);
+            event.getPlayer().removeMetadata(dev.itsrealperson.permadeath.util.script.CoreScriptRegistry.CANCEL_METADATA, Main.getInstance());
+        }
+    }
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR)
     public void onScriptJoin(PlayerJoinEvent event) {
         Main.getInstance().getScriptManager().fireTrigger(dev.itsrealperson.permadeath.api.script.ScriptTrigger.PLAYER_JOIN, event.getPlayer(), null, null);
     }

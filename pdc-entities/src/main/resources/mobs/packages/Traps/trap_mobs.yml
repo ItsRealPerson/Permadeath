@@ -1,0 +1,24 @@
+Mimic_Barrel:
+  Type: ZOMBIE
+  Display: "&6&lBarril Viviente"
+  Health: "100"
+  SpawnRules:
+    Interact:
+      Block: BARREL
+      Action: RIGHT_CLICK
+  Skills:
+    - message{msg="&c&l¡EL BARRIL ERA UNA TRAMPA!"} @pir{r=5} ~onSpawn
+    - potion{type=SLOWNESS;duration=200;level=2} @target ~onSpawn
+    - sound{s=ENTITY_ZOMBIE_ATTACK_IRON_DOOR;v=1;p=0.5} @self ~onSpawn
+
+Cursed_Relic_Guardian:
+  Type: ZOMBIE
+  Display: "&6Guardian de la Reliquia"
+  Health: "300"
+  SpawnRules:
+    Interact:
+      Block: GOLD_BLOCK
+      Action: RIGHT_CLICK
+  Skills:
+    - message{msg="&c¡HAS PROFANADO EL ORO ANCESTRAL!"} @target ~onSpawn
+    - lightning @self ~onSpawn

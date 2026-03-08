@@ -1,0 +1,27 @@
+Void_Emperor:
+  Type: WITHER_SKELETON
+  Display: "&5&lVoid Emperor"
+  Health: "day * 10 + 1000"
+  AI:
+    Goals:
+      - 0: float
+      - 1: pillar_climb
+      - 2: shadow_step
+      - 3: meleeattack{speed=1.5}
+    Targets:
+      - 1: players
+  SpawnRules:
+    Natural:
+      Chance: 1.0
+  Skills:
+    # Ataque de área periódico
+    - skill{id=Tormenta_Ancestral} @self ~onTimer:100 ?weather{type=THUNDER}
+    
+    # Vórtice mortal: Se activa al recibir daño si tiene poca vida
+    - skill{id=Vortice_Mortal} @self ~onDamaged ?health{max=30} ?chance{c=30}
+    
+    # Invoca secuaces
+    - summon{type=Undead_Berserker;amount=2;radius=5} @self ~onTimer:400
+    
+    # Visual constante
+    - particle_math{type=SOUL;steps=40;x=sin(t)*3;z=cos(t)*3;y=sin(t*2)} @self ~onTimer:10

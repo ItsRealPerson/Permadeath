@@ -33,6 +33,14 @@ public class CommandManager implements CommandExecutor, TabCompleter {
 
         SubCommand sub = subCommands.get(args[0].toLowerCase());
         if (sub == null) {
+            // --- INTEGRACIÓN VÍA API: Comandos de Addons ---
+            var addonSub = dev.itsrealperson.permadeath.api.addons.AddonRegistry.getSubCommand(args[0]);
+            if (addonSub.isPresent()) {
+                addonSub.get().execute(sender, Arrays.copyOfRange(args, 1, args.length));
+                return true;
+            }
+            // -----------------------------------------------
+
             sender.sendMessage(TextUtils.format(Main.prefix + "&cComando no reconocido. Usa /pdc help para ver la lista."));
             return true;
         }
@@ -49,9 +57,15 @@ public class CommandManager implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return subCommands.values().stream()
+            List<String> suggestions = subCommands.values().stream()
                     .filter(sub -> sub.getPermission() == null || sender.hasPermission(sub.getPermission()))
                     .map(SubCommand::getName)
+                    .collect(Collectors.toList());
+            
+            // Añadir comandos de addons
+            dev.itsrealperson.permadeath.api.addons.AddonRegistry.getSubCommands().forEach(cmd -> suggestions.add(cmd.getName()));
+            
+            return suggestions.stream()
                     .filter(name -> name.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }
@@ -60,6 +74,12 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             SubCommand sub = subCommands.get(args[0].toLowerCase());
             if (sub != null) {
                 return sub.tabComplete(sender, Arrays.copyOfRange(args, 1, args.length));
+            }
+            
+            // Sugerencias para comandos de addons
+            var addonSub = dev.itsrealperson.permadeath.api.addons.AddonRegistry.getSubCommand(args[0]);
+            if (addonSub.isPresent()) {
+                return addonSub.get().tabComplete(sender, Arrays.copyOfRange(args, 1, args.length));
             }
         }
 
@@ -73,6 +93,9 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             if (sub.getPermission() == null || sender.hasPermission(sub.getPermission())) {
                 sender.sendMessage(TextUtils.format(" &7➤ &b/pdc " + sub.getName() + " &f- " + sub.getDescription()));
             }
+        }
+        for (dev.itsrealperson.permadeath.api.addons.AddonSubCommand addonCmd : dev.itsrealperson.permadeath.api.addons.AddonRegistry.getSubCommands()) {
+            sender.sendMessage(TextUtils.format(" &7➤ &b/pdc " + addonCmd.getName() + " &f- " + addonCmd.getDescription() + " &e[Addon]"));
         }
         sender.sendMessage(TextUtils.format("&7&m------------------------------------------"));
     }

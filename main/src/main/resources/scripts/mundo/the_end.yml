@@ -1,0 +1,106 @@
+# scripts/mundo/the_end.yml
+# Transcripción 1:1 DEFINITIVA Y REAL de la pelea contra la Dragona (Demonio de Permadeath)
+
+Scripts:
+  # --- FASE 1: CONFIGURACIÓN INICIAL ---
+  - Id: "End_Dragon_Spawn_Setup"
+    Trigger: "ENTITY_SPAWN"
+    Conditions:
+      - "is_entity_type{type=ENDER_DRAGON}"
+    Actions:
+      # Escalado de Vida Real por Día
+      - "set_max_health{amount='(day_at_least{value=100} * 4000) + (day_at_least{value=60} * day_at_most{value=99} * 2000) + (day_at_least{value=30} * day_at_most{value=59} * 1000) + (day_at_most{value=29} * 200)'}"
+      - "heal{amount=4000}"
+      - "set_metadata{key='dragon_phase';value='NORMAL'}"
+      - "set_metadata{key='shield_spawned';value=0}"
+      - "apply_potion{type=INCREASE_DAMAGE;duration=999999;amplifier=4}"
+
+  # --- ATAQUE: TNT BOMBARDERO (Día 30+, ¡6 TNTs con Doble Potencia!) ---
+  - Id: "End_Dragon_TNT_Attack"
+    Trigger: "TICK_1S"
+    Conditions:
+      - "is_entity_type{type=ENDER_DRAGON}"
+      - "chance{value=5}" # Cada 20s aprox (30+random(61) en el core)
+      - "day_at_least{value=30}"
+    Actions:
+      - "spawn_entity{type=TNT;yield=8.0}" # Potencia duplicada (Core default es 4.0)
+      - "spawn_entity{type=TNT;yield=8.0}"
+      - "spawn_entity{type=TNT;yield=8.0}"
+      - "spawn_entity{type=TNT;yield=8.0}"
+      - "spawn_entity{type=TNT;yield=8.0}"
+      - "spawn_entity{type=TNT;yield=8.0}"
+      - "play_sound{sound=ENTITY_TNT_PRIMED;volume=2.0;pitch=1.0}"
+
+  # --- FASE 2: ESCUDO DE CRISTALES (50% HP) ---
+  - Id: "End_Dragon_Shield_Activation"
+    Trigger: "ENTITY_DAMAGE"
+    Conditions:
+      - "is_entity_type{type=ENDER_DRAGON}"
+      - "check_metadata{key='shield_spawned';value=0;op='=='}"
+      - "%target_hp% < (%target_max_hp% * 0.5)"
+    Actions:
+      - "set_metadata{key='shield_spawned';value=1}"
+      - "set_invulnerable{value=true}"
+      - "send_title{title='&b&lESCUDO ACTIVADO';subtitle='&7Destruye los cristales para dañarla'}"
+      - "spawn_entity{type=END_CRYSTAL}"
+      - "play_sound{sound=ENTITY_WITHER_SPAWN;volume=2.0;pitch=0.5}"
+
+  # --- ATAQUE: ESCUDO DE RAYOS (Aterrizaje Día 60+) ---
+  - Id: "End_Dragon_Lightning_Shield"
+    Trigger: "TICK_1S"
+    Conditions:
+      - "is_entity_type{type=ENDER_DRAGON}"
+      - "is_dragon_landing{}"
+      - "day_at_least{value=60}"
+    Actions:
+      - "strike_lightning{}"
+      - "play_particle{type=EXPLOSION_NORMAL;amount=10;spread=2.0}"
+
+  # --- ATAQUE: ENJAMBRE DE PHANTOMS (Día 60+) ---
+  - Id: "End_Dragon_Phantom_Swarm"
+    Trigger: "PLAYER_TICK"
+    Conditions:
+      - "is_environment{type=THE_END}"
+      - "day_at_least{value=60}"
+      - "chance{value=2}"
+    Actions:
+      - "spawn_entity{type=PHANTOM}"
+      - "spawn_entity{type=PHANTOM}"
+      - "spawn_entity{type=PHANTOM}"
+      - "play_sound{sound=ENTITY_PHANTOM_SCREAM;volume=1.0;pitch=0.5}"
+
+  # --- ATAQUE: VÓRTICE DE VACÍO (Día Enraged) ---
+  - Id: "End_Dragon_Vanish_Platforms"
+    Trigger: "PLAYER_TICK"
+    Conditions:
+      - "is_environment{type=THE_END}"
+      - "check_metadata{key='dragon_phase';value='ENRAGED';op='=='}"
+      - "chance{value=5}"
+    Actions:
+      - "delete_blocks{radius=3;height=10}"
+      - "play_sound{sound=BLOCK_GLASS_BREAK;volume=1.0;pitch=0.1}"
+      - "send_actionbar{text='&5&l¡EL SUELO SE DESVANECE!'}"
+
+  # --- MECÁNICAS DE MUNDO ---
+  
+  # Endermen Buff (Día 30+)
+  - Id: "End_Endermen_Invulnerable"
+    Trigger: "ENTITY_SPAWN"
+    Conditions:
+      - "is_environment{type=THE_END}"
+      - "is_entity_type{type=ENDERMAN}"
+      - "day_at_least{value=30}"
+      - "chance{value=20}"
+    Actions:
+      - "set_invulnerable{value=true}"
+      - "apply_potion{type=REGENERATION;duration=999999;amplifier=2}"
+      - "play_particle{type=VILLAGER_HAPPY;amount=20;spread=1.0}"
+
+  # Muerte de la Dragona
+  - Id: "End_Dragon_Death"
+    Trigger: "ENTITY_DEATH"
+    Conditions:
+      - "is_entity_type{type=ENDER_DRAGON}"
+    Actions:
+      - "play_sound{sound=UI_TOAST_CHALLENGE_COMPLETE;volume=10.0}"
+      - "command{cmd='summon firework_rocket ~ ~ ~ {LifeTime:20,FireworksItem:{id:firework_rocket,Count:1,tag:{Fireworks:{Explosions:[{Type:1,Flicker:1,Colors:[I;65280],FadeColors:[I;16777215]}]}}}}';as=CONSOLE}"

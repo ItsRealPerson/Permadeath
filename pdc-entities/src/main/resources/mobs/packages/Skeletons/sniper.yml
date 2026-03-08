@@ -1,0 +1,16 @@
+Ghost_Sniper:
+  Type: SKELETON
+  Display: "&bGhost Sniper"
+  Health: "150"
+  AI:
+    Clear: true
+    Goals:
+      - 0: float
+      - 1: strafe{speed=1.5}
+      - 2: sniper{interval=10}
+      - 3: stalk{dist=20;speed=1.0}
+    Targets:
+      - 1: players
+  Skills:
+    - potion{type=INVISIBILITY;duration=9999} @self ~onSpawn
+    - message{msg="&3&oUna flecha silba cerca de tu cabeza..."} @target ~onShoot ?chance{c=10}

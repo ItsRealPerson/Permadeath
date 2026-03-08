@@ -98,6 +98,21 @@ public class EntityEvents implements Listener {
         );
     }
 
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    public void onScriptProjectileHit(ProjectileHitEvent event) {
+        java.util.Map<String, Object> context = new java.util.HashMap<>();
+        context.put("projectile_type", event.getEntity().getType().name());
+        context.put("hit_block", event.getHitBlock() != null ? event.getHitBlock().getType().name() : "AIR");
+        context.put("hit_location", event.getEntity().getLocation());
+        
+        Entity shooter = event.getEntity().getShooter() instanceof Entity s ? shooter = s : null;
+        
+        Main.instance.getScriptManager().fireTrigger(
+            dev.itsrealperson.permadeath.api.script.ScriptTrigger.PROJECTILE_HIT, 
+            shooter, event.getHitEntity(), context
+        );
+    }
+
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR)
     public void onDeath(EntityDeathEvent event) {
         dev.itsrealperson.permadeath.Main.instance.getScriptManager().fireTrigger(

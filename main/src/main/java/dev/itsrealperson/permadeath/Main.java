@@ -97,6 +97,7 @@ public final class Main extends JavaPlugin implements Listener, dev.itsrealperso
     private dev.itsrealperson.permadeath.util.NetworkManager networkManager;
     private dev.itsrealperson.permadeath.util.ShardManager shardManager;
     private dev.itsrealperson.permadeath.util.script.ScriptManager scriptManager;
+    private dev.itsrealperson.permadeath.util.script.ScriptItemManager scriptItemManager;
     private FileConfiguration abyssConfig;
     private File abyssFile;
     private ModuleManager moduleManager;

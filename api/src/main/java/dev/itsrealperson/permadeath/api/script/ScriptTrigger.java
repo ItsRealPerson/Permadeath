@@ -16,6 +16,7 @@ public enum ScriptTrigger {
     PLAYER_DEATH,      // Al morir (Baneo/Mensaje)
     PLAYER_PORTAL,     // Al usar portales (Nether/End/Abismo)
     PLAYER_TICK,       // Cada segundo por cada jugador
+    PLAYER_INTERACT,   // Al hacer click derecho/izquierdo
     
     // --- EVENTOS DE MUNDO ---
     DAY_CHANGE,        // Cada vez que cambia el día de Permadeath
@@ -23,6 +24,7 @@ public enum ScriptTrigger {
     RAID_START,        // Al empezar una raid
     ITEM_CONSUME,      // Al comer o beber algo
     LIGHTNING_STRIKE,  // Al impactar un rayo
+    PROJECTILE_HIT,    // Al impactar un proyectil (flechas, etc)
     
     // --- EVENTOS DE MUNDO ---
     BLOCK_BREAK,       // Al romper un bloque

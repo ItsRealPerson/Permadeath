@@ -200,6 +200,17 @@ public class AbyssManager implements Listener, PermadeathModule {
     }
 
     public void teleportToAbyss(Player player) {
+        // --- DIMENSIONAL HOSTING REDIRECT ---
+        String worldName = "pdc_the_abyss";
+        if (!plugin.getShardManager().isWorldHostedLocally(worldName)) {
+            String targetServer = plugin.getShardManager().getProxyServerForWorld(worldName);
+            if (targetServer != null) {
+                Bukkit.broadcastMessage(ChatColor.GRAY + "[RED] Transfiriendo a " + player.getName() + " a " + targetServer + " (El Abismo)");
+                dev.itsrealperson.permadeath.util.ProxyTransfer.transferPlayer(player, targetServer);
+                return;
+            }
+        }
+
         if (!Main.instance.isExtendedDifficulty()) {
             player.sendMessage(ChatColor.RED + "El Abismo está sellado. Necesitas despertar el Corazón del Abismo para entrar.");
             return;

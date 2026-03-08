@@ -1,0 +1,26 @@
+# Combos Maestros para PDC-Entities
+
+# Fase 2: Furia y Efectos
+Modo_Furia:
+  - message{msg="&c&l¡%mob% HA ENTRADO EN MODO FURIA!"}
+  - ignite{ticks=100} @self
+  - absorption{amount=20} @self
+  - particle_ring{type=FLAME;radius=2;points=20} @self
+  - sound{s=ENTITY_ENDER_DRAGON_GROWL;v=1;p=0.5} @self
+
+# Rayos en círculo
+Tormenta_Ancestral:
+  - lightning{damage=true} @ring{r=5;points=8}
+  - potion{type=BLINDNESS;duration=100} @pir{r=10}
+# Atrae a todos y explota
+Vortice_Mortal:
+  - message{msg="&5&l¡EL VACÍO OS ATRAE!"} @pir{r=15}
+  - pull{power=2} @pir{r=15}
+  - particle_helix{type=SOUL;radius=3;height=5} @self
+  - explode{power=4;break=false} @self
+  - sound{s=ENTITY_WITHER_DEATH;v=1;p=0.5} @self
+
+Master_Heal:
+  - heal{a=20} @self
+  - particle{p=HEART;a=10} @self
+  - message{msg="&a[MetaSkill] ¡Sanación de emergencia activada!"} @self

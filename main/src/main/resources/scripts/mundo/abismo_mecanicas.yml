@@ -1,0 +1,81 @@
+# scripts/mundo/abismo_mecanicas.yml
+# Transcripción 1:1 de la Presión y Oxígeno del Abismo de Permadeath
+
+Scripts:
+  # Inicializar metadatos si no existen
+  - Id: "Abyss_Init"
+    Trigger: "PLAYER_TICK"
+    Conditions:
+      - "is_world{name='world_permadeath_abyss'}"
+      - "check_metadata{key='abyss_init';value=1;op='!= '}"
+    Actions:
+      - "set_metadata{key='abyss_pressure';value='1.0'}"
+      - "set_metadata{key='abyss_grace';value='30'}"
+      - "set_metadata{key='abyss_init';value='1'}"
+
+  # --- FASE 1: POCIÓN DE RESPIRACIÓN ---
+  - Id: "Abyss_Potion_Safety"
+    Trigger: "PLAYER_TICK"
+    Conditions:
+      - "is_world{name='world_permadeath_abyss'}"
+      - "has_potion_effect{type=WATER_BREATHING}"
+    Actions:
+      - "set_bossbar{id='abyss';title='&d&lRespiración Abisal';progress='1.0';color='PURPLE'}"
+      - "set_warning_border{value=false}"
+      - "set_sky_darkness{value=0.2}"
+
+  # --- FASE 2: MÁSCARA DEL ABISMO (EN ACCESORIOS) ---
+  - Id: "Abyss_Mask_Safety"
+    Trigger: "PLAYER_TICK"
+    Conditions:
+      - "is_world{name='world_permadeath_abyss'}"
+      - "has_potion_effect{type=WATER_BREATHING;invert=true}"
+      - "is_wearing{type=ABYSSAL_MASK}"
+    Actions:
+      - "set_bossbar{id='abyss';title='&b&lOxígeno de la Máscara';progress='1.0';color='BLUE'}"
+      - "set_metadata{key='abyss_grace';value='30'}" # Reset de gracia
+      - "set_warning_border{value=false}"
+      - "set_sky_darkness{value=0.2}"
+
+  # --- FASE 3: PERIODO DE GRACIA (30s SIN MÁSCARA) ---
+  - Id: "Abyss_No_Mask_Grace"
+    Trigger: "PLAYER_TICK"
+    Conditions:
+      - "is_world{name='world_permadeath_abyss'}"
+      - "has_potion_effect{type=WATER_BREATHING;invert=true}"
+      - "is_wearing{type=ABYSSAL_MASK;invert=true}"
+      - "check_metadata{key='abyss_grace';value=0;op='>'}"
+    Actions:
+      - "modify_metadata{key='abyss_grace';value=1;op=SUB}"
+      - "set_bossbar{id='abyss';title='&3&lPresión del Abismo (%abyss_grace%s)';progress='%abyss_grace% / 30';color='YELLOW'}"
+      - "set_metadata{key='abyss_pressure';value='1.0'}" # Mantiene presión al máximo durante la gracia
+
+  # --- FASE 4: PRESIÓN ACTIVA (OXÍGENO AGOTÁNDOSE) ---
+  - Id: "Abyss_Pressure_Drain"
+    Trigger: "PLAYER_TICK"
+    Conditions:
+      - "is_world{name='world_permadeath_abyss'}"
+      - "has_potion_effect{type=WATER_BREATHING;invert=true}"
+      - "is_wearing{type=ABYSSAL_MASK;invert=true}"
+      - "check_metadata{key='abyss_grace';value=0;op='<='}"
+      - "check_metadata{key='abyss_pressure';value=0;op='>'}"
+    Actions:
+      - "modify_metadata{key='abyss_pressure';value=0.005;op=SUB}"
+      - "set_bossbar{id='abyss';title='&3&lPresión del Abismo';progress='%abyss_pressure%';color='BLUE'}"
+      - "set_sky_darkness{value=1.0 - %abyss_pressure%}"
+
+  # --- FASE 5: OXÍGENO AGOTADO (DAÑO + WITHER) ---
+  - Id: "Abyss_Oxygen_Depleted"
+    Trigger: "PLAYER_TICK"
+    Conditions:
+      - "is_world{name='world_permadeath_abyss'}"
+      - "has_potion_effect{type=WATER_BREATHING;invert=true}"
+      - "is_wearing{type=ABYSSAL_MASK;invert=true}"
+      - "check_metadata{key='abyss_pressure';value=0;op='<='}"
+    Actions:
+      - "damage{amount=2.0}"
+      - "apply_potion{type=WITHER;duration=40;amplifier=1}"
+      - "set_bossbar{id='abyss';title='&c&l¡OXÍGENO AGOTADO!';progress='0';color='RED'}"
+      - "set_warning_border{value=true}"
+      - "set_sky_darkness{value=1.0}"
+      - "play_sound{sound=ENTITY_WARDEN_HEARTBEAT;volume=1.0;pitch=0.5}"

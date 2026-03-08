@@ -82,6 +82,11 @@ public class PermadeathAPI {
         return provider.getScriptManager();
     }
 
+    public static dev.itsrealperson.permadeath.api.script.ScriptItemManagerAPI getScriptItemManager() {
+        if (provider == null) return null;
+        return provider.getScriptItemManager();
+    }
+
     /**
      * Obtiene una carpeta dedicada para un addon dentro de Permadeath/addons/
      * @param addonName Nombre del addon

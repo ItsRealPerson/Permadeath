@@ -1,0 +1,128 @@
+# ==========================================
+# MASTER TEST SUITE - TODAS LAS MECÁNICAS
+# ==========================================
+
+# 1. MECÁNICAS DE DAÑO Y MENSAJES
+Mob_Damage_Msg:
+  Type: ZOMBIE
+  Display: "&c[Test] Daño y Mensajes"
+  Skills:
+    - message{msg="&cProbando daño directo..."} @pir{r=10} ~onTimer:100
+    - damage{a=2} @target ~onAttack
+    - message{msg="&4¡Mensaje al morir!"} @playersinworld ~onDeath
+
+# 2. MECÁNICAS DE ESTADO Y ATRIBUTOS
+Mob_Status_Attrs:
+  Type: HUSK
+  Display: "&6[Test] Status y Atributos"
+  Skills:
+    - attribute{t=GENERIC_MAX_HEALTH;a=100;o=ADD_NUMBER} @self ~onSpawn
+    - attribute{t=GENERIC_MOVEMENT_SPEED;a=0.2;o=ADD_NUMBER} @self ~onSpawn
+    - potion{t=INCREASE_DAMAGE;d=200;l=1} @self ~onTimer:100
+    - glow{d=100} @self ~onDamaged
+    - stun{d=60} @target ~onAttack
+    - ignite{d=100} @target ~onAttack
+
+# 3. MECÁNICAS DE MOVIMIENTO Y FÍSICA
+Mob_Physics_Move:
+  Type: SPIDER
+  Display: "&b[Test] Física y Movimiento"
+  Skills:
+    - teleport{v=random;r=10} @self ~onDamaged ?chance{c=20}
+    - swap @target ~onTimer:200
+    - velocity{v=0,1.5,0} @self ~onAttack
+    - push{f=3} @pir{r=5} ~onTimer:100
+    - pull{f=2} @pir{r=15} ~onTimer:150
+    - explode{p=2;fire=false;break=false} @self ~onDeath
+
+# 4. MECÁNICAS DE SALUD Y SUPERVIVENCIA
+Mob_Health_Survival:
+  Type: DROWNED
+  Display: "&a[Test] Salud y Oxígeno"
+  Skills:
+    - heal{a=5} @self ~onTimer:100 ?health{max=15}
+    - absorption{a=4;d=200} @self ~onDamaged ?chance{c=50}
+    - drain_oxygen{a=50} @target ~onTimer:20 ?world{names=world}
+    - consume{m=RAW_COPPER} @self ~onTimer:100
+
+# 5. MECÁNICAS DE INVOCACIÓN Y METASKILLS
+Mob_Meta_Summon:
+  Type: EVOKER
+  Display: "&d[Test] Meta y Summon"
+  Skills:
+    - summon{type=VEX;amount=1} @self ~onTimer:200
+    - signal{s=TEST_SIGNAL} @eir{r=20} ~onDamaged
+    - skill{s=Master_Heal} @self ~onDamaged ?health{max=10}
+    - lightning{d=true} @target ~onAttack
+
+# 6. MECÁNICAS VISUALES (PARTÍCULAS)
+Mob_Visual_Full:
+  Type: BLAZE
+  Display: "&f[Test] Partículas"
+  Skills:
+    - particle{p=FLAME;a=10} @self ~onTimer:10
+    - particle_line{p=SOUL_FIRE_FLAME;density=0.5} @target ~onTimer:40
+    - particle_ring{p=HAPPY_VILLAGER;r=3;points=15} @self ~onTimer:60
+    - particle_helix{p=REDSTONE;r=2;h=3;points=30} @self ~onTimer:80
+    - particle_math{p=VILLAGER_ANGRY;f="sin(t)*2, cos(t)*2, 0"} @self ~onTimer:20
+
+# 7. MECÁNICAS DE SISTEMA (VARIABLES Y AUDIO)
+Mob_System_Audio:
+  Type: SKELETON
+  Display: "&e[Test] Sistema y Audio"
+  Skills:
+    - sound{s=ENTITY_EXPERIENCE_ORB_PICKUP;v=1;p=1} @self ~onSpawn
+    - variable{n=test_hits;v=test_hits + 1;op=SET} @self ~onDamaged
+    - 'message{msg="&eVariable test_hits es: %var:test_hits%"} @pir{r=10} ~onDamaged'
+    - projectile{type=ARROW;velocity=1.5} @target ~onTimer:40
+
+# 8. TEST DE TARGETERS AVANZADOS
+Mob_Target_Test:
+  Type: WITCH
+  Display: "&5[Test] Targeters"
+  Skills:
+    - message{msg="&5Efecto en línea hacia adelante..."} @self ~onTimer:100
+    - particle{p=SMOKE_NORMAL} @line{r=10} ~onTimer:100
+    - particle{p=HEART} @forward{d=5} ~onTimer:100
+    - lightning{d=false} @ring{r=5;p=8} ~onTimer:200
+    - particle{p=FLAME} @block ~onTimer:50
+
+# 9. TEST DE CONDICIONES (EL "ESQUIVO")
+Mob_Condition_Test:
+  Type: STRAY
+  Display: "&3[Test] Condiciones"
+  Skills:
+    - message{msg="&bEs de día"} @self ~onTimer:100 ?daytime{type=DAY}
+    - message{msg="&1Es de noche"} @self ~onTimer:100 ?daytime{type=NIGHT}
+    - message{msg="&fEstás agachado"} @self ~onTimer:40 ?sneaking
+    - message{msg="&7Estás en un bioma de Planicie"} @self ~onTimer:200 ?biome{names=PLAINS}
+    - message{msg="&eTienes una espada en la mano"} @self ~onTimer:100 ?holding{m=DIAMOND_SWORD}
+    - message{msg="&c¡Estás muy cerca!"} @self ~onTimer:20 ?distance{max=3}
+
+# 10. TEST DE BETTERMODEL AVANZADO
+Mob_BetterModel_Advanced:
+  Type: ZOMBIE
+  Display: "&b[Test] BetterModel Avanzado"
+  Model: demon_knight # Cambiar por un modelo real si existe
+  Skills:
+    - model_tint{color=#FF0000} @self ~onDamaged
+    - model_tint{color=#FFFFFF} @self ~onTimer:100
+    - model_glow{enabled=true;color=#00FF00} @self ~onEnterCombat
+    - model_enchant{enabled=true} @self ~onTimer:200
+    - model_visibility{visible=false;part=head} @self ~onTimer:300 ?chance{c=50}
+    - model_visibility{visible=true;part=head} @self ~onTimer:400
+    - animation{name=attack;once=true} @self ~onAttack
+    - message{msg="&b[Test] Probando efectos visuales del modelo 3D."} @pir{r=10} ~onSpawn
+
+# 11. TEST DE MECÁNICAS Y TARGETERS ESENCIALES (Nuevos)
+Mob_Essentials_Test:
+  Type: ZOMBIE
+  Display: "&6[Test] Esenciales"
+  Skills:
+    - speak{m="¡Soy un mob interactivo!"} @pir{r=5} ~onInteract
+    - jump{p=0.8} @self ~onJump
+    - "speak{m=\"He detectado a %target%\"} @target ~onTimer:100"
+    - "damage{a=5} @cone{r=5;a=90} ~onAttack"
+    - settarget @nearestplayer ~onDamaged ?chance{c=20}
+    - speak{m="¡Salto de poder!"} @self ~onJump
+

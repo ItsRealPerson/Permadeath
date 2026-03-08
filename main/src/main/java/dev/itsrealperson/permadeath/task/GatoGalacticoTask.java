@@ -27,12 +27,17 @@ public class GatoGalacticoTask extends BukkitRunnable {
 
     private Location cat;
     private Main main;
+    private boolean finished = false;
 
     int time = 5;
 
     public GatoGalacticoTask(Location cat, Main main) {
         this.cat = cat;
         this.main = main;
+    }
+
+    public boolean isFinished() {
+        return finished;
     }
 
     @Override
@@ -289,7 +294,10 @@ public class GatoGalacticoTask extends BukkitRunnable {
             }
 
             Bukkit.broadcastMessage(TextUtils.format("&eUn gato galáctico ha invicado un(a) &c&l" + entidad + " &7(" + cat.getX() + ", " + cat.getY() + ", " + cat.getZ()));
-            this.cancel();
+            finished = true;
+            try {
+                this.cancel();
+            } catch (IllegalStateException ignored) {}
         }
     }
 }

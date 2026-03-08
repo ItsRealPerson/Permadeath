@@ -214,10 +214,24 @@ public final class NetheriteArmor implements Listener {
     public static void setupHealth(Player p) {
         Double maxHealth = getAvailableMaxHealth(p);
         
-        // Debug temporal para consola
-        // if (Main.getInstance().getDay() >= 40) {
-        //    Main.getInstance().getLogger().info("[DEBUG HEALTH] Player: " + p.getName() + " | Day: " + Main.getInstance().getDay() + " | CalcMax: " + maxHealth);
-        // }
+        // --- HOOK DE ADDONS ---
+        // Si un addon ha registrado un HealthProvider, le damos el control absoluto
+        var provider = dev.itsrealperson.permadeath.api.addons.AddonRegistry.getHealthProvider();
+        if (provider.isPresent()) {
+            try {
+                double addonHealth = provider.get().calculateMaxHealth(p, Main.instance.getDay(), maxHealth);
+                // Sanity Check: No permitir menos de 1 HP ni más de 5000 HP por seguridad
+                if (addonHealth >= 1.0 && addonHealth <= 5000.0) {
+                    maxHealth = addonHealth;
+                } else {
+                    Main.instance.getLogger().warning("Addon intentó establecer vida inválida: " + addonHealth + ". Usando valor por defecto.");
+                }
+            } catch (Exception e) {
+                Main.instance.getLogger().severe("ERROR crítico en HealthProvider de un Addon: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        // ----------------------
 
         org.bukkit.attribute.AttributeInstance attribute = p.getAttribute(Attribute.MAX_HEALTH);
         if (attribute != null) {

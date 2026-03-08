@@ -1,0 +1,107 @@
+# Mobs de prueba para cada mecánica y IA del sistema PDC-Entities
+
+Test_Builder:
+  Type: ZOMBIE
+  Display: "&e&lPrueba: Constructor"
+  Health: 20
+  AI:
+    Goals:
+      - 1: tower_builder
+  Skills:
+    - lightning @self ~onAttack
+    - message{msg="&e[AI] ¡Estoy construyendo una torre!"} @pir{r=10} ~onEnterCombat
+
+Test_Breaker:
+  Type: HUSK
+  Display: "&6&lPrueba: Destructor"
+  Health: 30
+  AI:
+    Goals:
+      - 1: breaker
+  Skills:
+    - sound{s=BLOCK_ANVIL_LAND;v=1;p=1} @self ~onAttack
+    - damage{a=5} @target ~onAttack
+    - message{msg="&6[AI] Rompiendo bloques en mi camino..."} @pir{r=10} ~onEnterCombat
+
+Test_Climber:
+  Type: SKELETON
+  Display: "&b&lPrueba: Escalador"
+  Health: 20
+  AI:
+    Goals:
+      - 1: pillar
+  Skills:
+    - velocity{v=0,1,0} @self ~onDamaged
+    - message{msg="&b[AI] ¡No puedes esconderte arriba!"} @pir{r=10} ~onEnterCombat
+
+Test_Sniper:
+  Type: SKELETON
+  Display: "&c&lPrueba: Francotirador"
+  Health: 20
+  Skills:
+    - projectile{type=ARROW;velocity=2.0} @target ~onTimer:40
+    - ignite{d=100} @target ~onAttack
+    - stun{d=40} @target ~onAttack
+    - message{msg="&c[Mecánica] Disparo preciso y efectos de estado."} @pir{r=10} ~onEnterCombat
+
+Test_Support:
+  Type: VILLAGER
+  Display: "&a&lPrueba: Soporte"
+  Health: 50
+  Skills:
+    - heal{a=10} @eir{r=10} ~onTimer:100
+    - absorption{a=4;d=200} @eir{r=10} ~onTimer:100
+    - glow{d=100} @eir{r=10} ~onTimer:100
+    - message{msg="&a[Mecánica] Curación, Absorción y Resplandor."} @pir{r=10} ~onEnterCombat
+
+Test_Chaos:
+  Type: WITCH
+  Display: "&5&lPrueba: Caos"
+  Health: 40
+  Skills:
+    - explode{p=3;fire=true;break=false} @self ~onDeath
+    - teleport{v=random;r=10} @self ~onDamaged ?chance{c=30}
+    - swap @target ~onTimer:200
+    - push{f=2} @pir{r=5} ~onAttack
+    - pull{f=2} @pir{r=15} ~onTimer:100
+    - message{msg="&5[Mecánica] Teletransporte, Swap y Fuerza (Push/Pull)."} @pir{r=10} ~onEnterCombat
+
+Test_Summoner:
+  Type: EVOKER
+  Display: "&d&lPrueba: Invocador"
+  Health: 60
+  Skills:
+    - summon{type=VEX;amount=2} @self ~onTimer:200
+    - signal{s=TEST_SIGNAL} @eir{r=20} ~onDamaged
+    - skill{s=Master_Heal} @self ~onDamaged ?health{max=20}
+    - message{msg="&d[Mecánica] Invocación, Señales y MetaSkills."} @pir{r=10} ~onEnterCombat
+
+Test_Attribute:
+  Type: ZOMBIE_VILLAGER
+  Display: "&7&lPrueba: Atributos"
+  Health: 20
+  Skills:
+    - attribute{t=GENERIC_MOVEMENT_SPEED;a=0.5;o=ADD_NUMBER} @self ~onSpawn
+    - attribute{t=GENERIC_MAX_HEALTH;a=100;o=ADD_NUMBER} @self ~onSpawn
+    - consume{m=IRON_INGOT} @self ~onTimer:100
+    - message{msg="&7[Mecánica] Atributos dinámicos y Consumo de items."} @pir{r=10} ~onEnterCombat
+
+Test_Visual:
+  Type: BLAZE
+  Display: "&f&lPrueba: Visuales"
+  Health: 20
+  Skills:
+    - particle{p=FLAME;a=20;s=0.1} @self ~onTimer:20
+    - particle_line{p=SOUL_FIRE_FLAME;density=0.5} @target ~onTimer:40
+    - particle_ring{p=HAPPY_VILLAGER;r=3;points=20} @self ~onTimer:60
+    - particle_helix{p=REDSTONE;r=2;h=3;points=40} @self ~onTimer:80
+    - message{msg="&f[Mecánica] Partículas avanzadas (Línea, Anillo, Hélice)."} @pir{r=10} ~onEnterCombat
+
+Test_Survival:
+  Type: DROWNED
+  Display: "&9&lPrueba: Supervivencia"
+  Health: 20
+  Skills:
+    - drain_oxygen{a=100} @target ~onTimer:20
+    - variable{n=test_var;v=test_var + 1;op=SET} @self ~onDamaged
+    - message{msg="&9[Mecánica] Drenado de oxígeno y Variables internas."} @pir{r=10} ~onEnterCombat

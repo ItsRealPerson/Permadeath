@@ -1,0 +1,39 @@
+# --- COMBOS DEL DEMON KNIGHT (Sincronizados con Tiempos de Animación) ---
+
+DK_Hammer_Attack_1:
+  - animation{name=hammer_attack_1} @self
+  - delay{t=8}
+  - damage{a=10} @cone{r=4;a=90}
+  - sound{s=ENTITY_ZOMBIE_ATTACK_IRON_DOOR;v=1;p=0.5} @self
+
+DK_Hammer_Attack_2:
+  - animation{name=hammer_attack_2} @self
+  - delay{t=10}
+  - damage{a=12} @cone{r=4;a=90}
+  - sound{s=ENTITY_ZOMBIE_ATTACK_IRON_DOOR;v=1;p=0.4} @self
+
+DK_Shield_Bash:
+  - animation{name=shield_attack_1} @self
+  - delay{t=3}
+  - push{f=1.5} @target
+  - damage{a=5} @target
+  - sound{s=ITEM_SHIELD_BLOCK;v=1;p=0.8} @self
+
+DK_Chaos_Impact:
+  - animation{name=hammer_attack_3} @self
+  - delay{t=5}
+  - 'speak{m="&c¡SENTID EL PESO DEL CAOS!"} @pir{r=10}'
+  - delay{t=10}
+  - blockwave{r=5;v=0.6} @self
+  - damage{a=15} @pir{r=6}
+  - velocity{v=0,0.8,0} @pir{r=6}
+  - shieldbreak{c=160} @pir{r=6}
+  - particle_ring{p=SMOKE_LARGE;r=5;points=20} @selfndo
+  - sound{s=ENTITY_GENERIC_EXPLODE;v=1;p=0.5} @self
+
+DK_Counter_Shield:
+  - animation{name=shield_attack_2} @self
+  - delay{t=4}
+  - push{f=2} @target
+  - spin{a=180} @target
+  - 'speak{m="&7¡No retrocederé!"} @target'

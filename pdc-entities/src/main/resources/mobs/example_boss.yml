@@ -1,0 +1,9 @@
+# Ejemplo de Mob Avanzado para Permadeath
+Quantum_Zombie:
+  Type: ZOMBIE
+  Display: "&b&lQuantum Zombie"
+  Health: "(day * 5) + 100"
+  Damage: "(day * 0.2) + 8"
+  Skills:
+    - damage{amount=5} @self ~onAttack
+    - damage{amount=10} @self ~onDamaged

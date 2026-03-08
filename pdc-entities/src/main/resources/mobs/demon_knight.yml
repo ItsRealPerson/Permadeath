@@ -1,0 +1,40 @@
+# Boss: Caballero Demonio (Sincronizado)
+Demon_Knight:
+  Type: IRON_GOLEM
+  Display: "&4&lCaballero Demonio"
+  Health: "300 + (day * 10)"
+  Model: demon_knight
+  
+  Animations:
+    Idle: idle
+    Walk: walk
+    Run: run
+    Death: death
+    Guard: guard
+
+  AI:
+    Clear: true
+    Goals:
+      - 1: float
+    Targets:
+      - 1: nearest_player
+      - 2: hurt_by_target
+
+  Skills:
+    # --- EFECTOS AMBIENTALES ---
+    - title{t="&4&l¡CABALLERO DEMONIO!";s="&cEl heraldo del caos ha despertado"} @playersinworld ~onSpawn
+    - actionbar{m="&4&l%mob% &7ha entrado en combate..."} @pir{r=20} ~onEnterCombat
+    
+    # --- LÓGICA DE ATAQUE SINCRONIZADA ---
+    # El motor elegirá uno de estos tres combos cada vez que el mob ataque
+    - randomskill{s=DK_Hammer_Attack_1,DK_Hammer_Attack_2,DK_Shield_Bash} @target ~onAttack
+
+    # --- HABILIDAD ESPECIAL: IMPACTO DE CAOS ---
+    - skill{id=DK_Chaos_Impact} @self ~onTimer:160 ?onground
+
+    # --- CONTRAATAQUE ---
+    - skill{id=DK_Counter_Shield} @self ~onDamaged ?chance{c=20}
+
+    # --- ESTADO DEFENSIVO ---
+    - animation{name=guard} @self ~onDamaged ?health{max=100}
+    - potion{t=DAMAGE_RESISTANCE;d=40;l=3} @self ~onDamaged ?health{max=100}

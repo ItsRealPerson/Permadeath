@@ -24,7 +24,11 @@ public interface NMSAccessor {
 
     void drown(Player p, double amount);
 
-    void clearEntityPathfinders(Object goalSelector, Object targetSelector);
+    void clearEntityPathfinders(LivingEntity entity);
+
+    void addGoalSelector(LivingEntity entity, int priority, String goalId, java.util.Map<String, String> args);
+
+    void addTargetSelector(LivingEntity entity, int priority, String targetId, java.util.Map<String, String> args);
 }
 
 

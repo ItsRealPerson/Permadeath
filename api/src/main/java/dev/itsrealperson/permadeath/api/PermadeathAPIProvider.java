@@ -63,6 +63,11 @@ public interface PermadeathAPIProvider {
     dev.itsrealperson.permadeath.api.script.ScriptManagerAPI getScriptManager();
 
     /**
+     * @return El gestor de ítems personalizados de scripts.
+     */
+    dev.itsrealperson.permadeath.api.script.ScriptItemManagerAPI getScriptItemManager();
+
+    /**
      * Obtiene una carpeta dedicada para un addon dentro de Permadeath/addons/
      * @param addonName Nombre del addon
      * @return La carpeta del addon

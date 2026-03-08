@@ -1,0 +1,34 @@
+Siege_Master:
+  Type: ZOMBIE
+  Display: "&4&lMaster of Siege"
+  Health: "day * 5 + 500"
+  AI:
+    Clear: true
+    Goals:
+      - 0: float
+      - 1: pillar_climb
+      - 2: tower_builder
+      - 3: block_breaker
+      - 4: door_breaker
+      - 5: meleeattack{speed=1.2}
+    Targets:
+      - 1: wallhack
+      - 2: blood_scent{range=50}
+  Skills:
+    - message{msg="&c&l¡EL MAESTRO DE ASEDIO HA LLEGADO!"} @playersinworld ~onSpawn
+
+    # Combate normal
+    - projectile{type=ARROW;velocity=2.5} @nearestplayer ~onTimer:20 ?distance{min=10}
+    - pull{power=1.5} @pir{r=8} ~onTimer:60 ?distance{min=3}
+
+    # ACTIVACIÓN DE FASE 2: Cuando la vida < 50%
+    # 1. Establece la variable fase2 a 1
+    - variable{key=fase2;op=SET;val=1} @self ~onDamaged ?health{max=50} ?variable{key=fase2;max=0}
+    # 2. Ejecuta la MetaSkill de Furia
+    - skill{id=Modo_Furia} @self ~onDamaged ?health{max=50} ?variable{key=fase2;min=1} ?variable{key=furia_notified;max=0}
+    # 3. Marcar que ya notificamos la furia (para que no se repita el mensaje)
+    - variable{key=furia_notified;op=SET;val=1} @self ~onDamaged ?variable{key=fase2;min=1}
+
+    # Habilidades exclusivas de FASE 2
+    - skill{id=Tormenta_Ancestral} @self ~onTimer:100 ?variable{key=fase2;min=1} ?weather{type=STORM}
+    - stun{duration=60} @nearestplayer ~onTimer:120 ?variable{key=fase2;min=1}

@@ -217,6 +217,18 @@ public class BeginningManager implements Listener, PermadeathModule {
     }
 
     private void handlePortalTeleport(Player p, World fromWorld, Location portalBlock, org.bukkit.event.Cancellable event) {
+        // --- DIMENSIONAL HOSTING REDIRECT ---
+        String worldName = "pdc_the_beginning";
+        if (!main.getShardManager().isWorldHostedLocally(worldName)) {
+            String targetServer = main.getShardManager().getProxyServerForWorld(worldName);
+            if (targetServer != null) {
+                if (event != null) event.setCancelled(true);
+                Bukkit.broadcastMessage(TextUtils.format("&7[RED] Transfiriendo a &b" + p.getName() + " &7a &b" + targetServer + " &7(The Beginning)"));
+                dev.itsrealperson.permadeath.util.ProxyTransfer.transferPlayer(p, targetServer);
+                return;
+            }
+        }
+
         if (beginningWorld == null) {
             Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[Permadeath-Debug] Abortado: beginningWorld es NULL");
             return;
