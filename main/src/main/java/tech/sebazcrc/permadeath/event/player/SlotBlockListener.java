@@ -41,7 +41,7 @@ public class SlotBlockListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onClickVoid(InventoryClickEvent e) {
         if (e.isCancelled()) return;
         if (e.getCurrentItem() != null) {
@@ -94,7 +94,7 @@ public class SlotBlockListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onMoveItem(InventoryMoveItemEvent e) {
         if (e.isCancelled()) return;
         if (e.getItem() != null) {
@@ -104,7 +104,7 @@ public class SlotBlockListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onPickup(InventoryPickupItemEvent e) {
         if (e.isCancelled()) return;
         if (e.getItem().getItemStack() != null) {

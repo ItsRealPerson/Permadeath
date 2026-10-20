@@ -15,7 +15,7 @@ import java.util.Objects;
 
 public class TotemListener implements Listener {
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void totemNerf(EntityResurrectEvent event) {
 
         if (!(event.getEntity() instanceof Player)) return;

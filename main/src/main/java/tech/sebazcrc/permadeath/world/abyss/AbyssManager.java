@@ -12,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockReceiveGameEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.persistence.PersistentDataType;
 import tech.sebazcrc.permadeath.Main;
@@ -356,6 +357,11 @@ public class AbyssManager implements Listener {
         }
         if (player.getWorldBorder() != null) player.setWorldBorder(null);
         player.getPersistentDataContainer().remove(new NamespacedKey(plugin, "abyss_grace_ticks"));
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent e) {
+        removePressureBar(e.getPlayer());
     }
 
     private void playAbyssSound(Player player) {

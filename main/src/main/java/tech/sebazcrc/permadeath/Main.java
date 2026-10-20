@@ -102,7 +102,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     public tech.sebazcrc.permadeath.util.ResetManager resetManager;
     public tech.sebazcrc.permadeath.util.GameRuleManager gameRuleManager;
     private Map<Integer, Boolean> registeredDays = new HashMap<>();
-    private ArrayList<Player> doneEffectPlayers = new ArrayList<>();
+    private Set<UUID> doneEffectPlayers = new HashSet<>();
     private boolean loaded = false;
     private boolean alreadyRegisteredChanges = false;
     public ShellEvent shulkerEvent;
@@ -279,7 +279,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
     public void setTask(EndTask task) { this.task = task; }
     public int getPlayTime() { return playTime; }
     public void setPlayTime(int playTime) { this.playTime = playTime; }
-    public ArrayList<Player> getDoneEffectPlayers() { return doneEffectPlayers; }
+    public Set<UUID> getDoneEffectPlayers() { return doneEffectPlayers; }
     public boolean isSmallIslandsEnabled() { return true; }
     public static boolean isRunningPaperSpigot() { return runningPaperSpigot; }
 
@@ -517,14 +517,14 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         if (getDay() >= 50) {
             if (player.hasPotionEffect(PotionEffectType.MINING_FATIGUE)) {
                 PotionEffect e = player.getPotionEffect(PotionEffectType.MINING_FATIGUE);
-                if (e.getDuration() >= 4 * 60 * 20 && !getDoneEffectPlayers().contains(player)) {
+                if (e.getDuration() >= 4 * 60 * 20 && !getDoneEffectPlayers().contains(player.getUniqueId())) {
                     int min = 10 * 60;
                     player.removePotionEffect(PotionEffectType.MINING_FATIGUE);
                     player.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, min * 20, 2));
-                    getDoneEffectPlayers().add(player);
+                    getDoneEffectPlayers().add(player.getUniqueId());
                 }
-                if (e.getDuration() == 4 * 60 * 20 - 1 && getDoneEffectPlayers().contains(player)) {
-                    getDoneEffectPlayers().remove(player);
+                if (e.getDuration() == 4 * 60 * 20 - 1 && getDoneEffectPlayers().contains(player.getUniqueId())) {
+                    getDoneEffectPlayers().remove(player.getUniqueId());
                 }
             }
 
@@ -921,7 +921,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
         for (OfflinePlayer off : Bukkit.getOfflinePlayers()) {
 
-            if (off == null) return;
+            if (off == null) continue;
 
             PlayerDataManager manager = new PlayerDataManager(off.getName(), this);
             manager.generateDayData();

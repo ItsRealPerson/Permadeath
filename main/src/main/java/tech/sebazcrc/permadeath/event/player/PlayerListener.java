@@ -48,8 +48,7 @@ import static org.bukkit.Bukkit.getServer;
 
 public class PlayerListener implements Listener {
 
-    ArrayList<Player> sleeping = new ArrayList<>();
-    ArrayList<Player> globalSleeping = new ArrayList<>();
+    private final Set<UUID> globalSleeping = new HashSet<>();
 
     long stormTicks;
     long stormHours;
@@ -576,7 +575,7 @@ public class PlayerListener implements Listener {
 
         if (Main.getInstance().getDay() >= 10 && Main.getInstance().getDay() <= 19 && time >= 13000) {
 
-            globalSleeping.add(player);
+            globalSleeping.add(player.getUniqueId());
 
             Bukkit.getOnlinePlayers().forEach(p -> {
                 String msg = Main.getInstance().getMessages().getMessage("Sleeping", p).replace("%needed%", String.valueOf(4)).replace("%players%", String.valueOf(globalSleeping.size())).replace("%player%", player.getName());
@@ -635,13 +634,7 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        if (sleeping.contains(p)) {
-            sleeping.remove(p);
-        }
-
-        if (globalSleeping.contains(p)) {
-            globalSleeping.remove(p);
-        }
+        globalSleeping.remove(p.getUniqueId());
 
         if (p.getWorld().getTime() >= 0 && p.getWorld().getTime() < 13000) {
             return;
@@ -758,13 +751,8 @@ public class PlayerListener implements Listener {
 
         Player p = e.getPlayer();
 
-        if (sleeping.contains(p)) {
-            sleeping.remove(p);
-        }
-
-        if (globalSleeping.contains(p)) {
-            globalSleeping.remove(p);
-        }
+        globalSleeping.remove(p.getUniqueId());
+        Main.getInstance().getDoneEffectPlayers().remove(p.getUniqueId());
     }
 
     @EventHandler

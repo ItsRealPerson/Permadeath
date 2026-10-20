@@ -1137,17 +1137,22 @@ public class SpawnListener implements Listener {
         Bukkit.broadcastMessage(TextUtils.format("&cUn gato supernova va a explotar en: " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + " (" + cat.getWorld().getName() + ")."));
         
         runTaskLaterRegion(loc, () -> {
-            if (cat == null || !cat.isValid() || !gatosSupernova.contains(cat)) return;
+            try {
+                if (cat == null || !gatosSupernova.contains(cat)) return;
+                if (!cat.isValid() || cat.isDead()) return;
 
-            int configPower = plugin.getConfig().getInt("Toggles.Gatos-Supernova.Explosion-Power");
-            float power = (float) configPower;
-            boolean breakBlocks = plugin.getConfig().getBoolean("Toggles.Gatos-Supernova.Destruir-Bloques");
-            boolean placeFire = plugin.getConfig().getBoolean("Toggles.Gatos-Supernova.Fuego");
+                int configPower = plugin.getConfig().getInt("Toggles.Gatos-Supernova.Explosion-Power");
+                float power = (float) configPower;
+                boolean breakBlocks = plugin.getConfig().getBoolean("Toggles.Gatos-Supernova.Destruir-Bloques");
+                boolean placeFire = plugin.getConfig().getBoolean("Toggles.Gatos-Supernova.Fuego");
 
-            w.createExplosion(loc, power, placeFire, breakBlocks, cat);
-            
-            gatosSupernova.remove(cat);
-            cat.remove();
+                w.createExplosion(loc, power, placeFire, breakBlocks, cat);
+                cat.remove();
+            } finally {
+                if (cat != null) {
+                    gatosSupernova.remove(cat);
+                }
+            }
         }, 20 * 30);
     }
 
