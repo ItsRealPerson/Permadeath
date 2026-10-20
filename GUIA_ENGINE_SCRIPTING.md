@@ -5,6 +5,8 @@ Esta guía contiene la documentación completa del motor de scripting de Permade
 ---
 
 ## ⚡ Disparadores (Triggers)
+Eventos del juego que disparan tus scripts.
+
 | Trigger | Descripción | Variables de Contexto |
 | :--- | :--- | :--- |
 | `ENTITY_SPAWN` | Cuando cualquier entidad aparece. | `%caster_type%` |
@@ -28,8 +30,9 @@ Esta guía contiene la documentación completa del motor de scripting de Permade
 
 ## 🔍 Condiciones de Élite
 *   `is_sneaking{}`, `is_sprinting{}`, `is_gliding{}`, `is_burning{}`, `is_wet{}`.
-*   `has_potion_effect{type=EFFECT}`: Si tiene un efecto de poción.
-*   `is_holding{type=MATERIAL}`: Comprobar ítem en mano.
+*   `has_potion_effect{type=EFFECT}`: Si tiene un efecto de poción activo.
+*   `is_holding{type=MATERIAL/ID}`: Comprobar ítem en mano (Vainilla o Script Item).
+*   `is_custom_item{id=ID}`: Comprobar si el ítem es uno creado por script.
 *   `is_wearing{type=MATERIAL/ABYSSAL_MASK;slot=HEAD/CHEST/LEGS/FEET}`: Armadura. **Nota:** `ABYSSAL_MASK` solo detecta el slot de accesorios.
 *   `has_permission{node='pdc.use'}`: Comprobar permisos.
 
@@ -43,7 +46,7 @@ Esta guía contiene la documentación completa del motor de scripting de Permade
 
 ### Lógica y Progresión
 *   `day_at_least{value=X}`, `day_at_most{value=X}`: Rango de días.
-*   `chance{value=0-100}`, `chance_by_day{base=10;increment=0.5}`: Probabilidades.
+*   `chance{value=0-100}`, `chance_by_day{base=10;increment=0.5}`: Probabilidades dinámicas.
 *   `is_passive{}`: Si es un mob pacífico según el Core.
 *   `check_metadata{key='var';value=10;op='>'}`: Lee variables dinámicas.
 
@@ -53,17 +56,52 @@ Esta guía contiene la documentación completa del motor de scripting de Permade
 *   `velocity{x=0;y=1.0;z=0}`, `shockwave{radius=5;power=1.5}`, `pull_closer{radius=10;speed=0.5}`.
 *   `set_bossbar{id='id';title='Text';progress='1.0';color='BLUE'}`: Crea/Actualiza barra de Boss.
 *   `remove_bossbar{id='id'}`: Elimina la barra de Boss.
-*   `set_sky_darkness{value=0.5}`, `set_warning_border{value=true}`: Efectos visuales.
+*   `set_sky_darkness{value=0.5}`, `set_warning_border{value=true}`: Efectos de PacketEvents.
 *   `damage{amount='formula'}`, `heal{amount=2.0}`, `apply_potion{type=EFFECT;duration=ticks;amplifier=X}`.
 *   `play_particle{type=NAME;amount=10;spread=0.5}`, `camera_shake{power=1.0}`, `guardian_beam{}`.
 *   `modify_metadata{key='n';value=1;op=ADD/SUB/SET}`: **Variables matemáticas**.
+*   `give_item{id=ID;amount=1}`, `drop_item{id=ID;amount=1}`: Gestión de ítems.
 *   `cancel_event{}`, `command{cmd='texto';as=CONSOLE/PLAYER}`, `ban_player{reason='Text'}`.
 
 ---
 
-## 💡 10 Ejemplos de Contenido Pro
+## 🎒 Sistema de Ítems Personalizados
+Los ítems se definen en `scripts/items/`.
 
-### 1. Espada de Zeus
+```yaml
+Items:
+  - Id: "MI_ITEM"
+    Material: "VANILLA_MAT"
+    Name: "&bNombre"
+    Lore: ["Línea 1"]
+    CustomModelData: 101
+    Unbreakable: true
+    Color: "#HEX" # Para cuero o pociones
+    Enchantments: {sharpness: 5}
+    Attributes: {generic.attack_damage: 10.0}
+    Recipes:
+      - Shape: ["AAA", " B ", " B "]
+        Ingredients: "A:GOLD_INGOT,B:STICK"
+      - Template: "NETHERITE_UPGRADE_SMITHING_TEMPLATE"
+        Base: "DIAMOND_SWORD"
+        Addition: "custom:MATERIAL_CUSTOM"
+```
+
+---
+
+## 🧮 Placeholders Dinámicos
+| Tag | Descripción |
+| :--- | :--- |
+| `%caster_name%`, `%target_name%` | Nombres de los involucrados. |
+| `%caster_hp%`, `%caster_max_hp%` | Vida actual/máxima. |
+| `%caster_x/y/z%`, `%caster_biome%` | Ubicación y bioma. |
+| `%damage_amount%`, `%pdc_day%` | Daño y Día actual. |
+
+---
+
+## 💡 10 Ejemplos de Contenido de Élite
+
+### 1. Espada de Zeus (Habilidad de Ítem)
 Al hacer click derecho con una espada de oro, cae un rayo donde miras (coste: 2 corazones).
 ```yaml
   - Id: "Espada_Zeus"
@@ -77,19 +115,18 @@ Al hacer click derecho con una espada de oro, cae un rayo donde miras (coste: 2 
       - "modify_metadata{key='zeus_cooldown';value=10;op=SET}"
 ```
 
-### 2. Zona de Radiación (Daño por Entorno)
-Mecánica de zona tóxica que te daña si no llevas un casco de Netherite.
+### 2. Presión del Abismo (1:1 Core)
+Mecánica de oxígeno y presión cuando no se lleva la máscara en el Abismo.
 ```yaml
-  - Id: "Zona_Toxica_Tick"
+  - Id: "Abyss_Oxygen_Drain"
     Trigger: "PLAYER_TICK"
     Conditions:
-      - "is_world{name='world_nether'}"
-      - "y_level{value=30;op='<'}" # Por debajo de Y=30
-      - "is_wearing{type=NETHERITE_HELMET;slot=HEAD;invert=true}"
+      - "is_world{name='world_permadeath_abyss'}"
+      - "is_wearing{type=ABYSSAL_MASK;invert=true}"
+      - "has_potion_effect{type=WATER_BREATHING;invert=true}"
     Actions:
-      - "damage{amount=1.0}"
-      - "apply_potion{type=POISON;duration=60;amplifier=0}"
-      - "send_actionbar{text='&c&l¡LOS GASES TÓXICOS TE AHOGAN!'}"
+      - "modify_metadata{key='abyss_pressure';value=0.005;op=SUB}"
+      - "set_bossbar{id='abyss';title='&3&lPresión del Abismo';progress='%abyss_pressure%';color='BLUE'}"
 ```
 
 ### 3. Oxígeno Agotado
@@ -106,8 +143,8 @@ Aplicar daño y Wither cuando la presión llega a 0.
       - "set_bossbar{id='abyss';title='&c&l¡OXÍGENO AGOTADO!';progress='0';color='RED'}"
 ```
 
-### 4. Blood Moon
-Cada cambio de día, hay una probabilidad de activar una tormenta eterna.
+### 4. Blood Moon (Evento Escalable)
+Cada cambio de día, hay una probabilidad (que sube con los días) de activar una tormenta eterna.
 ```yaml
   - Id: "Blood_Moon_Start"
     Trigger: "DAY_CHANGE"
@@ -118,7 +155,7 @@ Cada cambio de día, hay una probabilidad de activar una tormenta eterna.
       - "send_title{title='&4&lBLOOD MOON';subtitle='&cLos antiguos han despertado...'}"
 ```
 
-### 5. Vampirismo
+### 5. Vampirismo (Pasiva de Combate)
 Si matas a una entidad de noche, recuperas 1 corazón.
 ```yaml
   - Id: "Vampire_Leech"
@@ -130,7 +167,7 @@ Si matas a una entidad de noche, recuperas 1 corazón.
       - "play_particle{type=HEART;amount=5}"
 ```
 
-### 6. Oro Maldito
+### 6. Oro Maldito (Trampa Ambiental)
 Picar oro en el Nether tiene un 20% de probabilidad de prenderte fuego.
 ```yaml
   - Id: "Cursed_Gold"
@@ -144,7 +181,7 @@ Picar oro en el Nether tiene un 20% de probabilidad de prenderte fuego.
       - "play_sound{sound=ENTITY_GHAST_SCREAM}"
 ```
 
-### 7. Peso Pesado
+### 7. Peso Pesado (Penalización de Armadura)
 Llevar armadura completa de Netherite te da Lentitud 1 pero Resistencia 1.
 ```yaml
   - Id: "Heavy_Armor"
@@ -156,7 +193,7 @@ Llevar armadura completa de Netherite te da Lentitud 1 pero Resistencia 1.
       - "apply_potion{type=DAMAGE_RESISTANCE;duration=40;amplifier=0}"
 ```
 
-### 8. Grito de Guerra
+### 8. Grito de Guerra (Habilidad de Área)
 Al agacharte (Sneak), empujas a todos los mobs cercanos 5 bloques.
 ```yaml
   - Id: "War_Cry"
@@ -170,7 +207,7 @@ Al agacharte (Sneak), empujas a todos los mobs cercanos 5 bloques.
       - "modify_metadata{key='cry_cd';value=20;op=SET}"
 ```
 
-### 9. Trampa de Luz
+### 9. Trampa de Luz (IA de Mobs)
 Los mobs que spawnean en oscuridad total (luz < 2) son 100% agresivos y más rápidos.
 ```yaml
   - Id: "Dark_Spawn"
@@ -182,7 +219,7 @@ Los mobs que spawnean en oscuridad total (luz < 2) son 100% agresivos y más rá
       - "apply_potion{type=SPEED;duration=99999;amplifier=1}"
 ```
 
-### 10. Flechas Explosivas
+### 10. Flechas Explosivas (Proyectiles)
 Las flechas disparadas por el jugador explotan al impactar si es Día 60+.
 ```yaml
   - Id: "Explosive_Arrows"

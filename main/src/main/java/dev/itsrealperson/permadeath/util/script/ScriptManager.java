@@ -97,6 +97,7 @@ public class ScriptManager implements ScriptManagerAPI {
         categories.put("entidades", new String[]{"dia_20_hostiles.yml", "dia_30_replacements.yml", "dia_40_replacements.yml", "dia_50_replacements.yml", "nether_spawns.yml"});
         categories.put("mundo", new String[]{"dia_40_clima.yml", "dia_50_uhc.yml", "dia_60_ambiente.yml", "catastrofes.yml", "agua_acida.yml", "the_end.yml", "abismo_mecanicas.yml"});
         categories.put("mecanicas", new String[]{"totems.yml", "consumibles.yml", "picar_bloques.yml", "hornos.yml", "cubetas.yml"});
+        categories.put("items", new String[]{"core_items.yml"});
 
         for (Map.Entry<String, String[]> entry : categories.entrySet()) {
             File catFolder = new File(folder, entry.getKey());

@@ -1,19 +1,14 @@
 package dev.itsrealperson.permadeath.nms.v1_21_R3.block;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Sound;
+import dev.itsrealperson.permadeath.api.interfaces.InfernalNetheriteBlock;
+import dev.itsrealperson.permadeath.util.item.PermadeathItems;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.CreatureSpawner;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
-import dev.itsrealperson.permadeath.api.interfaces.InfernalNetheriteBlock;
-import dev.itsrealperson.permadeath.util.item.PermadeathItems;
 
 public class InfernalNetheriteBlockImpl implements InfernalNetheriteBlock {
     private NamespacedKey getKey() {
@@ -41,10 +36,7 @@ public class InfernalNetheriteBlockImpl implements InfernalNetheriteBlock {
             if (key != null) {
                 spawner.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, true);
             }
-            
-            // Intentar establecer el equipo del Armor Stand interno (esto activa la textura en el RP)
-            // Nota: En Bukkit API el control sobre el ítem visual del spawner es limitado,
-            // pero establecer el tipo y el PDC suele ser suficiente para la mayoría de RPs de Permadeath.
+
             spawner.update();
         }
 

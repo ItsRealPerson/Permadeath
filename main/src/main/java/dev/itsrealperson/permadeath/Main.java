@@ -332,7 +332,7 @@ public final class Main extends JavaPlugin implements Listener, dev.itsrealperso
         // 8. Registrar comandos
         setupCommands();
 
-        prefix = TextUtils.format((getConfig().contains("Prefix") ? getConfig().getString("Prefix") : "&c&lPERMADEATH&4&l &7âž¤ &f"));
+        prefix = TextUtils.format((getConfig().contains("Prefix") ? getConfig().getString("Prefix") : "&b&lPDC-Engine&3&l &7» &f"));
 
         // Cargar mundos si existen en la configuración
         if (getConfig().contains("Worlds")) {
@@ -350,7 +350,7 @@ public final class Main extends JavaPlugin implements Listener, dev.itsrealperso
         var loadedAddons = dev.itsrealperson.permadeath.api.addons.AddonRegistry.getRegisteredAddons();
         if (!loadedAddons.isEmpty()) {
             Bukkit.getConsoleSender().sendMessage(TextUtils.format("&7&m------------------------------------------"));
-            Bukkit.getConsoleSender().sendMessage(TextUtils.format(" [Permadeath] &b&lAddons Cargados (&f" + loadedAddons.size() + "&b&l):"));
+            Bukkit.getConsoleSender().sendMessage(TextUtils.format(" [PDC-Engine] &b&lAddons Cargados (&f" + loadedAddons.size() + "&b&l):"));
             for (var addon : loadedAddons) {
                 Bukkit.getConsoleSender().sendMessage(TextUtils.format("  &7➤ &f" + addon.getName() + " &bv" + addon.getVersion()));
             }
@@ -378,8 +378,8 @@ public final class Main extends JavaPlugin implements Listener, dev.itsrealperso
         DiscordPortal.onDisable();
 
         Bukkit.getConsoleSender().sendMessage(TextUtils.format("&f&m------------------------------------------"));
-        Bukkit.getConsoleSender().sendMessage(TextUtils.format("             &c&lPERMADEATH"));
-        Bukkit.getConsoleSender().sendMessage(TextUtils.format("     &7- Desactivando el Plugin."));
+        Bukkit.getConsoleSender().sendMessage(TextUtils.format("             &b&lPDC-Engine"));
+        Bukkit.getConsoleSender().sendMessage(TextUtils.format("     &7- Desactivando el Motor."));
         Bukkit.getConsoleSender().sendMessage(TextUtils.format("&f&m------------------------------------------"));
 
         this.instance = null;
@@ -396,7 +396,12 @@ public final class Main extends JavaPlugin implements Listener, dev.itsrealperso
     public BeginningManager getBeginningManager() { return begginingManager; }
     public AbyssManager getAbyssManager() { return abyssManager; }
     public dev.itsrealperson.permadeath.util.NetworkManager getNetworkManager() { return networkManager; }
-    public dev.itsrealperson.permadeath.util.script.ScriptManager getScriptManager() { return scriptManager; }
+    @Override
+    public dev.itsrealperson.permadeath.api.script.ScriptManagerAPI getScriptManager() { return scriptManager; }
+
+    @Override
+    public dev.itsrealperson.permadeath.api.script.ScriptItemManagerAPI getScriptItemManager() { return scriptItemManager; }
+
     public dev.itsrealperson.permadeath.util.ShardManager getShardManager() { return shardManager; }
     public SpawnListener getSpawnListener() { return spawnListener; }
     public NMSHandler getNmsHandler() { return NMS.getHandler(); }

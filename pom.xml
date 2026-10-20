@@ -6,12 +6,13 @@
 
     <groupId>dev.itsrealperson.permadeath</groupId>
     <artifactId>Permadeath</artifactId>
-    <version>1.4-PRE2</version>
+    <version>1.5-Alpha-1</version>
     <packaging>pom</packaging>
     <modules>
         <module>api</module>
         <module>v1_21_R3</module>
         <module>main</module>
+        <module>pdc-entities</module>
     </modules>
 
     <properties>
@@ -34,6 +35,10 @@
         </repository>
         <repository>
             <id>papermc</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
+        </repository>
+        <repository>
+            <id>papermc-userdev</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
         <repository>

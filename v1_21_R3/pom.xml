@@ -6,11 +6,10 @@
     <parent>
         <groupId>dev.itsrealperson.permadeath</groupId>
         <artifactId>Permadeath</artifactId>
-        <version>1.4-PRE2</version>
+        <version>1.5-Alpha-1</version>
     </parent>
 
     <artifactId>v1_21_R3</artifactId>
-    <version>1.4-PRE2</version>
 
   <properties>
     <maven.compiler.source>21</maven.compiler.source>

@@ -1,0 +1,154 @@
+# scripts/items/core_items.yml
+# Transcripción 1:1 de todos los ítems y recetas de Permadeath Core
+
+Items:
+  # --- ACCESORIOS Y MEDALLAS ---
+  - Id: "WATER_MEDAL"
+    Material: "HEART_OF_THE_SEA"
+    Name: "&bMedalla de Agua"
+    Lore:
+      - "&7Otorga respiración infinita"
+      - "&7mientras esté en el inventario."
+    Unbreakable: true
+    Enchantments:
+      infinity: 1
+    Metadata:
+      water_medal: "1"
+    Recipes:
+      - Shape: ["TGT", "GNG", "GGG"]
+        Ingredients: "T:TRIDENT,G:GOLD_BLOCK,N:HEART_OF_THE_SEA"
+
+  # --- SISTEMA ABISAL ---
+  - Id: "ABYSSAL_HEART"
+    Material: "RECOVERY_COMPASS"
+    Name: "&3Corazón del Abismo"
+    Lore:
+      - "&7Un núcleo de energía oscura extraído"
+      - "&7de las profundidades del Abismo."
+      - ""
+      - "&eClick derecho para despertar al mundo..."
+      - "&c(Requiere estar en el Día 60)"
+    Enchantments:
+      infinity: 1
+    Recipes:
+      - Shape: ["ENE", "EHE", "EEE"]
+        Ingredients: "E:ECHO_SHARD,N:NETHERITE_BLOCK,H:HEART_OF_THE_SEA"
+
+  - Id: "ABYSSAL_FILTER"
+    Material: "NETHER_WART"
+    Name: "&bFiltro Abisal"
+    Lore:
+      - "&7Un purificador de aire diseñado"
+      - "&7para entornos de vacío."
+      - ""
+      - "&eClick derecho con la máscara en la"
+      - "&emano para restaurar el oxígeno."
+    CustomModelData: 101
+    Metadata:
+      abyssal_item: "filter"
+    Recipes:
+      - Shape: [" S ", "SES", " S "]
+        Ingredients: "S:custom:VOID_SHARD,E:ECHO_SHARD"
+
+  - Id: "ABYSSAL_MASK"
+    Material: "LEATHER_HELMET"
+    Name: "&bMáscara del Abismo"
+    Lore:
+      - "&7Protege contra la presión del Abismo."
+      - "&7Se desgasta mientras estás en la dimensión."
+      - ""
+      - "&eUsa un Filtro Abisal para recuperarte."
+    Color: "#1A1A1A"
+    Metadata:
+      abyssal_item: "mask"
+    Recipes:
+      - Shape: ["FSF", "VHV", "VVV"]
+        Ingredients: "F:custom:ABYSSAL_FILTER,S:NETHERITE_UPGRADE_SMITHING_TEMPLATE,V:custom:VOID_SHARD,H:NETHERITE_HELMET"
+
+  - Id: "VOID_SHARD"
+    Material: "AMETHYST_SHARD"
+    Name: "&3Fragmento de Vacío"
+    Lore: ["&7Materia cristalizada del Abismo."]
+    CustomModelData: 102
+
+  # --- EQUIPO DE NETHERITE INFERNAL ---
+  - Id: "INFERNAL_INGOT"
+    Material: "DIAMOND"
+    Name: "&6Lingote de Netherite Infernal"
+    CustomModelData: 1
+    Unbreakable: true
+
+  - Id: "INFERNAL_SWORD"
+    Material: "DIAMOND_SWORD"
+    Name: "&6Espada de Netherite Infernal"
+    CustomModelData: 1
+    Unbreakable: true
+    Attributes:
+      generic.attack_damage: 8.0
+      generic.attack_speed: -2.4
+    Recipes:
+      - Template: "NETHERITE_UPGRADE_SMITHING_TEMPLATE"
+        Base: "DIAMOND_SWORD"
+        Addition: "custom:INFERNAL_INGOT"
+
+  - Id: "INFERNAL_PICKAXE"
+    Material: "DIAMOND_PICKAXE"
+    Name: "&6Pico de Netherite Infernal"
+    CustomModelData: 1
+    Unbreakable: true
+    Attributes:
+      generic.attack_damage: 6.0
+      generic.attack_speed: 1.2
+    Recipes:
+      - Template: "NETHERITE_UPGRADE_SMITHING_TEMPLATE"
+        Base: "DIAMOND_PICKAXE"
+        Addition: "custom:INFERNAL_INGOT"
+
+  - Id: "INFERNAL_ELYTRA"
+    Material: "ELYTRA"
+    Name: "&6Elytras de Netherite Infernal"
+    CustomModelData: 1
+    Attributes:
+      generic.armor: 8.0
+      generic.armor_toughness: 3.0
+    Recipes:
+      - Shape: ["III", "IPI", "III"]
+        Ingredients: "I:DIAMOND,P:ELYTRA"
+
+  # --- CONSUMIBLES ---
+  - Id: "SUPER_GOLDEN_APPLE"
+    Material: "GOLDEN_APPLE"
+    Name: "&6Super Golden Apple +"
+    Enchantments:
+      infinity: 1
+    Recipes:
+      - Shape: ["GGG", "GAG", "GGG"]
+        Ingredients: "G:GOLD_INGOT,A:GOLDEN_APPLE"
+
+  - Id: "HYPER_GOLDEN_APPLE"
+    Material: "GOLDEN_APPLE"
+    Name: "&6Hyper Golden Apple +"
+    Enchantments:
+      infinity: 1
+    Recipes:
+      - Shape: ["GGG", "GAG", "GGG"]
+        Ingredients: "G:GOLD_BLOCK,A:GOLDEN_APPLE"
+
+  # --- RELIQUIAS ---
+  - Id: "RELIQUIA_FIN"
+    Material: "LIGHT_BLUE_DYE"
+    Name: "&6Reliquia Del Fin"
+    Unbreakable: true
+    CustomModelData: 1
+    Recipes:
+      - Shape: [" S ", " D ", " S "]
+        Ingredients: "S:SHULKER_SHELL,D:DIAMOND_BLOCK"
+
+  - Id: "ORBE_VIDA"
+    Material: "BROWN_DYE"
+    Name: "&6Orbe de Vida"
+    Unbreakable: true
+    CustomModelData: 1
+    Recipes:
+      - Shape: ["DGB", "RSE", "NOL"]
+        Ingredients: "D:DIAMOND,G:GOLD_INGOT,B:BONE_BLOCK,R:BLAZE_ROD,S:HEART_OF_THE_SEA,E:END_STONE,N:NETHER_BRICKS,O:OBSIDIAN,L:LAPIS_BLOCK"

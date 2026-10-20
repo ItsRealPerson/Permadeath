@@ -6,11 +6,10 @@
     <parent>
         <groupId>dev.itsrealperson.permadeath</groupId>
         <artifactId>Permadeath</artifactId>
-        <version>1.4-PRE2</version>
+        <version>1.5-Alpha-1</version>
     </parent>
 
     <artifactId>main</artifactId>
-    <version>1.4-PRE2</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -34,7 +33,7 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>${maven-shade-plugin.version}</version>
                 <configuration>
-                    <finalName>Permadeath</finalName>
+                    <finalName>Permadeath-${project.version}</finalName>
                     <relocations>
                         <relocation>
                             <pattern>org.apache.commons.lang3</pattern>

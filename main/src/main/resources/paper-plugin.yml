@@ -1,17 +1,17 @@
-name: Permadeath
-version: 1.4
+name: PDC-Engine
+version: 1.5-Alpha-1
 main: dev.itsrealperson.permadeath.Main
 bootstrapper: dev.itsrealperson.permadeath.PermadeathBootstrap
 loader: dev.itsrealperson.permadeath.PermadeathLoader
 api-version: 1.21
 folia-supported: true
 authors: [ SebazCRC, vo1d_dev, ItsRealPerson ]
-description: Recreación del Plugin "PermaDeath" de la serie de ElRichMC, actualizado a 1.21 (Folia).
+description: Programmable Dynamic Core - The Universal Game Logic Engine.
 website: https://github.com/ItsRealPerson/Permadeath
 
 dependencies:
   server:
-    WorldEdit:
+    BetterModel:
       load: BEFORE
       required: false
       join-classpath: true
@@ -23,5 +23,5 @@ permissions:
 
 commands:
   pdc:
-    description: Comando principal de Permadeath
-    aliases: [ permadeath ]
+    description: PDC-Engine Main Command
+    aliases: [ permadeath, engine ]

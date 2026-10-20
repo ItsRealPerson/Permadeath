@@ -39,3 +39,7 @@ build/
 test-server/
 *.jar
 *.zip
+*.log
+recursos externos/
+.idea/IntelliLang.xml
+
