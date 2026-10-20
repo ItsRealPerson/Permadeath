@@ -19,16 +19,39 @@ public class RecipeManager {
     }
 
     public void registerRecipes() {
+        registerBaseRecipes();
+        if (instance.getDay() >= 25) {
+            registerD25Recipes();
+        }
+        if (instance.getDay() >= 30) {
+            registerD30Recipes();
+        }
+    }
 
+    public void registerBaseRecipes() {
         try {
             registerHyperGAP();
             registerSuperGAP();
             registerShulkerUnCraft();
             registerEndRel();
+        } catch (Exception ex) {
+            // Ignorar si alguna receta fue registrada previamente
+        }
+    }
+
+    public void registerD25Recipes() {
+        try {
             registerSmithingArmor();
+        } catch (Exception ex) {
+            // Ignorar si alguna receta fue registrada previamente
+        }
+    }
+
+    public void registerD30Recipes() {
+        try {
             registerWaterMedal();
         } catch (Exception ex) {
-            // Ignorar, la receta fue registrada antes probablemente
+            // Ignorar si alguna receta fue registrada previamente
         }
     }
 

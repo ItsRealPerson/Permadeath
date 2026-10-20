@@ -331,6 +331,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
                     }
                 }
                 DateManager.getInstance().tick();
+                registerListeners();
 
                 if (world != null) {
                     isStormingCache = world.hasStorm();
@@ -700,7 +701,6 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         this.messages = new Messages(this);
         if (this.recipes == null) {
             this.recipes = new RecipeManager(this);
-            this.recipes.registerRecipes();
         }
         
         this.abyssFile = new File(getDataFolder(), "abyss.yml");
@@ -830,6 +830,8 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
             registeredDays.put(1, true);
 
             this.getServer().getPluginManager().registerEvents(new AnvilListener(this), this);
+            if (this.recipes == null) this.recipes = new RecipeManager(this);
+            this.recipes.registerBaseRecipes();
         }
 
         if (DateManager.getInstance().getDay() >= 20 && !registeredDays.getOrDefault(20, false)) {
@@ -840,25 +842,35 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
             Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado los cambios de Mobs pacíficos hostiles."));
         }
 
-        if (DateManager.getInstance().getDay() >= 30 && endManager == null && endData == null && !registeredDays.getOrDefault(30, false)) {
+        if (DateManager.getInstance().getDay() >= 25 && !registeredDays.getOrDefault(25, false)) {
+            registeredDays.put(25, true);
+
+            if (this.recipes == null) this.recipes = new RecipeManager(this);
+            this.recipes.registerD25Recipes();
+            Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado las recetas de Netherite y Fragmento Ancestral para el día &b25"));
+        }
+
+        if (DateManager.getInstance().getDay() >= 30 && !registeredDays.getOrDefault(30, false)) {
             registeredDays.put(30, true);
 
-            this.endManager = new EndManager(instance);
-            getServer().getPluginManager().registerEvents(endManager, instance);
+            if (this.recipes == null) this.recipes = new RecipeManager(this);
+            this.recipes.registerD30Recipes();
 
-            this.endData = new EndDataManager(instance);
+            if (endManager == null && endData == null) {
+                this.endManager = new EndManager(instance);
+                getServer().getPluginManager().registerEvents(endManager, instance);
+                this.endData = new EndDataManager(instance);
 
-            if (runningPaperSpigot) {
-                getServer().getPluginManager().registerEvents(new PaperListeners(instance), instance);
-                Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado cambios especiales para &c&lPaperMC&e."));
+                if (runningPaperSpigot) {
+                    getServer().getPluginManager().registerEvents(new PaperListeners(instance), instance);
+                    Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado cambios especiales para &c&lPaperMC&e."));
+                }
             }
         }
 
         if (DateManager.getInstance().getDay() >= 40 && !registeredDays.getOrDefault(40, false)) {
 
             registeredDays.put(40, true);
-            if (this.recipes == null) this.recipes = new RecipeManager(this);
-            this.recipes.registerRecipes();
             this.getNmsHandler().addMushrooms();
             getServer().getPluginManager().registerEvents(new SlotBlockListener(instance), instance);
             Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado cambios para el día &b40"));
@@ -1027,6 +1039,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         getServer().getPluginManager().registerEvents(new tech.sebazcrc.permadeath.event.player.CustomEnchantmentListener(), instance);
         registeredDays.put(1, false);
         registeredDays.put(20, false);
+        registeredDays.put(25, false);
         registeredDays.put(30, false);
         registeredDays.put(40, false);
         registeredDays.put(50, false);
