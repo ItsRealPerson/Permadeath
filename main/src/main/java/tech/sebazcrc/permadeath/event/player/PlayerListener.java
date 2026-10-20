@@ -698,16 +698,14 @@ public class PlayerListener implements Listener {
                 }
             }
 
-            if (Main.worldEditFound) {
+            if (Main.worldEditFound && Main.instance.getDay() >= 40) {
                 if (!Main.instance.getBeData().generatedOverWorldBeginningPortal()) {
-                    if (Main.instance.getDay() >= 40) {
-                        if (Main.isRunningFolia()) {
-                            Bukkit.getGlobalRegionScheduler().runDelayed(Main.instance, t -> {
-                                Main.instance.getBeginningManager().generatePortal(true, null);
-                            }, 20L);
-                        } else {
+                    if (Main.isRunningFolia()) {
+                        Bukkit.getGlobalRegionScheduler().runDelayed(Main.instance, t -> {
                             Main.instance.getBeginningManager().generatePortal(true, null);
-                        }
+                        }, 20L);
+                    } else {
+                        Main.instance.getBeginningManager().generatePortal(true, null);
                     }
                 }
 

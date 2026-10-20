@@ -91,3 +91,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo 
   - Inicializado `BeginningManager` de forma temprana en `Main.onEnable()`, asegurando la escucha de eventos de mundos desde el inicio del servidor y dejando el acceso de jugadores condicionado al día adecuado.
 - **Resolución de Mundo en Tareas Asíncronas (`BeginningPopulator.java`):**
   - Añadido `resolveWorld(WorldInfo)` con fallback por UID y nombre de mundo, reduciendo el delay de pegado de esquemáticas a 40 ticks para una generación fluida y libre de vacíos.
+- **Alineación Progresiva Canónica de The Beginning (Día 40 / Día 50):**
+  - Condicionada la generación del portal de salida de The Beginning (`generateBeginningPortal`) en `PlayerListener.java` a `Main.instance.getDay() >= 40`, evitando que se genere en el spawn al entrar cualquier jugador en Día 1.
+  - Bloqueada la carga activa de la dimensión (`BeginningManager.loadWorld()`) para días < 40, asegurando que el mundo permanezca inactivo y latente hasta que la progresión canónica lo active en el Día 40.
+  - Condicionada la tarea de spawneo periódico de mobs abisales / The Beginning (`startSpawnerTask()`) a `Main.instance.getDay() >= 50`, con disparo reactivo en `Main.registerListeners()` al alcanzar el Día 50.

@@ -40,18 +40,20 @@ public class BeginningManager implements Listener {
         this.data = main.getBeData();
 
         main.getServer().getPluginManager().registerEvents(this, main);
-        loadWorld();
 
         Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] BeginningManager inicializado correctamente.");
 
         if (main.getDay() >= 40) {
-            startSpawnerTask();
+            loadWorld();
+            if (main.getDay() >= 50) {
+                startSpawnerTask();
+            }
         }
     }
 
     @EventHandler
     public void onWorldInit(WorldInitEvent event) {
-        if (isBeginningWorld(event.getWorld())) {
+        if (main.getDay() >= 40 && isBeginningWorld(event.getWorld())) {
             injectPopulator(event.getWorld());
             Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] Poblador de The Beginning inyectado en onWorldInit: " + event.getWorld().getName());
         }
@@ -59,7 +61,7 @@ public class BeginningManager implements Listener {
 
     @EventHandler
     public void onWorldLoad(WorldLoadEvent event) {
-        if (isBeginningWorld(event.getWorld())) {
+        if (main.getDay() >= 40 && isBeginningWorld(event.getWorld())) {
             this.beginningWorld = event.getWorld();
             injectPopulator(this.beginningWorld);
             setupWorldDefaults();
@@ -75,6 +77,7 @@ public class BeginningManager implements Listener {
     }
 
     public void loadWorld() {
+        if (main.getDay() < 40) return;
         this.beginningWorld = Bukkit.getWorld(WORLD_NAME);
         
         if (this.beginningWorld == null) {
@@ -316,7 +319,11 @@ public class BeginningManager implements Listener {
         WorldEditPortal.generatePortal(overworld, location);
     }
 
-    private void startSpawnerTask() {
+    private boolean spawnerStarted = false;
+
+    public void startSpawnerTask() {
+        if (spawnerStarted) return;
+        spawnerStarted = true;
         Runnable spawner = () -> {
             if (beginningWorld == null) return;
             

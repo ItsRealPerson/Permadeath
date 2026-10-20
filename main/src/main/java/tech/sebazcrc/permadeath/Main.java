@@ -911,6 +911,9 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
             Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado cambios para el día &b50"));
             this.recipes.registerD50Recipes();
+            if (this.begginingManager != null) {
+                this.begginingManager.startSpawnerTask();
+            }
             registeredDays.put(50, true);
         }
 
