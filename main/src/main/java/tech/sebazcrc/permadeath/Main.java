@@ -1005,6 +1005,7 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         this.setupConfig();
         reloadConfig();
         this.messages.reloadFiles();
+        tech.sebazcrc.permadeath.data.PlayerDataManager.reloadSharedConfig(new File(getDataFolder(), "jugadores.yml"));
         DateManager.getInstance().reloadDate();
         setupWorld();
 

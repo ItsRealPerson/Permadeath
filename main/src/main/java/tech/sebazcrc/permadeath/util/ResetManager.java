@@ -38,6 +38,7 @@ public class ResetManager {
         File playersFile = new File(plugin.getDataFolder(), "jugadores.yml");
         if (playersFile.exists()) {
             playersFile.delete();
+            tech.sebazcrc.permadeath.data.PlayerDataManager.resetSharedConfig();
             sender.sendMessage(Main.prefix + ChatColor.GREEN + "Se han borrado los datos de jugadores (jugadores.yml).");
         }
 

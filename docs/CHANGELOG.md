@@ -14,4 +14,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo 
 - **Compatibilidad Folia en BeginningPopulator:** Bifurcada la colocación diferida de estructuras entre `GlobalRegionScheduler` (Folia) y `runTaskLater` (Paper/Spigot), evitando excepciones `NoSuchMethodError`.
 - **Compatibilidad Folia en GatoGalacticoTask:** Añadido método de arranque compatible con `RegionScheduler` en Folia, evitando `UnsupportedOperationException` al invocar `runTaskTimer`.
 - **Iteración de Chunks en HostileEntityListener:** Corregido corte prematuro de chunks cambiando `return;` por `continue;` al convertir aldeanos en vindicadores.
+- **Discord Handshake Asíncrono:** La conexión de JDA y `awaitReady()` en `DiscordManager.java` ahora se ejecuta en un hilo asíncrono con `CompletableFuture.runAsync`, garantizando un arranque instantáneo del servidor y eliminando congelamientos o muertes por Watchdog.
+- **Eliminación de Spawns Fantasma en MobFactory:** Corregido `spawnQuantumCreeper` y `spawnEnderQuantumCreeper` en `MobFactory.java` para spawnear directamente la entidad NMS sin generar previamente entidades vanilla temporales que luego eran destruidas dejando referencias muertas.
+- **Concurrencia y Guardado Atómico en PlayerDataManager:** Implementado un cerrojo estático `FILE_LOCK`, caché compartida en memoria y guardado atómico con `ATOMIC_MOVE` en `PlayerDataManager.java` y sincronizado con `ResetManager.java`, erradicando pérdida de datos o corrupción por escrituras concurrentes en Folia.
 

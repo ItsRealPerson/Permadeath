@@ -20,6 +20,9 @@ import java.util.Arrays;
 
 public class PlayerDataManager {
 
+    private static final Object FILE_LOCK = new Object();
+    private static FileConfiguration sharedConfig = null;
+
     private String name;
     private String banDay;
     private String banTime;
@@ -29,19 +32,40 @@ public class PlayerDataManager {
     private FileConfiguration config;
     private Main instance;
 
+    public static FileConfiguration getSharedConfig(File file) {
+        synchronized (FILE_LOCK) {
+            if (sharedConfig == null) {
+                if (!file.exists()) {
+                    try {
+                        if (file.getParentFile() != null) file.getParentFile().mkdirs();
+                        file.createNewFile();
+                    } catch (IOException e) {
+                        System.out.println("[ERROR] Ha ocurrido un error al crear el archivo 'jugadores.yml'");
+                    }
+                }
+                sharedConfig = YamlConfiguration.loadConfiguration(file);
+            }
+            return sharedConfig;
+        }
+    }
+
+    public static void reloadSharedConfig(File file) {
+        synchronized (FILE_LOCK) {
+            sharedConfig = YamlConfiguration.loadConfiguration(file);
+        }
+    }
+
+    public static void resetSharedConfig() {
+        synchronized (FILE_LOCK) {
+            sharedConfig = new YamlConfiguration();
+        }
+    }
+
     public PlayerDataManager(String playerName, Main instance) {
         this.name = playerName;
         this.instance = instance;
         this.playersFile = new File(instance.getDataFolder(), "jugadores.yml");
-        this.config = YamlConfiguration.loadConfiguration(playersFile);
-
-        if (!playersFile.exists()) {
-            try {
-                playersFile.createNewFile();
-            } catch (IOException e) {
-                System.out.println("[ERROR] Ha ocurrido un error al crear el archivo 'jugadores.yml'");
-            }
-        }
+        this.config = getSharedConfig(playersFile);
 
         if (config.contains("Players." + playerName)) {
             this.banDay = config.getString("Players." + playerName + ".banDay");
@@ -176,18 +200,27 @@ public class PlayerDataManager {
     }
 
     public void saveFile() {
-        // Clonar la configuración para evitar ConcurrentModificationException
-        final String data;
-        synchronized (this.config) {
-            data = this.config.saveToString();
-        }
-        
         final File fileToSave = this.playersFile;
         Runnable task = () -> {
-            try {
-                java.nio.file.Files.writeString(fileToSave.toPath(), data);
-            } catch (IOException e) {
-                e.printStackTrace();
+            synchronized (FILE_LOCK) {
+                try {
+                    File tempFile = new File(fileToSave.getParentFile(), "jugadores.yml.tmp");
+                    config.save(tempFile);
+                    try {
+                        java.nio.file.Files.move(tempFile.toPath(), fileToSave.toPath(),
+                                java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                                java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+                    } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                        java.nio.file.Files.move(tempFile.toPath(), fileToSave.toPath(),
+                                java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } catch (Exception e) {
+                    try {
+                        config.save(fileToSave);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
             }
         };
 

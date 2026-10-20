@@ -32,22 +32,30 @@ public class MobFactory {
     }
 
     public Creeper spawnQuantumCreeper(Location l, @Nullable Creeper c) {
+        if (VersionManager.getRev().equals("1_21_R3")) {
+            if (c != null && c.isValid()) {
+                c.remove();
+            }
+            return (Creeper) instance.getNmsHandler().spawnNMSCustomEntity("QuantumCreeper", null, l, null);
+        }
+
         if (c == null) {
             c = l.getWorld().spawn(l, Creeper.class);
         }
         c.setCustomName(format("&6Quantum Creeper"));
         addPersistentData(c, "quantum_creeper");
         c.setExplosionRadius(instance.getConfig().getInt("Toggles.Quantum-Explosion-Power"));
-        
-        // Soporte 1.21
-        if (VersionManager.getRev().equals("1_21_R3")) {
-            instance.getNmsHandler().spawnNMSCustomEntity("QuantumCreeper", null, l, null);
-            if (c.isValid()) c.remove();
-        }
         return c;
     }
 
     public Creeper spawnEnderQuantumCreeper(Location l, @Nullable Creeper c) {
+        if (VersionManager.getRev().equals("1_21_R3")) {
+            if (c != null && c.isValid()) {
+                c.remove();
+            }
+            return (Creeper) instance.getNmsHandler().spawnNMSCustomEntity("EnderQuantumCreeper", null, l, null);
+        }
+
         if (c == null) {
             c = l.getWorld().spawn(l, Creeper.class);
         }
@@ -55,12 +63,6 @@ public class MobFactory {
         c.setCustomName(format("&6Ender Quantum Creeper"));
         addPersistentData(c, "ender_quantum_creeper");
         c.setExplosionRadius(instance.getConfig().getInt("Toggles.Quantum-Explosion-Power"));
-
-        // Soporte 1.21
-        if (VersionManager.getRev().equals("1_21_R3")) {
-            instance.getNmsHandler().spawnNMSCustomEntity("EnderQuantumCreeper", null, l, null);
-            if (c.isValid()) c.remove();
-        }
         return c;
     }
 

@@ -57,25 +57,28 @@ public class DiscordManager {
                 return;
             }
 
-            try {
-                JDABuilder builder = JDABuilder.createDefault(token);
-                builder.setActivity(Activity.watching(Objects.requireNonNull(configuration.getString("Status"))));
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    JDABuilder builder = JDABuilder.createDefault(token);
+                    builder.setActivity(Activity.watching(Objects.requireNonNull(configuration.getString("Status"))));
 
-                this.bot = builder.build();
-                this.bot.awaitReady();
-            } catch (InterruptedException e) {
-                log("Ha ocurrido un error al iniciar sesión con la aplicación de Discord, revisa tu token.");
-                e.printStackTrace();
-            }
+                    this.bot = builder.build();
+                    this.bot.awaitReady();
 
-            try {
-                String s = configuration.getString("Channels.Anuncios");
-                if (s == null) return;
-                TextChannel channel = bot.getTextChannelById(s);
-                if (channel == null) return;
-                sendEmbed(channel, buildEmbed("Permadeath", Color.GREEN, null, null, null, ":gear: Plugin encendido."));
-            } catch (Exception ignored) {
-            }
+                    String s = configuration.getString("Channels.Anuncios");
+                    if (s != null) {
+                        TextChannel channel = bot.getTextChannelById(s);
+                        if (channel != null) {
+                            sendEmbed(channel, buildEmbed("Permadeath", Color.GREEN, null, null, null, ":gear: Plugin encendido."));
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    log("Ha ocurrido un error al iniciar sesión con la aplicación de Discord, revisa tu token.");
+                    e.printStackTrace();
+                } catch (Exception e) {
+                    log("Error al conectar con Discord: " + e.getMessage());
+                }
+            });
         } else {
             log("El bot de discord no está activado en la config");
         }
