@@ -212,6 +212,9 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
             this.abyssManager.startSpawnerTask();
         }
 
+        this.beData = new BeginningDataManager(this);
+        this.begginingManager = new BeginningManager(this);
+
         tickAll();
     }
 
@@ -888,8 +891,12 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
                 Bukkit.broadcastMessage(TextUtils.format(prefixStr + "&4&lNo se pudo registrar TheBeginning ya que no se ha encontrado el plugin &7WorldEdit"));
                 Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&c[DEBUG] Permadeath requiere WorldEdit o FastAsyncWorldEdit para The Beginning."));
             } else {
-                this.beData = new BeginningDataManager(this);
-                this.begginingManager = new BeginningManager(this);
+                if (this.beData == null) this.beData = new BeginningDataManager(this);
+                if (this.begginingManager == null) {
+                    this.begginingManager = new BeginningManager(this);
+                } else {
+                    this.begginingManager.loadWorld();
+                }
                 Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado cambios de TheBeginning"));
                 registeredDays.put(40, true);
             }

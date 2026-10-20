@@ -29,38 +29,48 @@ public class BeginningManager implements Listener {
         return closed;
     }
 
+    public static boolean isBeginningWorld(World world) {
+        if (world == null) return false;
+        String name = world.getName().toLowerCase();
+        return name.contains("beginning");
+    }
+
     public BeginningManager(Main main) {
         this.main = main;
         this.data = main.getBeData();
-        this.beginningWorld = Bukkit.getWorld(WORLD_NAME);
+
+        main.getServer().getPluginManager().registerEvents(this, main);
+        loadWorld();
 
         Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] BeginningManager inicializado correctamente.");
 
-        main.getServer().getPluginManager().registerEvents(this, main);
-        
         if (main.getDay() >= 40) {
-            loadWorld();
             startSpawnerTask();
         }
     }
 
     @EventHandler
     public void onWorldInit(WorldInitEvent event) {
-        if (event.getWorld().getName().endsWith("permadeath_beginning") || event.getWorld().getName().endsWith("permadeath/beginning")) {
-            if (event.getWorld().getPopulators().stream().noneMatch(p -> p instanceof BeginningPopulator)) {
-                event.getWorld().getPopulators().add(new BeginningPopulator());
-                Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] Poblador de The Beginning inyectado.");
-            }
+        if (isBeginningWorld(event.getWorld())) {
+            injectPopulator(event.getWorld());
+            Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] Poblador de The Beginning inyectado en onWorldInit: " + event.getWorld().getName());
         }
     }
 
     @EventHandler
     public void onWorldLoad(WorldLoadEvent event) {
-        String name = event.getWorld().getName();
-        if (name.endsWith("permadeath_beginning") || name.endsWith("permadeath/beginning")) {
+        if (isBeginningWorld(event.getWorld())) {
             this.beginningWorld = event.getWorld();
+            injectPopulator(this.beginningWorld);
             setupWorldDefaults();
-            Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] Dimensión The Beginning vinculada.");
+            Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] Dimensión The Beginning vinculada: " + event.getWorld().getName());
+        }
+    }
+
+    private void injectPopulator(World world) {
+        if (world != null && world.getPopulators().stream().noneMatch(p -> p instanceof BeginningPopulator)) {
+            world.getPopulators().add(new BeginningPopulator());
+            Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "[Permadeath] BeginningPopulator agregado a " + world.getName());
         }
     }
 
@@ -69,7 +79,7 @@ public class BeginningManager implements Listener {
         
         if (this.beginningWorld == null) {
             for (World w : Bukkit.getWorlds()) {
-                if (w.getName().endsWith("permadeath_beginning")) {
+                if (isBeginningWorld(w)) {
                     this.beginningWorld = w;
                     break;
                 }
@@ -89,6 +99,7 @@ public class BeginningManager implements Listener {
         }
 
         if (this.beginningWorld != null) {
+            injectPopulator(this.beginningWorld);
             this.beginningWorld.setSpawnLocation(0, 100, 0);
             setupWorldDefaults();
         }
@@ -134,7 +145,7 @@ public class BeginningManager implements Listener {
             World w = p.getWorld();
             
             boolean isOverworld = w.getEnvironment() == World.Environment.NORMAL;
-            boolean isBeginning = w.getName().endsWith("permadeath_beginning") || w.getName().endsWith("permadeath/beginning");
+            boolean isBeginning = isBeginningWorld(w);
             
             if (isOverworld || isBeginning) {
                 handlePortalTeleport(p, w, e);
@@ -182,7 +193,7 @@ public class BeginningManager implements Listener {
         p.setMetadata("pdc_tp_cooldown", new org.bukkit.metadata.FixedMetadataValue(main, System.currentTimeMillis()));
 
         boolean isOverworld = fromWorld.getEnvironment() == World.Environment.NORMAL;
-        boolean isBeginning = fromWorld.getName().endsWith("permadeath_beginning") || fromWorld.getName().endsWith("permadeath/beginning");
+        boolean isBeginning = isBeginningWorld(fromWorld);
 
         if (!isOverworld && !isBeginning) return;
 

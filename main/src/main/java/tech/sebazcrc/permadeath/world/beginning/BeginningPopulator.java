@@ -76,15 +76,18 @@ public class BeginningPopulator extends BlockPopulator {
         }
     }
 
+    private World resolveWorld(WorldInfo worldInfo) {
+        World w = Bukkit.getWorld(worldInfo.getUID());
+        if (w != null) return w;
+        return Bukkit.getWorld(worldInfo.getName());
+    }
+
     private void scheduleSchematic(WorldInfo worldInfo, int x, int z, String type, SplittableRandom random) {
-        // En Folia, no podemos usar Bukkit.getWorld durante la generación inicial del chunk de forma segura
-        // Programamos una tarea global para que espere a que el mundo esté cargado
         if (Main.isRunningFolia()) {
             Bukkit.getGlobalRegionScheduler().runDelayed(Main.instance, t -> {
-                World world = Bukkit.getWorld(worldInfo.getUID());
+                final World world = resolveWorld(worldInfo);
                 if (world == null) return;
 
-                // Ahora que tenemos el mundo, usamos el region scheduler
                 Bukkit.getRegionScheduler().run(Main.instance, new org.bukkit.Location(world, x, HEIGHT, z), task -> {
                     if (type.equals("island")) {
                         WorldEditPortal.generateIsland(world, x, z, HEIGHT, random);
@@ -94,10 +97,10 @@ public class BeginningPopulator extends BlockPopulator {
                         generateTree(world, x, z);
                     }
                 });
-            }, 100L); // Esperar 5 segundos para asegurar que el mundo esté listo
+            }, 40L);
         } else {
             Bukkit.getScheduler().runTaskLater(Main.instance, () -> {
-                World world = Bukkit.getWorld(worldInfo.getUID());
+                final World world = resolveWorld(worldInfo);
                 if (world == null) return;
                 if (type.equals("island")) {
                     WorldEditPortal.generateIsland(world, x, z, HEIGHT, random);
@@ -106,7 +109,7 @@ public class BeginningPopulator extends BlockPopulator {
                 } else if (type.equals("tree")) {
                     generateTree(world, x, z);
                 }
-            }, 100L);
+            }, 40L);
         }
     }
 

@@ -83,3 +83,11 @@ Todos los cambios notables en este proyecto serán documentados en este archivo 
   - Asegurado que un fallo temporal al verificar WorldEdit en Día 40 no impida reintentar el registro en recargas posteriores vía `/pdc reload`.
 - **Restauración de Comando Anti-AFK (`PDCCommand.java`):**
   - Restaurado el subcomando administrativo `/pdc afk bypass <add/remove> <jugador>` y el mensaje de ayuda de `/pdc afk`, permitiendo gestionar la lista de bypass directamente desde el servidor sin necesidad de editar `config.yml` manualmente.
+
+### Corrección (Generación de Terreno e Inyección de Poblador en The Beginning)
+- **Inyección Garantizada de `BeginningPopulator` (`BeginningManager.java`):**
+  - Implementado `injectPopulator(World)` ejecutado redundantemente en `onWorldInit`, `onWorldLoad`, y `loadWorld()`, garantizando que la dimensión nunca quede huérfana de su generador de bloques de púrpura, islas y estructuras.
+  - Creado método utilitario universal `isBeginningWorld(World)` (`contains("beginning")`), eliminando incompatibilidades con nombres de mundos nativos en Paper/Folia (`permadeath:beginning`, `world_permadeath_beginning`).
+  - Inicializado `BeginningManager` de forma temprana en `Main.onEnable()`, asegurando la escucha de eventos de mundos desde el inicio del servidor y dejando el acceso de jugadores condicionado al día adecuado.
+- **Resolución de Mundo en Tareas Asíncronas (`BeginningPopulator.java`):**
+  - Añadido `resolveWorld(WorldInfo)` con fallback por UID y nombre de mundo, reduciendo el delay de pegado de esquemáticas a 40 ticks para una generación fluida y libre de vacíos.
