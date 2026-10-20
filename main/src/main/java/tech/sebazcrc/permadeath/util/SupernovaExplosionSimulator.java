@@ -9,181 +9,207 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 import tech.sebazcrc.permadeath.Main;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class SupernovaExplosionSimulator {
 
     /**
-     * Simula matemáticamente una explosión masiva de Supernova manteniendo la estética
-     * cúbica, tosca e irregular característica de Minecraft (sin lag, sin miles de rayos inútiles).
+     * Simula la explosión masiva del Gato Supernova utilizando el algoritmo exacto de
+     * Ray-Marching Cúbico de Minecraft (Explosion.java / ServerExplosion.java),
+     * garantizando la forma tosca, imperfecta, facetada y escalonada original,
+     * pero a escala masiva, con alto rendimiento y ÚNICAMENTE DESTRUYENDO bloques
+     * a aire (sin generar esferas, ni magma ni bloques artificiales).
      */
     public static void simulate(Location center, float power, boolean breakBlocks, boolean setFire, LivingEntity cat, Plugin plugin) {
         if (center == null || center.getWorld() == null) return;
         final World world = center.getWorld();
 
-        // 1. Efectos audiovisuales de clímax masivo
+        // 1. Efectos audiovisuales y cosméticos masivos
         world.playSound(center, Sound.ENTITY_GENERIC_EXPLODE, 100.0F, 0.5F);
-        world.playSound(center, Sound.ENTITY_WITHER_SPAWN, 50.0F, 0.8F);
-        world.playSound(center, Sound.ITEM_TRIDENT_THUNDER, 80.0F, 0.6F);
+        world.playSound(center, Sound.ENTITY_WITHER_SPAWN, 50.0F, 0.7F);
+        world.playSound(center, Sound.ITEM_TRIDENT_THUNDER, 80.0F, 0.5F);
 
-        world.spawnParticle(Particle.EXPLOSION_EMITTER, center, 8, 3.0, 3.0, 3.0, 0.1);
-        world.spawnParticle(Particle.FLASH, center, 4, 1.0, 1.0, 1.0, 0.1);
-
-        // 2. Cálculo de dimensiones del cráter basado en potencia nominal
-        // Con power = 200, genera un cráter tosco de ~70-80 bloques de diámetro
-        final int radiusH = Math.max(16, (int) Math.min(42.0, power * 0.20));
-        final int radiusDown = (int) (radiusH * 0.52); // ~22 bloques de profundidad
-        final int radiusUp = (int) (radiusH * 0.90);
+        world.spawnParticle(Particle.EXPLOSION_EMITTER, center, 12, 4.0, 4.0, 4.0, 0.2);
+        world.spawnParticle(Particle.FLASH, center, 6, 2.0, 2.0, 2.0, 0.1);
 
         final int cX = center.getBlockX();
         final int cY = center.getBlockY();
         final int cZ = center.getBlockZ();
 
-        // 3. Onda de choque cinemática y daño masivo a entidades (Radio 75m)
-        final double shockwaveRadius = radiusH * 1.8;
+        // 2. Onda expansiva cinética y daño a entidades
+        // Radio letal escalado con la potencia de la explosión
+        final double shockwaveRadius = Math.max(30.0, Math.min(80.0, power * 0.40));
         for (Entity e : world.getNearbyEntities(center, shockwaveRadius, shockwaveRadius, shockwaveRadius)) {
             if (!(e instanceof LivingEntity living) || e == cat) continue;
 
             double dist = e.getLocation().distance(center);
             if (dist > shockwaveRadius) continue;
 
-            // Daño no lineal (letal en epicentro, decreciente hacia el borde)
             double normDist = dist / shockwaveRadius;
             double damage;
-            if (dist <= 12.0) {
-                damage = 350.0; // Muerte prácticamente garantizada en el núcleo
+            if (dist <= 14.0) {
+                damage = 400.0; // Letal en el epicentro
             } else {
-                damage = Math.max(10.0, 250.0 * Math.pow(1.0 - normDist, 1.8));
+                damage = Math.max(12.0, 300.0 * Math.pow(1.0 - normDist, 1.8));
             }
 
-            // Aplicar daño
             living.damage(damage);
 
-            // Impulso vectorial balístico radial hacia afuera y hacia arriba
+            // Empuje radial hacia afuera y hacia arriba (arroja sobrevivientes a los desniveles)
             Vector push = e.getLocation().toVector().subtract(center.toVector());
             if (push.lengthSquared() > 0.001) {
                 push.normalize();
             } else {
                 push = new Vector(0, 1, 0);
             }
-            double pushStrength = Math.max(0.4, 2.5 * (1.0 - normDist));
+            double pushStrength = Math.max(0.5, 2.8 * (1.0 - normDist));
             push.multiply(pushStrength);
-            push.setY(Math.min(1.4, push.getY() + 0.65));
+            push.setY(Math.min(1.5, push.getY() + 0.75));
             e.setVelocity(push);
         }
 
         if (!breakBlocks) return;
 
-        // 4. Recopilación de bloques por capas Y para ejecución escalonada (sin lag)
-        final int minY = Math.max(world.getMinHeight() + 1, cY - radiusDown);
-        final int maxY = Math.min(world.getMaxHeight() - 1, cY + radiusUp);
+        // 3. Algoritmo Canónico de Ray-Marching Cúbico de Minecraft
+        // Proyecta rayos densos desde las caras de un cubo [-1, 1]^3.
+        // La concentración angular natural en vértices y caras produce la silueta
+        // cuadrada/facetada e imperfecta icónica de Minecraft.
+        final int resolution = 36; // 36x36 por cara = ~7.500 rayos para cobertura perfecta a gran distancia
+        final float basePower = Math.max(28.0F, Math.min(65.0F, power * 0.32F));
+        final ThreadLocalRandom random = ThreadLocalRandom.current();
 
-        List<List<BlockCoordinate>> layers = new ArrayList<>();
-        for (int y = maxY; y >= minY; y--) {
-            List<BlockCoordinate> layer = new ArrayList<>();
-            int dy = y - cY;
-            double vertDist = dy <= 0 ? (double) Math.abs(dy) / radiusDown : (double) dy / radiusUp;
+        // Conjunto de bloques a destruir empaquetados en un long (evita allocs de memoria)
+        final Set<Long> blocksToDestroy = new HashSet<>(30000);
 
-            for (int dx = -radiusH - 4; dx <= radiusH + 4; dx++) {
-                for (int dz = -radiusH - 4; dz <= radiusH + 4; dz++) {
-                    // Métrica Híbrida Cúbica de Minecraft (Euclídea + Chebyshev)
-                    double euclidean = Math.sqrt(dx * dx + dz * dz);
-                    double chebyshev = Math.max(Math.abs(dx), Math.abs(dz));
-                    double horizDist = (0.55 * euclidean + 0.45 * chebyshev) / radiusH;
+        for (int i = 0; i < resolution; ++i) {
+            for (int j = 0; j < resolution; ++j) {
+                for (int k = 0; k < resolution; ++k) {
+                    // Solo rayos desde la superficie del cubo
+                    if (i == 0 || i == resolution - 1 || j == 0 || j == resolution - 1 || k == 0 || k == resolution - 1) {
+                        double d0 = (double) ((float) i / (float) (resolution - 1) * 2.0F - 1.0F);
+                        double d1 = (double) ((float) j / (float) (resolution - 1) * 2.0F - 1.0F);
+                        double d2 = (double) ((float) k / (float) (resolution - 1) * 2.0F - 1.0F);
+                        double d3 = Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2);
+                        d0 /= d3;
+                        d1 /= d3;
+                        d2 /= d3;
 
-                    double dTotal = (horizDist * horizDist) + (vertDist * vertDist);
+                        // Energía aleatoria por rayo idéntica a Minecraft: radio * (0.7 + rand * 0.6)
+                        float rayEnergy = basePower * (0.7F + random.nextFloat() * 0.6F);
+                        double curX = center.getX();
+                        double curY = center.getY();
+                        double curZ = center.getZ();
 
-                    // Ruido hash pseudoaleatorio cuantizado por coordenadas para crear
-                    // escalones pronunciados, dientes de roca y paredes imperfectas (tosqueo)
-                    long hash = ((long) (cX + dx) * 3129871L) ^ ((long) (cZ + dz) * 618033L) ^ ((long) y * 1123L);
-                    double noise = ((hash ^ (hash >>> 16)) & 0xFFFF) / 65535.0; // [0, 1]
+                        // Avanzar por pasos de 0.35 bloques
+                        while (rayEnergy > 0.0F) {
+                            int bx = (int) Math.floor(curX);
+                            int by = (int) Math.floor(curY);
+                            int bz = (int) Math.floor(curZ);
 
-                    // Modulación escalonada (genera desniveles de 2 a 4 bloques de golpe)
-                    double step = (Math.floor(noise * 4.0) / 4.0 - 0.5) * 0.32;
-                    double threshold = 1.0 + step;
+                            if (by < world.getMinHeight() || by >= world.getMaxHeight()) {
+                                break;
+                            }
 
-                    if (dTotal <= threshold) {
-                        layer.add(new BlockCoordinate(cX + dx, y, cZ + dz, dTotal, noise));
+                            Block b = world.getBlockAt(bx, by, bz);
+                            Material mat = b.getType();
+
+                            // Bloques absolutamente indestructibles detienen el rayo de inmediato
+                            if (mat == Material.BEDROCK || mat == Material.BARRIER || mat == Material.END_PORTAL
+                                    || mat == Material.END_PORTAL_FRAME || mat == Material.NETHER_PORTAL) {
+                                break;
+                            }
+
+                            if (!mat.isAir()) {
+                                float resistance = mat.getBlastResistance();
+                                // Atenuación balanceada según la dureza real del material en Minecraft
+                                rayEnergy -= (resistance * 0.55F + 0.3F) * 0.3F;
+
+                                if (rayEnergy > 0.0F) {
+                                    blocksToDestroy.add(pack(bx, by, bz));
+                                }
+                            }
+
+                            curX += d0 * 0.35;
+                            curY += d1 * 0.35;
+                            curZ += d2 * 0.35;
+                            rayEnergy -= 0.18F; // Degradación gradual en el vacío
+                        }
                     }
                 }
             }
-            if (!layer.isEmpty()) {
-                layers.add(layer);
-            }
         }
 
-        // 5. Aplicación escalonada capa por capa (Time-Sliced) para mantener 20 TPS
-        executeLayers(world, layers, setFire, 0, plugin, center);
+        if (blocksToDestroy.isEmpty()) return;
+
+        // 4. Organizar bloques por capas Y (de arriba hacia abajo) para excavación natural
+        Map<Integer, List<Long>> layersMap = new TreeMap<>(Collections.reverseOrder());
+        for (long packed : blocksToDestroy) {
+            int y = unpackY(packed);
+            layersMap.computeIfAbsent(y, k -> new ArrayList<>()).add(packed);
+        }
+
+        List<List<Long>> layers = new ArrayList<>(layersMap.values());
+
+        // 5. Destrucción escalonada a AIRE (setType(AIR, false): sin físicas en cascada ni lag)
+        executeDestruction(world, layers, 0, plugin, center);
     }
 
-    private static void executeLayers(World world, List<List<BlockCoordinate>> layers, boolean setFire, int index, Plugin plugin, Location center) {
+    private static void executeDestruction(World world, List<List<Long>> layers, int index, Plugin plugin, Location center) {
         if (index >= layers.size()) {
             return;
         }
 
-        // Ejecutar 2 capas por tick para velocidad sin afectar el TPS
-        int maxLayersThisTick = Math.min(layers.size(), index + 2);
-        for (int i = index; i < maxLayersThisTick; i++) {
-            List<BlockCoordinate> currentLayer = layers.get(i);
-            for (BlockCoordinate coord : currentLayer) {
-                Block b = world.getBlockAt(coord.x, coord.y, coord.z);
-                Material mat = b.getType();
+        // Destruir 3 capas Y por tick: rápido, estético y garantiza 20.0 TPS estables
+        int maxIndex = Math.min(layers.size(), index + 3);
+        for (int i = index; i < maxIndex; i++) {
+            List<Long> layer = layers.get(i);
+            for (long packed : layer) {
+                int x = unpackX(packed);
+                int y = unpackY(packed);
+                int z = unpackZ(packed);
 
-                // Proteger bloques indestructibles
-                if (mat == Material.BEDROCK || mat == Material.BARRIER || mat == Material.END_PORTAL_FRAME
-                        || mat == Material.END_PORTAL || mat == Material.NETHER_PORTAL) {
+                Block b = world.getBlockAt(x, y, z);
+                Material mat = b.getType();
+                if (mat.isAir() || mat == Material.BEDROCK || mat == Material.BARRIER || mat == Material.END_PORTAL
+                        || mat == Material.END_PORTAL_FRAME || mat == Material.NETHER_PORTAL) {
                     continue;
                 }
 
-                // Zona de fondo/muros del cráter: Vitrificación térmica y calcinado
-                if (coord.dTotal > 0.88) {
-                    // Cerca del borde del cráter: no borrar todo, vitrificar la roca expuesta
-                    if (coord.noise > 0.82) {
-                        b.setType(Material.MAGMA_BLOCK, false);
-                    } else if (coord.noise > 0.74) {
-                        b.setType(Material.CRYING_OBSIDIAN, false);
-                    } else if (coord.noise > 0.60) {
-                        b.setType(Material.COBBLESTONE, false);
-                    } else if (coord.noise > 0.50) {
-                        b.setType(Material.CRACKED_STONE_BRICKS, false);
-                    } else {
-                        b.setType(Material.AIR, false);
-                    }
-                } else {
-                    // Núcleo del cráter: pulverizado total
-                    b.setType(Material.AIR, false);
-                }
+                // DESTRUCCIÓN PURA: Solo aire, jamás alterar ni crear otros bloques
+                b.setType(Material.AIR, false);
             }
         }
 
-        // Programar siguiente lote en el scheduler
-        final int nextIndex = maxLayersThisTick;
+        final int nextIndex = maxIndex;
         if (nextIndex < layers.size()) {
             if (Main.isRunningFolia()) {
-                Bukkit.getRegionScheduler().runDelayed(plugin, center, t -> executeLayers(world, layers, setFire, nextIndex, plugin, center), 1L);
+                Bukkit.getRegionScheduler().runDelayed(plugin, center, t -> executeDestruction(world, layers, nextIndex, plugin, center), 1L);
             } else {
-                Bukkit.getScheduler().runTaskLater(plugin, () -> executeLayers(world, layers, setFire, nextIndex, plugin, center), 1L);
+                Bukkit.getScheduler().runTaskLater(plugin, () -> executeDestruction(world, layers, nextIndex, plugin, center), 1L);
             }
         }
     }
 
-    private static class BlockCoordinate {
-        final int x, y, z;
-        final double dTotal;
-        final double noise;
+    private static long pack(int x, int y, int z) {
+        return (((long) (x + 33554432) & 0x3FFFFFF) << 38)
+                | (((long) (y + 1024) & 0xFFF) << 26)
+                | ((long) (z + 33554432) & 0x3FFFFFF);
+    }
 
-        BlockCoordinate(int x, int y, int z, double dTotal, double noise) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-            this.dTotal = dTotal;
-            this.noise = noise;
-        }
+    private static int unpackX(long packed) {
+        return (int) ((packed >> 38) & 0x3FFFFFF) - 33554432;
+    }
+
+    private static int unpackY(long packed) {
+        return (int) ((packed >> 26) & 0xFFF) - 1024;
+    }
+
+    private static int unpackZ(long packed) {
+        return (int) (packed & 0x3FFFFFF) - 33554432;
     }
 }
