@@ -102,12 +102,22 @@ public class PDCCommand implements CommandExecutor {
     }
 
     private void handleRecipes(CommandSender sender) {
-        if (!(sender instanceof Player p)) return;
+        if (!(sender instanceof Player p)) {
+            sender.sendMessage(ChatColor.RED + "Este comando solo puede ser ejecutado por un jugador.");
+            return;
+        }
         tech.sebazcrc.permadeath.util.gui.RecipeGUI.openMain(p);
     }
 
     private void handleAbyss(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player p)) return;
+        if (!sender.hasPermission("permadeathcore.admin") && !sender.isOp()) {
+            sender.sendMessage(ChatColor.RED + "No tienes permiso para usar este comando.");
+            return;
+        }
+        if (!(sender instanceof Player p)) {
+            sender.sendMessage(ChatColor.RED + "Este comando solo puede ser ejecutado por un jugador.");
+            return;
+        }
 
         if (!instance.isAbyssEnabled()) {
             p.sendMessage(ChatColor.RED + "La dimensión del Abismo se encuentra deshabilitada temporalmente.");
@@ -124,7 +134,10 @@ public class PDCCommand implements CommandExecutor {
     }
 
     private void handleAccesorios(CommandSender sender) {
-        if (!(sender instanceof Player p)) return;
+        if (!(sender instanceof Player p)) {
+            sender.sendMessage(ChatColor.RED + "Este comando solo puede ser ejecutado por un jugador.");
+            return;
+        }
         tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.open(p);
     }
 
@@ -175,19 +188,25 @@ public class PDCCommand implements CommandExecutor {
     }
 
     private void handleSetupBeginning(CommandSender sender) {
-        if (!sender.isOp()) { sender.sendMessage(ChatColor.RED + "No tienes permiso."); return; }
+        if (!sender.hasPermission("permadeathcore.admin") && !sender.isOp()) {
+            sender.sendMessage(ChatColor.RED + "No tienes permiso.");
+            return;
+        }
         instance.setupFoliaWorldConfig(sender);
     }
 
     private void handleReload(CommandSender sender) {
-        if (!sender.isOp()) { sender.sendMessage(ChatColor.RED + "No tienes permiso."); return; }
+        if (!sender.hasPermission("permadeathcore.admin") && !sender.isOp()) {
+            sender.sendMessage(ChatColor.RED + "No tienes permiso.");
+            return;
+        }
         instance.reload(sender);
     }
 
     private void handleDebug(CommandSender sender, String[] args) {
         if (!(sender instanceof Player p) || !p.hasPermission("permadeathcore.admin")) return;
         if (args.length < 2) {
-            p.sendMessage(TextUtils.format(instance.prefix + "&eSub comandos debug: &7info, generate_beginning, toggle, emptyWorld, module, health, events, hasOrb, hyper, removegaps, withertime, testtotems"));
+            p.sendMessage(TextUtils.format(instance.prefix + "&eSub comandos debug: &7info, toggle, optimize_spawns, health, module, removegaps"));
             return;
         }
         switch (args[1].toLowerCase()) {
@@ -232,7 +251,11 @@ public class PDCCommand implements CommandExecutor {
     }
 
     private void handleGive(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player p) || !p.hasPermission("permadeathcore.give")) return;
+        if (!(sender instanceof Player p)) {
+            sender.sendMessage(ChatColor.RED + "Este comando solo puede ser ejecutado por un jugador.");
+            return;
+        }
+        if (!p.hasPermission("permadeathcore.give")) return;
         if (args.length < 2) {
             p.sendMessage(TextUtils.format("&eItems: &7medalla, netheriteArmor, infernalArmor, netheriteTools, lifeOrb, ancestralFragment, moldes..."));
             return;
@@ -244,7 +267,7 @@ public class PDCCommand implements CommandExecutor {
             }
             case "ancestralfragment" -> p.getInventory().addItem(NetheriteArmor.craftAncestralFragment());
             case "moldes" -> p.getInventory().addItem(NetheriteArmor.craftTemplate("helmet"), NetheriteArmor.craftTemplate("chestplate"), NetheriteArmor.craftTemplate("leggings"), NetheriteArmor.craftTemplate("boots"));
-            case "medalla" -> p.getInventory().addItem(new ItemBuilder(Material.TOTEM_OF_UNDYING).setUnbrekeable(true).setDisplayName(TextUtils.format("&6&lMedalla de Superviviente")).build());
+            case "medalla" -> p.getInventory().addItem(PermadeathItems.createSurvivorMedal());
             case "infernalarmor" -> {
                 p.getInventory().addItem(InfernalNetherite.craftNetheriteHelmet(), InfernalNetherite.craftNetheriteChest(), InfernalNetherite.craftNetheriteLegs(), InfernalNetherite.craftNetheriteBoots());
                 p.sendMessage(TextUtils.format("&eArmadura infernal entregada."));
@@ -260,6 +283,9 @@ public class PDCCommand implements CommandExecutor {
             case "abyssalfilter" -> p.getInventory().addItem(PermadeathItems.createAbyssalFilter());
             case "voidshard" -> p.getInventory().addItem(PermadeathItems.createVoidShard());
             case "abyssalpotion" -> p.getInventory().addItem(PermadeathItems.createAbyssalPotion());
+            case "infernalelytra" -> p.getInventory().addItem(PermadeathItems.craftInfernalElytra());
+            case "infernalingot" -> p.getInventory().addItem(PermadeathItems.craftInfernalNetheriteIngot());
+            case "abyssalore" -> p.getInventory().addItem(PermadeathItems.createAbyssalOre());
         }
     }
 
@@ -382,6 +408,10 @@ public class PDCCommand implements CommandExecutor {
 
     private void handleBoss(CommandSender sender, String[] args) {
         if (!sender.hasPermission("permadeathcore.admin")) return;
+        if (args.length >= 2 && args[1].equalsIgnoreCase("help")) {
+            sender.sendMessage(TextUtils.format(instance.prefix + "&6Comandos de Bosses: &7/pdc boss spawn warden"));
+            return;
+        }
         if (args.length < 3 || !args[1].equalsIgnoreCase("spawn")) {
             sender.sendMessage(TextUtils.format(instance.prefix + "&6Comandos de Bosses: &7/pdc boss spawn warden"));
             return;

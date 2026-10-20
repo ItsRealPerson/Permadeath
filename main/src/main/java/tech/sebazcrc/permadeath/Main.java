@@ -575,8 +575,8 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
             
             if (timeForWither % (60 * 60) == 0 && player.getGameMode() == GameMode.SURVIVAL) {
                 timeForWither = 0;
-                Wither wither = player.getWorld().spawn(player.getLocation().clone().add(0, 5, 0), Wither.class);
-                wither.setInvulnerabilityTicks(100);
+                Location wLoc = player.getLocation().clone().add(0, 5, 0);
+                player.getWorld().spawn(wLoc, Wither.class, w -> w.setInvulnerableTicks(100));
             }
             player.getPersistentDataContainer().set(new NamespacedKey(this, "wither"), PersistentDataType.INTEGER, ++timeForWither);
 

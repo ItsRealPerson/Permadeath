@@ -73,13 +73,13 @@ public final class NetheriteArmor implements Listener {
 
         // CASCO 3, PECHERA 8, PANTALONES 6, BOTAS 3
 
-        AttributeModifier modifier = new AttributeModifier(new NamespacedKey("permadeath", "armor"), 4, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HEAD);
+        AttributeModifier modifier = new AttributeModifier(new NamespacedKey("permadeath", "netherite_helmet_armor"), 4, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HEAD);
         meta.addAttributeModifier(Attribute.ARMOR, modifier);
 
-        AttributeModifier modifier2 = new AttributeModifier(new NamespacedKey("permadeath", "armor_toughness"), 4, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HEAD);
+        AttributeModifier modifier2 = new AttributeModifier(new NamespacedKey("permadeath", "netherite_helmet_armor_toughness"), 4, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HEAD);
         meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, modifier2);
 
-        AttributeModifier modifier3 = new AttributeModifier(new NamespacedKey("permadeath", "knockback_resistance"), 0.1, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HEAD);
+        AttributeModifier modifier3 = new AttributeModifier(new NamespacedKey("permadeath", "netherite_helmet_knockback_resistance"), 0.1, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.HEAD);
         meta.addAttributeModifier(Attribute.KNOCKBACK_RESISTANCE, modifier3);
 
         meta.setUnbreakable(true);
@@ -100,16 +100,16 @@ public final class NetheriteArmor implements Listener {
 
         // CASCO 3, PECHERA 8, PANTALONES 6, BOTAS 3
 
-        AttributeModifier modifier = new AttributeModifier(new NamespacedKey("permadeath", "armor"), 9, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.CHEST);
+        AttributeModifier modifier = new AttributeModifier(new NamespacedKey("permadeath", "netherite_chest_armor"), 9, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.CHEST);
         meta.addAttributeModifier(Attribute.ARMOR, modifier);
 
-        AttributeModifier modifier2 = new AttributeModifier(new NamespacedKey("permadeath", "armor_toughness"), 4, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.CHEST);
+        AttributeModifier modifier2 = new AttributeModifier(new NamespacedKey("permadeath", "netherite_chest_armor_toughness"), 4, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.CHEST);
         meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, modifier2);
 
-        AttributeModifier modifier3 = new AttributeModifier(new NamespacedKey("permadeath", "knockback_resistance"), 0.1, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.CHEST);
+        AttributeModifier modifier3 = new AttributeModifier(new NamespacedKey("permadeath", "netherite_chest_knockback_resistance"), 0.1, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.CHEST);
         meta.addAttributeModifier(Attribute.KNOCKBACK_RESISTANCE, modifier3);
 
-        AttributeModifier modifier4 = new AttributeModifier(new NamespacedKey("permadeath", "max_health"), 2, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.CHEST);
+        AttributeModifier modifier4 = new AttributeModifier(new NamespacedKey("permadeath", "netherite_chest_max_health"), 2, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.CHEST);
         meta.addAttributeModifier(Attribute.MAX_HEALTH, modifier4);
 
         meta.setUnbreakable(true);
@@ -133,16 +133,16 @@ public final class NetheriteArmor implements Listener {
 
         // CASCO 3, PECHERA 8, PANTALONES 6, BOTAS 3
 
-        AttributeModifier modifier = new AttributeModifier(new NamespacedKey("permadeath", "armor"), 7, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.LEGS);
+        AttributeModifier modifier = new AttributeModifier(new NamespacedKey("permadeath", "netherite_legs_armor"), 7, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.LEGS);
         meta.addAttributeModifier(Attribute.ARMOR, modifier);
 
-        AttributeModifier modifier2 = new AttributeModifier(new NamespacedKey("permadeath", "armor_toughness"), 4, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.LEGS);
+        AttributeModifier modifier2 = new AttributeModifier(new NamespacedKey("permadeath", "netherite_legs_armor_toughness"), 4, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.LEGS);
         meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, modifier2);
 
-        AttributeModifier modifier3 = new AttributeModifier(new NamespacedKey("permadeath", "knockback_resistance"), 0.1, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.LEGS);
+        AttributeModifier modifier3 = new AttributeModifier(new NamespacedKey("permadeath", "netherite_legs_knockback_resistance"), 0.1, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.LEGS);
         meta.addAttributeModifier(Attribute.KNOCKBACK_RESISTANCE, modifier3);
 
-        AttributeModifier modifier4 = new AttributeModifier(new NamespacedKey("permadeath", "max_health"), 2, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.LEGS);
+        AttributeModifier modifier4 = new AttributeModifier(new NamespacedKey("permadeath", "netherite_legs_max_health"), 2, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.LEGS);
         meta.addAttributeModifier(Attribute.MAX_HEALTH, modifier4);
 
         meta.setUnbreakable(true);
@@ -163,13 +163,13 @@ public final class NetheriteArmor implements Listener {
 
         // CASCO 3, PECHERA 8, PANTALONES 6, BOTAS 3
 
-        AttributeModifier modifier = new AttributeModifier(new NamespacedKey("permadeath", "armor"), 4, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.FEET);
+        AttributeModifier modifier = new AttributeModifier(new NamespacedKey("permadeath", "netherite_boots_armor"), 4, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.FEET);
         meta.addAttributeModifier(Attribute.ARMOR, modifier);
 
-        AttributeModifier modifier2 = new AttributeModifier(new NamespacedKey("permadeath", "armor_toughness"), 4, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.FEET);
+        AttributeModifier modifier2 = new AttributeModifier(new NamespacedKey("permadeath", "netherite_boots_armor_toughness"), 4, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.FEET);
         meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, modifier2);
 
-        AttributeModifier modifier3 = new AttributeModifier(new NamespacedKey("permadeath", "knockback_resistance"), 0.1, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.FEET);
+        AttributeModifier modifier3 = new AttributeModifier(new NamespacedKey("permadeath", "netherite_boots_knockback_resistance"), 0.1, AttributeModifier.Operation.ADD_NUMBER, org.bukkit.inventory.EquipmentSlotGroup.FEET);
         meta.addAttributeModifier(Attribute.KNOCKBACK_RESISTANCE, modifier3);
 
         meta.setUnbreakable(true);

@@ -357,8 +357,13 @@ public class PlayerListener implements Listener {
                     }
                     p1.sendMessage(TextUtils.format(msg.replace("%tiempo%", timeStr)));
                     
-                    if (Objects.requireNonNull(Main.instance.getConfig().getBoolean("Toggles.DefaultDeathSoundsEnabled")))
-                        p1.playSound(p1.getLocation(), Sound.ENTITY_SKELETON_HORSE_DEATH, 10, 1);
+                    if (Objects.requireNonNull(Main.instance.getConfig().getBoolean("Toggles.DefaultDeathSoundsEnabled"))) {
+                        if (Main.isRunningFolia()) {
+                            p1.getScheduler().run(Main.getInstance(), t -> p1.playSound(p1, Sound.ENTITY_SKELETON_HORSE_DEATH, 10.0F, 1.0F), null);
+                        } else {
+                            p1.playSound(p1, Sound.ENTITY_SKELETON_HORSE_DEATH, 10.0F, 1.0F);
+                        }
+                    }
                 }
                 
                 String consoleMsg = Main.getInstance().getMessages().getMsgForConsole(path);

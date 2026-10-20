@@ -149,7 +149,12 @@ public class EndTask extends BukkitRunnable {
 
         if (y < 0) return;
 
-        main.endWorld.strikeLightning(new Location(main.endWorld, x, y, z));
+        Location strikeLoc = new Location(main.endWorld, x, y, z);
+        if (Main.isRunningFolia()) {
+            Bukkit.getRegionScheduler().run(main, strikeLoc, t -> main.endWorld.strikeLightning(strikeLoc));
+        } else {
+            main.endWorld.strikeLightning(strikeLoc);
+        }
     }
 
     private void tickDemonPhase() {
@@ -294,12 +299,18 @@ public class EndTask extends BukkitRunnable {
                 lightingDuration = lightingDuration - 1;
 
                 for (Player all : main.endWorld.getPlayers()) {
-
-                    main.endWorld.strikeLightning(all.getLocation());
-
-                    if (currentDemonPhase == DemonPhase.ENRAGED) {
-
-                        all.damage(1.0D);
+                    if (Main.isRunningFolia()) {
+                        all.getScheduler().run(main, t -> {
+                            all.getWorld().strikeLightning(all.getLocation());
+                            if (currentDemonPhase == DemonPhase.ENRAGED) {
+                                all.damage(1.0D);
+                            }
+                        }, null);
+                    } else {
+                        main.endWorld.strikeLightning(all.getLocation());
+                        if (currentDemonPhase == DemonPhase.ENRAGED) {
+                            all.damage(1.0D);
+                        }
                     }
                 }
             } else {
@@ -317,10 +328,19 @@ public class EndTask extends BukkitRunnable {
             } else {
                 for (Player all : main.endWorld.getPlayers()) {
                     Location highest = main.endWorld.getHighestBlockAt(all.getLocation()).getLocation().add(0, 1, 0);
-                    AreaEffectCloud eff = (AreaEffectCloud) main.endWorld.spawnEntity(highest, EntityType.AREA_EFFECT_CLOUD);
-                    eff.setParticle(Particle.DAMAGE_INDICATOR);
-                    eff.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 20 * 5, 1), false);
-                    eff.setRadius(3.0F);
+                    if (Main.isRunningFolia()) {
+                        Bukkit.getRegionScheduler().run(main, highest, t -> {
+                            AreaEffectCloud eff = (AreaEffectCloud) main.endWorld.spawnEntity(highest, EntityType.AREA_EFFECT_CLOUD);
+                            eff.setParticle(Particle.DAMAGE_INDICATOR);
+                            eff.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 20 * 5, 1), false);
+                            eff.setRadius(3.0F);
+                        });
+                    } else {
+                        AreaEffectCloud eff = (AreaEffectCloud) main.endWorld.spawnEntity(highest, EntityType.AREA_EFFECT_CLOUD);
+                        eff.setParticle(Particle.DAMAGE_INDICATOR);
+                        eff.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 20 * 5, 1), false);
+                        eff.setRadius(3.0F);
+                    }
                 }
 
                 nightVision = false;
@@ -347,12 +367,24 @@ public class EndTask extends BukkitRunnable {
                     // La fuerza aumenta a medida que te acercas al centro
                     double force = 0.35 + (1.0 - (Math.sqrt(distSq) / 60.0)) * 0.25;
                     
-                    p.setVelocity(p.getVelocity().add(direction.multiply(force)));
-                    
-                    if (distSq < 9) { // 3 bloques de distancia
-                        p.damage(6.0);
-                        p.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 60, 3));
-                        p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 60, 0));
+                    if (Main.isRunningFolia()) {
+                        Vector velToAdd = direction.multiply(force);
+                        boolean doDamage = distSq < 9;
+                        p.getScheduler().run(main, t -> {
+                            p.setVelocity(p.getVelocity().add(velToAdd));
+                            if (doDamage) {
+                                p.damage(6.0);
+                                p.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 60, 3));
+                                p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 60, 0));
+                            }
+                        }, null);
+                    } else {
+                        p.setVelocity(p.getVelocity().add(direction.multiply(force)));
+                        if (distSq < 9) { // 3 bloques de distancia
+                            p.damage(6.0);
+                            p.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 60, 3));
+                            p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 60, 0));
+                        }
                     }
                 }
             }
@@ -368,11 +400,21 @@ public class EndTask extends BukkitRunnable {
             if (random.nextInt(10) == 0) {
                 for (Player p : main.endWorld.getPlayers()) {
                     Location spawnLoc = p.getLocation().clone().add(random.nextInt(20)-10, 40, random.nextInt(20)-10);
-                    FallingBlock meteor = main.endWorld.spawnFallingBlock(spawnLoc, Material.END_STONE.createBlockData());
-                    meteor.setDropItem(false);
-                    meteor.setHurtEntities(true);
-                    meteor.setVelocity(new Vector(0, -1.5, 0));
-                    meteor.setMetadata("Meteor", new org.bukkit.metadata.FixedMetadataValue(main, true));
+                    if (Main.isRunningFolia()) {
+                        Bukkit.getRegionScheduler().run(main, spawnLoc, t -> {
+                            FallingBlock meteor = main.endWorld.spawnFallingBlock(spawnLoc, Material.END_STONE.createBlockData());
+                            meteor.setDropItem(false);
+                            meteor.setHurtEntities(true);
+                            meteor.setVelocity(new Vector(0, -1.5, 0));
+                            meteor.setMetadata("Meteor", new org.bukkit.metadata.FixedMetadataValue(main, true));
+                        });
+                    } else {
+                        FallingBlock meteor = main.endWorld.spawnFallingBlock(spawnLoc, Material.END_STONE.createBlockData());
+                        meteor.setDropItem(false);
+                        meteor.setHurtEntities(true);
+                        meteor.setVelocity(new Vector(0, -1.5, 0));
+                        meteor.setMetadata("Meteor", new org.bukkit.metadata.FixedMetadataValue(main, true));
+                    }
                 }
             }
         } else if (meteorShowerDuration <= 0 && currentAttack == DemonCurrentAttack.METEOR_SHOWER) {
@@ -446,11 +488,22 @@ public class EndTask extends BukkitRunnable {
     private void spawnPhantomSwarm() {
         for (Player p : main.endWorld.getPlayers()) {
             for (int i = 0; i < 3; i++) {
-                Phantom ph = (Phantom) main.endWorld.spawnEntity(p.getLocation().add(0, 15, 0), EntityType.PHANTOM);
-                ph.setCustomName(ChatColor.DARK_PURPLE + "Abyssal Phantom");
-                ph.getAttribute(Attribute.MAX_HEALTH).setBaseValue(40.0);
-                ph.setHealth(40.0);
-                ph.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 2));
+                Location spawnLoc = p.getLocation().add(0, 15, 0);
+                if (Main.isRunningFolia()) {
+                    Bukkit.getRegionScheduler().run(main, spawnLoc, t -> {
+                        Phantom ph = (Phantom) main.endWorld.spawnEntity(spawnLoc, EntityType.PHANTOM);
+                        ph.setCustomName(ChatColor.DARK_PURPLE + "Abyssal Phantom");
+                        ph.getAttribute(Attribute.MAX_HEALTH).setBaseValue(40.0);
+                        ph.setHealth(40.0);
+                        ph.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 2));
+                    });
+                } else {
+                    Phantom ph = (Phantom) main.endWorld.spawnEntity(spawnLoc, EntityType.PHANTOM);
+                    ph.setCustomName(ChatColor.DARK_PURPLE + "Abyssal Phantom");
+                    ph.getAttribute(Attribute.MAX_HEALTH).setBaseValue(40.0);
+                    ph.setHealth(40.0);
+                    ph.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 2));
+                }
             }
         }
         currentAttack = DemonCurrentAttack.NONE;
