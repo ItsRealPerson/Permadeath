@@ -1,11 +1,18 @@
 package tech.sebazcrc.permadeath.nms.v1_21_R3.entity;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Giant;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import tech.sebazcrc.permadeath.nms.v1_21_R3.utils.EffectUtils;
@@ -13,34 +20,39 @@ import tech.sebazcrc.permadeath.nms.v1_21_R3.utils.MobUtils;
 
 import java.util.Random;
 
-public class CustomGiant {
+public class CustomGiant implements Listener {
+
+    private static NamespacedKey giantKey;
+    private static volatile boolean listenerRegistered = false;
+
+    public static void init(Plugin plugin) {
+        if (!listenerRegistered) {
+            synchronized (CustomGiant.class) {
+                if (!listenerRegistered) {
+                    giantKey = new NamespacedKey(plugin, "custom_giant");
+                    Bukkit.getPluginManager().registerEvents(new CustomGiant(), plugin);
+                    listenerRegistered = true;
+                }
+            }
+        }
+    }
 
     public static Giant spawn(Location loc, Plugin plugin) {
+        if (!listenerRegistered) {
+            init(plugin);
+        }
+
         Giant giant = (Giant) loc.getWorld().spawnEntity(loc, EntityType.GIANT, CreatureSpawnEvent.SpawnReason.CUSTOM);
 
         giant.setCustomName(null);
         giant.setCustomNameVisible(false);
         giant.setAI(true);
+        if (giantKey != null) {
+            giant.getPersistentDataContainer().set(giantKey, PersistentDataType.BYTE, (byte) 1);
+        }
 
         EffectUtils.setMaxHealth(giant, 720.0);
         EffectUtils.setAttackDamage(giant, 2000.0);
-
-        // Listener para sonidos de Zombie (Ambiente, DaÃ±o, Muerte)
-        plugin.getServer().getPluginManager().registerEvents(new org.bukkit.event.Listener() {
-            @org.bukkit.event.EventHandler
-            public void onDamage(org.bukkit.event.entity.EntityDamageEvent e) {
-                if (e.getEntity().equals(giant)) {
-                    giant.getWorld().playSound(giant.getLocation(), Sound.ENTITY_ZOMBIE_HURT, 1.5f, 0.5f);
-                }
-            }
-
-            @org.bukkit.event.EventHandler
-            public void onDeath(org.bukkit.event.entity.EntityDeathEvent e) {
-                if (e.getEntity().equals(giant)) {
-                    giant.getWorld().playSound(giant.getLocation(), Sound.ENTITY_ZOMBIE_DEATH, 1.5f, 0.5f);
-                }
-            }
-        }, plugin);
 
         // IA Manual
         Runnable giantTask = new Runnable() {
@@ -91,6 +103,25 @@ public class CustomGiant {
 
         return giant;
     }
+
+    @EventHandler
+    public void onDamage(EntityDamageEvent e) {
+        if (e.getEntityType() == EntityType.GIANT && isCustomGiant(e.getEntity())) {
+            e.getEntity().getWorld().playSound(e.getEntity().getLocation(), Sound.ENTITY_ZOMBIE_HURT, 1.5f, 0.5f);
+        }
+    }
+
+    @EventHandler
+    public void onDeath(EntityDeathEvent e) {
+        if (e.getEntityType() == EntityType.GIANT && isCustomGiant(e.getEntity())) {
+            e.getEntity().getWorld().playSound(e.getEntity().getLocation(), Sound.ENTITY_ZOMBIE_DEATH, 1.5f, 0.5f);
+        }
+    }
+
+    private static boolean isCustomGiant(org.bukkit.entity.Entity entity) {
+        if (giantKey != null && entity.getPersistentDataContainer().has(giantKey, PersistentDataType.BYTE)) {
+            return true;
+        }
+        return false;
+    }
 }
-
-

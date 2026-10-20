@@ -114,9 +114,6 @@ public final class NetheriteArmor implements Listener {
 
         meta.setUnbreakable(true);
 
-
-        meta.setUnbreakable(true);
-
         item.setItemMeta(meta);
 
         return item;

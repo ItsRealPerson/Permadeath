@@ -1,33 +1,23 @@
 package tech.sebazcrc.permadeath;
 
 import org.bukkit.*;
-import org.bukkit.block.BlockFace;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.WitherSkeleton;
-import org.bukkit.inventory.ItemFlag;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import tech.sebazcrc.permadeath.util.NMS;
 import tech.sebazcrc.permadeath.util.item.InfernalNetherite;
 import tech.sebazcrc.permadeath.util.item.NetheriteArmor;
 import tech.sebazcrc.permadeath.util.item.PermadeathItems;
-import tech.sebazcrc.permadeath.util.lib.ItemBuilder;
 import tech.sebazcrc.permadeath.data.DateManager;
 import tech.sebazcrc.permadeath.data.PlayerDataManager;
 import tech.sebazcrc.permadeath.util.TextUtils;
-import tech.sebazcrc.permadeath.discord.DiscordPortal;
 import tech.sebazcrc.permadeath.util.VersionManager;
-import tech.sebazcrc.permadeath.world.beginning.generator.EmptyGenerator;
 
 import java.time.LocalTime;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 public class PDCCommand implements CommandExecutor {
 

@@ -1,6 +1,5 @@
 package tech.sebazcrc.permadeath.util;
 
-import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.plugin.Plugin;
@@ -12,12 +11,21 @@ import tech.sebazcrc.permadeath.api.interfaces.NMSHandler;
 import java.lang.reflect.InvocationTargetException;
 
 public class NMS {
-    @Getter
     private static NMSAccessor accessor;
-    @Getter
     private static NMSHandler handler;
-    @Getter
     private static InfernalNetheriteBlock netheriteBlock;
+
+    public static NMSAccessor getAccessor() {
+        return accessor;
+    }
+
+    public static NMSHandler getHandler() {
+        return handler;
+    }
+
+    public static InfernalNetheriteBlock getNetheriteBlock() {
+        return netheriteBlock;
+    }
 
     private static Class<?> deathModuleClass;
 

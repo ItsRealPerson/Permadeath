@@ -1,6 +1,5 @@
 package tech.sebazcrc.permadeath.discord;
 
-import lombok.Getter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -26,10 +25,16 @@ public class DiscordManager {
     private static DiscordManager discordManager;
     private final Main instance;
 
-    @Getter
     private final File file;
-    @Getter
     private final FileConfiguration configuration;
+
+    public File getFile() {
+        return file;
+    }
+
+    public FileConfiguration getConfiguration() {
+        return configuration;
+    }
 
     private JDA bot;
 

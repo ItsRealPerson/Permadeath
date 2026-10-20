@@ -67,9 +67,9 @@ public class EntityTeleport {
 
         Block b = this.world.getBlockAt((int) x, (int) y, (int) z);
 
-        while (b.getY() > 0 && b.getType().isAir()) b = b.getRelative(BlockFace.DOWN);
+        while (b.getY() > b.getWorld().getMinHeight() && b.getType().isAir()) b = b.getRelative(BlockFace.DOWN);
 
-        if (b.getY() <= 0) return false;
+        if (b.getY() <= b.getWorld().getMinHeight()) return false;
 
         Location destination = new Location(this.world, x, b.getY() + 1, z);
         if (Main.isRunningFolia()) {

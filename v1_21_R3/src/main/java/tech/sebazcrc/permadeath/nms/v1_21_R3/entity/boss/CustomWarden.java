@@ -194,7 +194,7 @@ public class CustomWarden implements Listener {
     private boolean isTwistedWarden(Warden warden) {
         if (warden.getCustomName() == null) return false;
         String name = ChatColor.stripColor(warden.getCustomName());
-        return name.contains("Twisted Warden");
+        return name.contains("Twisted Warden") || name.contains("Warden Retorcido");
     }
 }
 

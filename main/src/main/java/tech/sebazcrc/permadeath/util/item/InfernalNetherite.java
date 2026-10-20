@@ -1,19 +1,15 @@
 package tech.sebazcrc.permadeath.util.item;
 
-import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.event.Listener;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import tech.sebazcrc.permadeath.util.lib.LeatherArmorBuilder;
 import tech.sebazcrc.permadeath.util.TextUtils;
-
-import java.util.UUID;
 
 public final class InfernalNetherite implements Listener {
     private static Color color = Color.fromRGB(16711680);
@@ -105,7 +101,6 @@ public final class InfernalNetherite implements Listener {
     public static ItemStack craftNetheriteBoots() {
 
         ItemStack item = new LeatherArmorBuilder(Material.LEATHER_BOOTS, 1)
-                .setColor(Color.fromRGB(0xAC1617))
                 .setColor(color)
                 .setDisplayName(bootName)
                 .build();

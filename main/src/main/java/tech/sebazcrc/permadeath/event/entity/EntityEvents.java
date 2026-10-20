@@ -172,10 +172,17 @@ public class EntityEvents implements Listener {
                 b.setAI(false);
                 p.getWorld().playSound(b.getLocation(), Sound.ENTITY_CREEPER_PRIMED, 1.0f, 1.0f);
                 final Location l = b.getLocation();
-                Bukkit.getScheduler().runTaskLater(Main.instance, () -> {
-                    l.getWorld().createExplosion(l, 1.5f, true, false, b);
-                    b.remove();
-                }, 10L);
+                if (Main.isRunningFolia()) {
+                    Bukkit.getRegionScheduler().runDelayed(Main.instance, l, task -> {
+                        l.getWorld().createExplosion(l, 1.5f, true, false, b);
+                        b.remove();
+                    }, 10L);
+                } else {
+                    Bukkit.getScheduler().runTaskLater(Main.instance, () -> {
+                        l.getWorld().createExplosion(l, 1.5f, true, false, b);
+                        b.remove();
+                    }, 10L);
+                }
                 e.setCancelled(true);
             }
             if (e.getEntity() instanceof Player && e.getDamager() instanceof LlamaSpit) {

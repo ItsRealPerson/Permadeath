@@ -68,7 +68,9 @@ public class BackupManager {
     }
 
     private void zipDirectory(File folder, String parentFolder, ZipOutputStream zos) throws IOException {
-        for (File file : folder.listFiles()) {
+        File[] files = folder.listFiles();
+        if (files == null) return;
+        for (File file : files) {
             if (file.isDirectory()) {
                 // Ignorar carpetas temporales o de sesión si es necesario
                 if (file.getName().equals("session.lock")) continue;

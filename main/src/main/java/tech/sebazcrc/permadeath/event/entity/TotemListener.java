@@ -176,25 +176,11 @@ public class TotemListener implements Listener {
     }
 
     private boolean doPlayerHaveSpecialTotem(Player p) {
-        boolean tieneMedalla = false;
-
-        if (p.getInventory().getItemInMainHand() != null) {
-            if (p.getInventory().getItemInMainHand().getType() == Material.TOTEM_OF_UNDYING && p.getInventory().getItemInMainHand().getItemMeta().isUnbreakable()) {
-                tieneMedalla = true;
-            }
-        }
-
-        if (p.getInventory().getItemInOffHand() != null) {
-            if (p.getInventory().getItemInOffHand().getType() == Material.TOTEM_OF_UNDYING && p.getInventory().getItemInOffHand().getItemMeta().isUnbreakable()) {
-                tieneMedalla = true;
-            }
-        }
-
-        return tieneMedalla;
+        return isSpecial(p.getInventory().getItemInMainHand()) || isSpecial(p.getInventory().getItemInOffHand());
     }
 
     private boolean isSpecial(ItemStack off) {
-        return off != null && off.getType() == Material.TOTEM_OF_UNDYING && off.getItemMeta().isUnbreakable();
+        return tech.sebazcrc.permadeath.util.item.PermadeathItems.isSurvivorMedal(off);
     }
 
     public enum EnumPlayerTotemSlot {

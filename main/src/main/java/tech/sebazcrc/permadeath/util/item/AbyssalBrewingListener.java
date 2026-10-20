@@ -17,32 +17,57 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 import tech.sebazcrc.permadeath.Main;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AbyssalBrewingListener implements Listener {
 
     private static final String META_KEY = "pdc_brewing_time";
-    private final Set<Block> activeStands = new HashSet<>();
+    private final Set<Block> activeStands = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     public AbyssalBrewingListener() {
-        Bukkit.getScheduler().runTaskTimer(Main.instance, () -> {
-            activeStands.removeIf(block -> block.getType() != Material.BREWING_STAND);
-            
-            for (Player p : Bukkit.getOnlinePlayers()) {
+        if (Main.isRunningFolia()) {
+            Bukkit.getGlobalRegionScheduler().runAtFixedRate(Main.instance, task -> tick(), 1L, 1L);
+        } else {
+            Bukkit.getScheduler().runTaskTimer(Main.instance, this::tick, 1L, 1L);
+        }
+    }
+
+    private void tick() {
+        activeStands.removeIf(block -> block.getType() != Material.BREWING_STAND);
+
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (Main.isRunningFolia()) {
+                p.getScheduler().run(Main.instance, t -> {
+                    if (p.getOpenInventory().getType() == InventoryType.BREWING) {
+                        if (p.getOpenInventory().getTopInventory().getHolder() instanceof BrewingStand stand) {
+                            activeStands.add(stand.getBlock());
+                        }
+                    }
+                }, null);
+            } else {
                 if (p.getOpenInventory().getType() == InventoryType.BREWING) {
                     if (p.getOpenInventory().getTopInventory().getHolder() instanceof BrewingStand stand) {
                         activeStands.add(stand.getBlock());
                     }
                 }
             }
+        }
 
-            for (Block b : activeStands) {
-                if (b.getState() instanceof BrewingStand stand) {
+        for (Block b : activeStands) {
+            if (Main.isRunningFolia()) {
+                Bukkit.getRegionScheduler().execute(Main.instance, b.getLocation(), () -> {
+                    if (b.getType() == Material.BREWING_STAND && b.getState() instanceof BrewingStand stand) {
+                        tickBrewingStand(stand);
+                    }
+                });
+            } else {
+                if (b.getType() == Material.BREWING_STAND && b.getState() instanceof BrewingStand stand) {
                     tickBrewingStand(stand);
                 }
             }
-        }, 1L, 1L);
+        }
     }
 
     private void tickBrewingStand(BrewingStand stand) {
@@ -130,14 +155,23 @@ public class AbyssalBrewingListener implements Listener {
             loc.getWorld().playSound(loc, org.bukkit.Sound.BLOCK_BREWING_STAND_BREW, 1.0f, 1.0f);
 
             // Sincronización visual forzada para todos en el área
-            Bukkit.getScheduler().runTaskLater(Main.instance, () -> {
+            if (Main.isRunningFolia()) {
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     if (p.getWorld().equals(loc.getWorld()) && p.getLocation().distanceSquared(loc) < 256) {
-                        p.updateInventory();
+                        p.getScheduler().runDelayed(Main.instance, t -> p.updateInventory(), null, 1L);
                     }
                 }
                 Bukkit.getConsoleSender().sendMessage("§b[Permadeath] Sincronización visual completada.");
-            }, 1L);
+            } else {
+                Bukkit.getScheduler().runTaskLater(Main.instance, () -> {
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        if (p.getWorld().equals(loc.getWorld()) && p.getLocation().distanceSquared(loc) < 256) {
+                            p.updateInventory();
+                        }
+                    }
+                    Bukkit.getConsoleSender().sendMessage("§b[Permadeath] Sincronización visual completada.");
+                }, 1L);
+            }
         }
     }
 

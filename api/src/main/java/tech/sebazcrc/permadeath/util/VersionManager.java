@@ -1,13 +1,18 @@
 package tech.sebazcrc.permadeath.util;
 
-import lombok.Getter;
 import org.bukkit.Bukkit;
 
 public class VersionManager {
-    @Getter
     private static final String version;
-    @Getter
     private static MinecraftVersion minecraftVersion;
+
+    public static String getVersion() {
+        return version;
+    }
+
+    public static MinecraftVersion getMinecraftVersion() {
+        return minecraftVersion;
+    }
 
     static {
         String bukkitVersion = Bukkit.getBukkitVersion();

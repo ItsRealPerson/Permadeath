@@ -13,26 +13,31 @@ public class RaidEvents implements Listener {
 
     @EventHandler
     public void onRaidFinish(RaidFinishEvent e) {
-
         if (Main.getInstance().getDay() < 50) return;
         if (e.getWinners().isEmpty()) return;
 
-        Bukkit.getScheduler().runTaskLater(Main.instance, new Runnable() {
-            @Override
-            public void run() {
-
-                for (Player player : e.getWinners()) {
-                    if (player.hasPotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE)) {
-
-                        PotionEffect effect = player.getPotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE);
-                        player.removePotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE);
-
-                        int min = 5 * 60;
-                        player.addPotionEffect(new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE, min, effect.getAmplifier()));
-                    }
-                }
+        if (Main.isRunningFolia()) {
+            for (Player player : e.getWinners()) {
+                player.getScheduler().runDelayed(Main.instance, t -> giveHeroBuff(player), null, 40L);
             }
-        }, 10L);
+        } else {
+            Bukkit.getScheduler().runTaskLater(Main.instance, () -> {
+                for (Player player : e.getWinners()) {
+                    giveHeroBuff(player);
+                }
+            }, 40L);
+        }
+    }
+
+    private void giveHeroBuff(Player player) {
+        if (player == null || !player.isOnline()) return;
+        if (player.hasPotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE)) {
+            PotionEffect effect = player.getPotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE);
+            player.removePotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE);
+
+            int min = 5 * 60;
+            player.addPotionEffect(new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE, min, effect != null ? effect.getAmplifier() : 0));
+        }
     }
 }
 
