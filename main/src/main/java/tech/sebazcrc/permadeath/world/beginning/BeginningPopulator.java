@@ -144,4 +144,89 @@ public class BeginningPopulator extends BlockPopulator {
             }
         });
     }
+
+    public void populateExistingChunk(@NotNull org.bukkit.Chunk chunk) {
+        World world = chunk.getWorld();
+        long seed = world.getSeed();
+        SimplexOctaveGenerator lowGenerator = new SimplexOctaveGenerator(new Random(seed), 8);
+        lowGenerator.setScale(0.02D);
+
+        int startX = chunk.getX() << 4;
+        int startZ = chunk.getZ() << 4;
+
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                int realX = startX + x;
+                int realZ = startZ + z;
+
+                int noise = (int) (lowGenerator.noise(realX, realZ, 0.5D, 0.5D) * 15);
+
+                if (noise <= 0) {
+                    if (Main.worldEditFound && Main.getInstance().isSmallIslandsEnabled() && x == 8 && z == 8) {
+                        if (Math.abs(realX) > 30 || Math.abs(realZ) > 30) {
+                            if (splittableRandom.nextInt(20) == 0) {
+                                scheduleSchematicDirect(world, realX, realZ, "island", splittableRandom);
+                            }
+                        }
+                    }
+                    continue;
+                }
+
+                int chance = Main.getInstance().getConfig().getInt("Toggles.TheBeginning.YticGenerateChance", 100000);
+                if (chance >= 256) chance = chance / 256;
+                if (chance < 1) chance = 1;
+
+                if (splittableRandom.nextInt(chance) == 0 && x == 8 && z == 8) {
+                    if (Math.abs(realX) > 40 || Math.abs(realZ) > 40) {
+                        scheduleSchematicDirect(world, realX, realZ, "ytic", null);
+                    }
+                }
+
+                for (int i = 0; i < noise / 3; i++) {
+                    org.bukkit.block.Block b = chunk.getBlock(x, HEIGHT + i, z);
+                    if (b.getType() == Material.AIR) {
+                        b.setType(Material.PURPUR_BLOCK, false);
+                    }
+                }
+                for (int i = 0; i < noise; i++) {
+                    org.bukkit.block.Block b = chunk.getBlock(x, HEIGHT - i - 1, z);
+                    if (b.getType() == Material.AIR) {
+                        b.setType(Material.PURPUR_BLOCK, false);
+                    }
+                }
+            
+                if (x == 8 && z == 8) {
+                    if (splittableRandom.nextInt(5) == 0) {
+                        if (Math.abs(realX) > 20 || Math.abs(realZ) > 20) {
+                            scheduleSchematicDirect(world, realX, realZ, "tree", null);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void scheduleSchematicDirect(World world, int x, int z, String type, SplittableRandom random) {
+        if (Main.isRunningFolia()) {
+            Bukkit.getRegionScheduler().run(Main.instance, new org.bukkit.Location(world, x, HEIGHT, z), task -> {
+                if (type.equals("island")) {
+                    WorldEditPortal.generateIsland(world, x, z, HEIGHT, random);
+                } else if (type.equals("ytic")) {
+                    WorldEditPortal.generateYtic(world, x, z, HEIGHT);
+                } else if (type.equals("tree")) {
+                    generateTree(world, x, z);
+                }
+            });
+        } else {
+            Bukkit.getScheduler().runTask(Main.instance, () -> {
+                if (type.equals("island")) {
+                    WorldEditPortal.generateIsland(world, x, z, HEIGHT, random);
+                } else if (type.equals("ytic")) {
+                    WorldEditPortal.generateYtic(world, x, z, HEIGHT);
+                } else if (type.equals("tree")) {
+                    generateTree(world, x, z);
+                }
+            });
+        }
+    }
 }

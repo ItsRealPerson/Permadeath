@@ -5,9 +5,17 @@ import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.WorldInfo;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 public class EmptyGenerator extends ChunkGenerator {
+
+    @NotNull
+    @Override
+    public List<org.bukkit.generator.BlockPopulator> getDefaultPopulators(@NotNull World world) {
+        return Collections.singletonList(new tech.sebazcrc.permadeath.world.beginning.BeginningPopulator());
+    }
 
     @Override
     public ChunkData generateChunkData(@NotNull World world, @NotNull Random cRandom, int chunkX, int chunkZ, @NotNull BiomeGrid biomes) {

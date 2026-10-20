@@ -106,7 +106,44 @@ public class BeginningManager implements Listener {
             injectPopulator(this.beginningWorld);
             this.beginningWorld.setSpawnLocation(0, 100, 0);
             setupWorldDefaults();
+            populateSpawnArea();
         }
+    }
+
+    public void populateSpawnArea() {
+        if (beginningWorld == null) return;
+        BeginningPopulator populator = new BeginningPopulator();
+        for (int cx = -7; cx <= 7; cx++) {
+            for (int cz = -7; cz <= 7; cz++) {
+                final int chunkX = cx;
+                final int chunkZ = cz;
+                if (Main.isRunningFolia()) {
+                    Bukkit.getRegionScheduler().run(main, beginningWorld, chunkX, chunkZ, task -> {
+                        org.bukkit.Chunk chunk = beginningWorld.getChunkAt(chunkX, chunkZ);
+                        if (!hasPurpurBlocks(chunk)) {
+                            populator.populateExistingChunk(chunk);
+                        }
+                    });
+                } else {
+                    org.bukkit.Chunk chunk = beginningWorld.getChunkAt(chunkX, chunkZ);
+                    if (!hasPurpurBlocks(chunk)) {
+                        populator.populateExistingChunk(chunk);
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean hasPurpurBlocks(org.bukkit.Chunk chunk) {
+        if (chunk.getX() == 0 && chunk.getZ() == 0) return false;
+        for (int x = 0; x < 16; x += 4) {
+            for (int z = 0; z < 16; z += 4) {
+                if (chunk.getBlock(x, 100, z).getType() == Material.PURPUR_BLOCK) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void setupWorldDefaults() {
@@ -201,6 +238,7 @@ public class BeginningManager implements Listener {
 
         // 3. Teletransporte al Beginning (0.5, 100.0, 0.5)
         if (isOverworld) {
+            populateSpawnArea();
             Location to = new Location(beginningWorld, 0.5, 100.0, 0.5, 90f, 0f);
             runNextTickTeleport(p, to, () -> p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e.")));
         }

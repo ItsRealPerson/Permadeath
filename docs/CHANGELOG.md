@@ -156,3 +156,8 @@ Todos los cambios notables en este proyecto serán documentados en este archivo 
   - Corregido cancelando incondicionalmente `PlayerTeleportEndGatewayEvent`, `PlayerTeleportEvent` (con causa `END_GATEWAY`) y `PlayerPortalEvent`.
   - Implementado `runNextTickTeleport` con precarga asíncrona de chunk (`to.getWorld().getChunkAtAsync(to)`) tanto para Paper como para Folia (`p.getScheduler().runDelayed`), garantizando que el jugador aterrice exactamente en `(0.5, 100.0, 0.5)` sin interferencia de las mecánicas internas de vanilla.
   - Limpieza de cachés de chunks residuales en `world_permadeath_beginning` y regeneración limpia del portal.
+- **Erradicación del Corte Cuadrado de 96 Bloques en Spawn de The Beginning (`BeginningPopulator.java`, `BeginningManager.java`, `Main.java`):**
+  - Diagnóstico de la generación asíncrona anticipada de spawn chunks por parte de Paper antes de habilitar los populators del plugin.
+  - Implementado `populateExistingChunk(Chunk)` en `BeginningPopulator` para reconstruir la topografía procedimental de Purpur en chunks ya generados en vacío, respetando las estructuras y plataformas del portal.
+  - Implementado escaneo y poblado proactivo en `BeginningManager.populateSpawnArea()` para el área de chunks $[-7, 7]$ tanto al cargar el mundo como al ingresar al portal.
+  - Mapeado del generador `Permadeath` en `bukkit.yml` y retorno dinámico de `EmptyGenerator` con `BeginningPopulator` en `Main.getDefaultWorldGenerator()`.

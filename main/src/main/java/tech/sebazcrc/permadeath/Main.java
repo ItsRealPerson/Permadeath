@@ -321,11 +321,12 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
     @Override
     public org.bukkit.generator.ChunkGenerator getDefaultWorldGenerator(String worldName, String id) {
-        if (worldName.equalsIgnoreCase("pdc_the_beginning")) {
-            return new tech.sebazcrc.permadeath.world.beginning.generator.BeginningGenerator();
+        String lower = worldName.toLowerCase();
+        if (lower.contains("beginning")) {
+            return new tech.sebazcrc.permadeath.world.beginning.generator.EmptyGenerator();
         }
-        if (worldName.equalsIgnoreCase("pdc_the_abyss")) {
-            return new tech.sebazcrc.permadeath.world.abyss.generator.DeepDarkAbyssGenerator();
+        if (lower.contains("abyss")) {
+            return new tech.sebazcrc.permadeath.world.abyss.generator.EmptyGenerator();
         }
         return null;
     }
