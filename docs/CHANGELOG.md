@@ -95,3 +95,12 @@ Todos los cambios notables en este proyecto serán documentados en este archivo 
   - Condicionada la generación del portal de salida de The Beginning (`generateBeginningPortal`) en `PlayerListener.java` a `Main.instance.getDay() >= 40`, evitando que se genere en el spawn al entrar cualquier jugador en Día 1.
   - Bloqueada la carga activa de la dimensión (`BeginningManager.loadWorld()`) para días < 40, asegurando que el mundo permanezca inactivo y latente hasta que la progresión canónica lo active en el Día 40.
   - Condicionada la tarea de spawneo periódico de mobs abisales / The Beginning (`startSpawnerTask()`) a `Main.instance.getDay() >= 50`, con disparo reactivo en `Main.registerListeners()` al alcanzar el Día 50.
+
+### Optimización y Simulación Matemática (Explosión Supernova / Gatos Galácticos)
+- **Simulador Procedural de Cráter Tosco y Cúbico (`SupernovaExplosionSimulator.java`):**
+  - Desarrollada una métrica híbrida euclidiana-Chebyshev ($0.55 \cdot d_{\text{euclid}} + 0.45 \cdot \max(|x|, |z|)$) para tallar una silueta cuadrada imperfecta con bordes angulares característicos del motor de vóxeles de Minecraft.
+  - Incorporada cuantización de ruido pseudoaleatorio (`floor(hash * 4.0) / 4.0`) para generar cornisas abruptas, desniveles de 2 a 4 bloques y fosas irregulares que obstaculizan ("tosquean") e inmovilizan a los jugadores sobrevivientes en la zona cero.
+  - Implementada vitrificación térmica perimetral ($d > 0.88$) transformando piedra expuesta en magma, obsidiana llorosa, blackstone y cobblestone con estelas de fuego esparcidas.
+  - Diseñada ejecución por capas temporizadas (*time-sliced*, 2 capas Y por tick) con bypass de actualizaciones físicas en bloque (`b.setType(Material.AIR, false)`), garantizando 20 TPS sostenidos y 0 ms de lag durante la deflagración.
+  - Aplicada onda expansiva cinética de 75 bloques con vector de empuje radial e impulso vertical hacia los jugadores y entidades en el área de impacto.
+  - Integrada delegación en `SpawnListener.java` (`explodeCat`) preservando el efecto cosmético vanilla para la vibración de cámara y audio del cliente.

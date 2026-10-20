@@ -1132,7 +1132,8 @@ public class SpawnListener implements Listener {
                 boolean breakBlocks = plugin.getConfig().getBoolean("Toggles.Gatos-Supernova.Destruir-Bloques");
                 boolean placeFire = plugin.getConfig().getBoolean("Toggles.Gatos-Supernova.Fuego");
 
-                w.createExplosion(loc, power, placeFire, breakBlocks, cat);
+                w.createExplosion(loc, 4.0f, false, false, cat);
+                tech.sebazcrc.permadeath.util.SupernovaExplosionSimulator.simulate(loc, power, breakBlocks, placeFire, cat, plugin);
                 cat.remove();
             } finally {
                 if (cat != null) {
