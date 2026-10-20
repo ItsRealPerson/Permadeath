@@ -151,3 +151,8 @@ Todos los cambios notables en este proyecto serán documentados en este archivo 
 - **Redirección Nativa de Spawn al Entrar a The Beginning (`BeginningManager.java`):**
   - Corregido el conflicto de colisión y carrera entre `PlayerMoveEvent` y `PlayerTeleportEndGatewayEvent`.
   - Implementada la redirección nativa de destino con `((PlayerTeleportEvent) event).setTo(to)` en `handlePortalTeleport`, aterrizando al jugador con precisión en `Location(beginningWorld, 0.5, 100.0, 0.5, 90f, 0f)` directamente en la plataforma frente al portal de regreso, en lugar del desvío vanilla a `(-96, 100, -16)`.
+- **Cancelación Estricta de Eventos de Gateway y Teletransporte Asíncrono en Next-Tick (`BeginningManager.java`):**
+  - Se descubrió que Paper/Minecraft ignora `setTo()` interdimensional en `TheEndGatewayBlockEntity`, forzando al jugador a las coordenadas relativas del bloque de origen en el Overworld (`-17, 92, 2656`).
+  - Corregido cancelando incondicionalmente `PlayerTeleportEndGatewayEvent`, `PlayerTeleportEvent` (con causa `END_GATEWAY`) y `PlayerPortalEvent`.
+  - Implementado `runNextTickTeleport` con precarga asíncrona de chunk (`to.getWorld().getChunkAtAsync(to)`) tanto para Paper como para Folia (`p.getScheduler().runDelayed`), garantizando que el jugador aterrice exactamente en `(0.5, 100.0, 0.5)` sin interferencia de las mecánicas internas de vanilla.
+  - Limpieza de cachés de chunks residuales en `world_permadeath_beginning` y regeneración limpia del portal.

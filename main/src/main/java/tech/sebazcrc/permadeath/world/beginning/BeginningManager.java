@@ -139,51 +139,31 @@ public class BeginningManager implements Listener {
         return beginningWorld;
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onMove(org.bukkit.event.player.PlayerMoveEvent e) {
-        if (beginningWorld == null) return;
-        if (e.getFrom().getBlockX() == e.getTo().getBlockX() 
-                && e.getFrom().getBlockY() == e.getTo().getBlockY() 
-                && e.getFrom().getBlockZ() == e.getTo().getBlockZ()) {
-            return;
-        }
-        
-        Block b = e.getTo().getBlock();
-        if (b.getType() == Material.END_GATEWAY) {
-            Player p = e.getPlayer();
-            World w = p.getWorld();
-            
-            boolean isOverworld = w.getEnvironment() == World.Environment.NORMAL;
-            boolean isBeginning = isBeginningWorld(w);
-            
-            if (isOverworld || isBeginning) {
-                handlePortalTeleport(p, w, e);
-            }
-        }
-    }
-
     // --- SISTEMA DE TELETRANSPORTE REFORZADO ---
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPaperGateway(PlayerTeleportEndGatewayEvent e) {
-        handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
+        e.setCancelled(true);
+        handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onVanillaTeleport(PlayerTeleportEvent e) {
         if (e.getCause() == PlayerTeleportEvent.TeleportCause.END_GATEWAY) {
-            handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
+            e.setCancelled(true);
+            handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld());
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPortalEvent(PlayerPortalEvent e) {
         if (e.getCause() == PlayerTeleportEvent.TeleportCause.END_GATEWAY) {
-            handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld(), e);
+            e.setCancelled(true);
+            handlePortalTeleport(e.getPlayer(), e.getFrom().getWorld());
         }
     }
 
-    private void handlePortalTeleport(Player p, World fromWorld, org.bukkit.event.Cancellable event) {
+    private void handlePortalTeleport(Player p, World fromWorld) {
         if (beginningWorld == null) {
             Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[Permadeath-Debug] Abortado: beginningWorld es NULL");
             return;
@@ -192,10 +172,7 @@ public class BeginningManager implements Listener {
         // Cooldown Check
         if (p.hasMetadata("pdc_tp_cooldown")) {
             long lastTp = p.getMetadata("pdc_tp_cooldown").get(0).asLong();
-            if (System.currentTimeMillis() - lastTp < 2000) { // 2 seconds cooldown
-                if (event != null && !(event instanceof org.bukkit.event.player.PlayerMoveEvent)) {
-                    event.setCancelled(true);
-                }
+            if (System.currentTimeMillis() - lastTp < 2500) {
                 return;
             }
         }
@@ -208,7 +185,6 @@ public class BeginningManager implements Listener {
 
         // 1. Verificación de Día
         if (main.getDay() < 50) {
-            if (event != null) event.setCancelled(true);
             p.setNoDamageTicks(p.getMaximumNoDamageTicks());
             p.damage(p.getHealth() + 1.0D);
             Bukkit.broadcastMessage(TextUtils.format("&c&lEl jugador &4&l" + p.getName() + " &c&lentró a The Beginning antes de tiempo."));
@@ -217,35 +193,16 @@ public class BeginningManager implements Listener {
 
         // 2. Verificación de Estado (Cerrado)
         if (isClosed()) {
-            if (event != null) event.setCancelled(true);
             p.sendMessage(ChatColor.RED + "The Beginning está cerrado actualmente.");
             return;
         }
 
-        Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[Permadeath-Debug] Intentando teleportar " + p.getName() + " desde " + fromWorld.getName());
+        Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[Permadeath-Debug] Teleportando " + p.getName() + " desde " + fromWorld.getName());
 
-        // 3. Teletransporte al Beginning
+        // 3. Teletransporte al Beginning (0.5, 100.0, 0.5)
         if (isOverworld) {
             Location to = new Location(beginningWorld, 0.5, 100.0, 0.5, 90f, 0f);
-
-            if (event instanceof PlayerTeleportEvent tpEvent) {
-                tpEvent.setTo(to);
-                p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e."));
-            } else {
-                if (event != null) event.setCancelled(true);
-                if (Main.isRunningFolia()) {
-                    p.getScheduler().run(main, task -> {
-                        p.teleportAsync(to).thenAccept(success -> {
-                            if (success) {
-                                p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e."));
-                            }
-                        });
-                    }, null);
-                } else {
-                    p.teleport(to);
-                    p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e."));
-                }
-            }
+            runNextTickTeleport(p, to, () -> p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e.")));
         }
 
         // 4. Teletransporte de vuelta al Overworld
@@ -253,22 +210,26 @@ public class BeginningManager implements Listener {
             Location target = data.getOverWorldPortal();
             if (target == null) target = main.world.getSpawnLocation();
             
-            // Offset to avoid infinite loop
             Location to = target.clone().add(3.5, 0, 0.5);
             to.setYaw(0f);
+            runNextTickTeleport(p, to, null);
+        }
+    }
 
-            if (event instanceof PlayerTeleportEvent tpEvent) {
-                tpEvent.setTo(to);
-            } else {
-                if (event != null) event.setCancelled(true);
-                if (Main.isRunningFolia()) {
-                    p.getScheduler().run(main, task -> {
-                        p.teleportAsync(to);
-                    }, null);
-                } else {
+    private void runNextTickTeleport(Player p, Location to, Runnable callback) {
+        if (Main.isRunningFolia()) {
+            p.getScheduler().runDelayed(main, task -> {
+                p.teleportAsync(to).thenAccept(success -> {
+                    if (success && callback != null) callback.run();
+                });
+            }, null, 1L);
+        } else {
+            Bukkit.getScheduler().runTaskLater(main, () -> {
+                to.getWorld().getChunkAtAsync(to).thenAccept(chunk -> {
                     p.teleport(to);
-                }
-            }
+                    if (callback != null) callback.run();
+                });
+            }, 1L);
         }
     }
 
