@@ -2,7 +2,7 @@ package tech.sebazcrc.permadeath.util.lib;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.util.Consumer;
+import java.util.function.Consumer;
 import tech.sebazcrc.permadeath.util.Utils;
 import java.io.IOException;
 import java.io.InputStream;

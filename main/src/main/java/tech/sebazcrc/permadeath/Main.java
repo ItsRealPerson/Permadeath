@@ -300,7 +300,12 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         FileConfiguration config = YamlConfiguration.loadConfiguration(bukkitConfig);
         if (!config.contains("worlds.pdc_the_beginning")) {
             config.set("worlds.pdc_the_beginning.generator", "Permadeath");
-            try { config.save(bukkitConfig); } catch (Exception ignored) {}
+            try {
+                config.save(bukkitConfig);
+                if (sender != null) sender.sendMessage(prefix + ChatColor.GREEN + "Generador de The Beginning configurado en bukkit.yml.");
+            } catch (Exception e) {
+                getLogger().log(Level.WARNING, "No se pudo actualizar bukkit.yml", e);
+            }
         }
     }
 
@@ -972,24 +977,6 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
                     Bukkit.getGlobalRegionScheduler().execute(this, () -> w.setMonsterSpawnLimit(140));
                 } else {
                     w.setMonsterSpawnLimit(140);
-                }
-            }
-
-            if (isRunningPaperSpigot()) {
-                try {
-                    Object nmsW = w.getClass().getDeclaredMethod("getHandle").invoke(w);
-
-                    final Field f = nmsW.getClass().getDeclaredField("paperConfig");
-                    f.setAccessible(true);
-                    Object paperConfig = f.get(nmsW);
-
-                    final Field creepers = paperConfig.getClass().getDeclaredField("disableCreeperLingeringEffect");
-                    creepers.setAccessible(true);
-                    creepers.set(paperConfig, true);
-
-                    Bukkit.getConsoleSender().sendMessage(prefix + "&eDeshabilitando Creeper-Lingering-Effect...");
-
-                } catch (Exception ignored) {
                 }
             }
         }

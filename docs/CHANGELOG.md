@@ -52,3 +52,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo 
   - `BeginningLootTable.java`: verificación de límites de índice previo a insertar loot aleatorio secundario.
 - **Aislamiento en Registro de Recetas (RecipeManager):** Modularizado el registro de recetas con método protector `safeRegister(...)` para que fallos o duplicidades en una receta no interrumpan el registro del resto.
 - **Transición a Logging Estructurado:** Sustituido `e.printStackTrace()` y `System.out.println` por `Logger.log(Level.SEVERE, ...)` en gestores de persistencia (`BeginningDataManager`, `DateManager`, `EndDataManager`, `PlayerDataManager`, `CauldronDataManager`, `LootManager`).
+
+### Simplificación y Limpieza (/ponytail)
+- **Eliminación de Reflexión Obsoleta (`Main.java`):** Purgado bloque de reflexión heredado de Paper 1.15 (`paperConfig.disableCreeperLingeringEffect`) que fallaba silenciosamente en cada carga de mundo en 1.21.8.
+- **Modernización con Stdlib (`UpdateChecker.java`):** Reemplazado `org.bukkit.util.Consumer` obsoleto por el estándar `java.util.function.Consumer` de Java, erradicando advertencias de compilación y llamadas deprecadas.
