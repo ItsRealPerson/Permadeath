@@ -427,11 +427,61 @@ public class PDCCommand implements CommandExecutor {
     }
 
     private void handleAFK(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("permadeathcore.admin") || args.length < 2) return;
-        if (args[1].equalsIgnoreCase("unban") && args.length >= 3) {
-            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "pardon " + args[2]);
-            new PlayerDataManager(args[2], instance).setLastDay(instance.getDay());
-            sender.sendMessage(TextUtils.format("&aJugador perdonado."));
+        if (!sender.hasPermission("permadeathcore.admin")) {
+            sender.sendMessage(TextUtils.format("&cNo tienes permisos para ejecutar este comando."));
+            return;
+        }
+
+        if (args.length == 1) {
+            sender.sendMessage(TextUtils.format("&cLista de comandos disponibles para el sistema Anti-AFK:"));
+            sender.sendMessage(TextUtils.format("&7/pdc afk unban <jugador> &f&l- &cRevoca un baneo por AFK."));
+            sender.sendMessage(TextUtils.format("&7/pdc afk bypass <add/remove> <jugador> &f&l- &cAgrega o elimina un jugador de la lista de personas inmunes."));
+            return;
+        }
+
+        if (args[1].equalsIgnoreCase("unban")) {
+            if (args.length < 3) {
+                sender.sendMessage(TextUtils.format("&cPor favor, ingresa a un jugador."));
+                return;
+            }
+            String paramPlayer = args[2];
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "pardon " + paramPlayer);
+            new PlayerDataManager(paramPlayer, instance).setLastDay(instance.getDay());
+            sender.sendMessage(TextUtils.format("&aAhora el jugador &e" + paramPlayer + " &apodrá volver a jugar."));
+        } else if (args[1].equalsIgnoreCase("bypass")) {
+            if (args.length < 4) {
+                sender.sendMessage(TextUtils.format("&ePor favor, ingresa todos los argumentos: &b/pdc afk bypass <add/remove> <jugador>"));
+                return;
+            }
+            String action = args[2];
+            String paramPlayer = args[3];
+            java.util.List<String> list = instance.getConfig().getStringList("AntiAFK.Bypass");
+
+            if (action.equalsIgnoreCase("add")) {
+                if (list.contains(paramPlayer)) {
+                    sender.sendMessage(TextUtils.format("&cEl jugador &e" + paramPlayer + " &cya se encuentra en la lista de jugadores inmunes."));
+                    return;
+                }
+                list.add(paramPlayer);
+                instance.getConfig().set("AntiAFK.Bypass", list);
+                instance.saveConfig();
+                instance.reloadConfig();
+                sender.sendMessage(TextUtils.format("&aEl jugador &e" + paramPlayer + " &aha sido agregado a la lista de jugadores inmunes."));
+            } else if (action.equalsIgnoreCase("remove")) {
+                if (!list.contains(paramPlayer)) {
+                    sender.sendMessage(TextUtils.format("&cEl jugador &e" + paramPlayer + " &cno se encuentra en la lista de jugadores inmunes."));
+                    return;
+                }
+                list.remove(paramPlayer);
+                instance.getConfig().set("AntiAFK.Bypass", list);
+                instance.saveConfig();
+                instance.reloadConfig();
+                sender.sendMessage(TextUtils.format("&aEl jugador &e" + paramPlayer + " &aha sido eliminado de la lista de jugadores inmunes."));
+            } else {
+                sender.sendMessage(TextUtils.format("&cAcción desconocida. Usa &eadd &co &eremove&c."));
+            }
+        } else {
+            sender.sendMessage(TextUtils.format("&cSubcomando de Anti-AFK no reconocido. Usa &e/pdc afk &cpara ver la ayuda."));
         }
     }
 

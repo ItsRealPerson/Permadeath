@@ -81,3 +81,5 @@ Todos los cambios notables en este proyecto serán documentados en este archivo 
   - Corregido el chequeo de mundo en la tarea de remoción de invisibilidad (`worldName.contains("beginning")`), asegurando que ningún jugador pueda permanecer invisible en The Beginning independientemente del prefijo de carpeta del mundo.
 - **Reintento de WorldEdit en Día 40 (`Main.java`):**
   - Asegurado que un fallo temporal al verificar WorldEdit en Día 40 no impida reintentar el registro en recargas posteriores vía `/pdc reload`.
+- **Restauración de Comando Anti-AFK (`PDCCommand.java`):**
+  - Restaurado el subcomando administrativo `/pdc afk bypass <add/remove> <jugador>` y el mensaje de ayuda de `/pdc afk`, permitiendo gestionar la lista de bypass directamente desde el servidor sin necesidad de editar `config.yml` manualmente.
