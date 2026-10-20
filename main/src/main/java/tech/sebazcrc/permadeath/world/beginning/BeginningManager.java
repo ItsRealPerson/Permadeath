@@ -254,6 +254,39 @@ public class BeginningManager implements Listener {
         }
     }
 
+    @EventHandler
+    public void onPlace(org.bukkit.event.block.BlockPlaceEvent e) {
+        if (beginningWorld == null || !e.getBlock().getWorld().equals(beginningWorld)) return;
+        if (e.getBlock().getState() instanceof Chest) {
+            data.addPopulatedChest(e.getBlock().getLocation());
+        }
+    }
+
+    @EventHandler
+    public void onBreak(org.bukkit.event.block.BlockBreakEvent e) {
+        if (beginningWorld == null || !e.getBlock().getWorld().equals(beginningWorld)) return;
+        if (e.getBlock().getState() instanceof Chest chest) {
+            populateChest(chest);
+        }
+    }
+
+    @EventHandler
+    public void onBucket(org.bukkit.event.player.PlayerBucketEmptyEvent e) {
+        if (beginningWorld == null || !e.getPlayer().getWorld().equals(beginningWorld)) return;
+        if (e.getBucket() == Material.WATER_BUCKET) {
+            e.setCancelled(true);
+            e.getPlayer().sendMessage(TextUtils.format(main.prefix + "&cNo puedes colocar agua en The Beginning."));
+        }
+    }
+
+    @EventHandler
+    public void onWater(org.bukkit.event.block.BlockDispenseEvent e) {
+        if (beginningWorld == null || !e.getBlock().getWorld().equals(beginningWorld)) return;
+        if (e.getItem() != null && e.getItem().getType() == Material.WATER_BUCKET) {
+            e.setCancelled(true);
+        }
+    }
+
     private void populateChest(Chest chest) {
         if (!data.hasPopulatedChest(chest.getLocation())) {
             if (main.getDay() < 60) {

@@ -69,3 +69,15 @@ Todos los cambios notables en este proyecto serán documentados en este archivo 
 - **Interacción y Recetas:**
   - Bloqueado el consumo y activación del Corazón del Abismo en `PlayerListener`.
   - Omitido el registro de recetas abisales (`abyssal_heart`, `abyssal_filter`, `abyssal_mask`) en `RecipeManager` si `isAbyssEnabled()` es falso.
+
+### Restauración y Paridad 1:1 vs `old-master`
+- **Receta de Infernal Elytra (`RecipeManager.java`):**
+  - Restaurada la llamada huérfana `safeRegister(this::registerIE)` dentro de `registerD60Recipes()`, permitiendo el crafteo legítimo de las Élitros Infernales a partir del Día 60.
+- **Protección Antiexploits en The Beginning (`BeginningManager.java`):**
+  - Restaurado `onPlace(BlockPlaceEvent)` para marcar cofres colocados por jugadores en `chests.yml`, evitando la generación infinita de loot especial al reabrirlos.
+  - Restaurado `onBreak(BlockBreakEvent)` para poblar automáticamente los cofres no abiertos antes de ser destruidos, previniendo la pérdida de ítems o exploits de rotura.
+  - Restaurado `onBucket(PlayerBucketEmptyEvent)` y `onWater(BlockDispenseEvent)` para impedir colocar o dispensar cubos de agua en la dimensión The Beginning.
+- **Detección de Invisibilidad en The Beginning (`Main.java`):**
+  - Corregido el chequeo de mundo en la tarea de remoción de invisibilidad (`worldName.contains("beginning")`), asegurando que ningún jugador pueda permanecer invisible en The Beginning independientemente del prefijo de carpeta del mundo.
+- **Reintento de WorldEdit en Día 40 (`Main.java`):**
+  - Asegurado que un fallo temporal al verificar WorldEdit en Día 40 no impida reintentar el registro en recargas posteriores vía `/pdc reload`.

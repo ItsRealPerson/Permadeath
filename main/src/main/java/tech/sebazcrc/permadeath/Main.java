@@ -486,7 +486,8 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
             if (player.getLocation().getBlock().getRelative(BlockFace.DOWN).getType() == Material.BEDROCK) {
                 player.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 10 * 20, 9));
             }
-            if (player.getWorld().getName().equalsIgnoreCase("pdc_the_beginning")) {
+            String worldName = player.getWorld().getName().toLowerCase();
+            if (worldName.contains("beginning")) {
                 if (player.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
                     player.removePotionEffect(PotionEffectType.INVISIBILITY);
                 }
@@ -879,7 +880,6 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
         if (DateManager.getInstance().getDay() >= 40 && !registeredDays.getOrDefault(40, false)) {
 
-            registeredDays.put(40, true);
             this.getNmsHandler().addMushrooms();
             getServer().getPluginManager().registerEvents(new SlotBlockListener(instance), instance);
             Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado cambios para el día &b40"));
@@ -887,12 +887,12 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
             if (Bukkit.getPluginManager().getPlugin("WorldEdit") == null && Bukkit.getPluginManager().getPlugin("FastAsyncWorldEdit") == null) {
                 Bukkit.broadcastMessage(TextUtils.format(prefixStr + "&4&lNo se pudo registrar TheBeginning ya que no se ha encontrado el plugin &7WorldEdit"));
                 Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&c[DEBUG] Permadeath requiere WorldEdit o FastAsyncWorldEdit para The Beginning."));
-                Bukkit.broadcastMessage(TextUtils.format(prefixStr + "&7Si necesitas soporte repórtalo en GitHub: &e" + Utils.GITHUB_LINK));
-                return;
+            } else {
+                this.beData = new BeginningDataManager(this);
+                this.begginingManager = new BeginningManager(this);
+                Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado cambios de TheBeginning"));
+                registeredDays.put(40, true);
             }
-            this.beData = new BeginningDataManager(this);
-            this.begginingManager = new BeginningManager(this);
-            Bukkit.getConsoleSender().sendMessage(TextUtils.format(prefixStr + "&eSe han registrado cambios de TheBeginning"));
         }
 
         if (DateManager.getInstance().getDay() >= 50 && !registeredDays.getOrDefault(50, false)) {

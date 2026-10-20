@@ -109,6 +109,7 @@ public class RecipeManager {
     }
 
     public void registerD60Recipes() {
+        safeRegister(this::registerIE);
         safeRegister(this::registerBeginningRelic);
         safeRegister(this::registerLifeOrb);
 
