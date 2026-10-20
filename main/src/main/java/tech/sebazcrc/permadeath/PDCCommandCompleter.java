@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.usigtil.stream.Collectors;
+import java.util.stream.Collectors;
 
 public class PDCCommandCompleter implements TabCompleter {
 
