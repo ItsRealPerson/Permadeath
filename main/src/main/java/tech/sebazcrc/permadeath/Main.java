@@ -698,6 +698,10 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
 
     private void startPlugin() {
         this.messages = new Messages(this);
+        if (this.recipes == null) {
+            this.recipes = new RecipeManager(this);
+            this.recipes.registerRecipes();
+        }
         
         this.abyssFile = new File(getDataFolder(), "abyss.yml");
         if (!abyssFile.exists()) {

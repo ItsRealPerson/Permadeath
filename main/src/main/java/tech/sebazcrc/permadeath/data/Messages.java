@@ -15,12 +15,16 @@ import java.util.List;
 
 public class Messages {
     private Main instance;
+    private FileConfiguration configES;
+    private FileConfiguration configEN;
+    private final java.util.Map<String, Language> langCache = new java.util.concurrent.ConcurrentHashMap<>();
 
     public Messages(Main instance) {
         this.instance = instance;
 
         saveDataES();
         saveDataEN();
+        reloadFiles();
     }
 
     public void saveDataES() {
@@ -77,59 +81,66 @@ public class Messages {
     }
 
     public void reloadFiles() {
-
-        loadEs();
-        loadEn();
-    }
-
-    private void loadEn() {
-        new FileAPI.FileOut(instance, "mensajes_EN", "mensajes/", false);
-
-        File f = new File(instance.getDataFolder(), "mensajes/mensajes_EN.yml");
-        FileConfiguration config = YamlConfiguration.loadConfiguration(f);
-
-        FileAPI.UtilFile c = FileAPI.select(instance, f, config);
-    }
-
-    private void loadEs() {
         new FileAPI.FileOut(instance, "mensajes_ES", "mensajes/", false);
+        File fES = new File(instance.getDataFolder(), "mensajes/mensajes_ES.yml");
+        if (!fES.exists()) saveDataES();
+        this.configES = YamlConfiguration.loadConfiguration(fES);
 
-        File f = new File(instance.getDataFolder(), "mensajes/mensajes_ES.yml");
-        FileConfiguration config = YamlConfiguration.loadConfiguration(f);
+        new FileAPI.FileOut(instance, "mensajes_EN", "mensajes/", false);
+        File fEN = new File(instance.getDataFolder(), "mensajes/mensajes_EN.yml");
+        if (!fEN.exists()) saveDataEN();
+        this.configEN = YamlConfiguration.loadConfiguration(fEN);
 
-        FileAPI.UtilFile c = FileAPI.select(instance, f, config);
+        this.langCache.clear();
+    }
 
-        c.load();
+    public FileConfiguration getConfigByLang(Language lang) {
+        if (lang == Language.ENGLISH) {
+            if (configEN == null) {
+                File f = new File(instance.getDataFolder(), "mensajes/mensajes_EN.yml");
+                configEN = YamlConfiguration.loadConfiguration(f);
+            }
+            return configEN;
+        }
+        if (configES == null) {
+            File f = new File(instance.getDataFolder(), "mensajes/mensajes_ES.yml");
+            configES = YamlConfiguration.loadConfiguration(f);
+        }
+        return configES;
+    }
+
+    public Language getPlayerLanguage(String playerName) {
+        return langCache.computeIfAbsent(playerName, name -> {
+            PlayerDataManager data = new PlayerDataManager(name, instance);
+            return data.getLanguage();
+        });
+    }
+
+    public void setPlayerLanguageCache(String playerName, Language lang) {
+        langCache.put(playerName, lang);
     }
 
     public String getMessageByPlayer(String path, String playerName, java.util.List replaces) {
 
         HashMap<String, Object> r = new HashMap<>();
-        //r.put("%player%", playerName);
 
         for (Object o : replaces) {
-
             String s = String.valueOf(o);
-
             String[] l = s.split(";;;");
-            Object b = l[1];
-
-            r.put(l[0], b);
+            if (l.length >= 2) {
+                r.put(l[0], l[1]);
+            }
         }
 
-        PlayerDataManager data = new PlayerDataManager(playerName, instance);
-        Language lang = data.getLanguage();
-
-        File f = getByLang(lang);
-        FileConfiguration c = YamlConfiguration.loadConfiguration(f);
+        Language lang = getPlayerLanguage(playerName);
+        FileConfiguration c = getConfigByLang(lang);
 
         String returning = c.getString(path);
         if (returning == null) return "Missing Message: " + path;
 
         for (String a : r.keySet()) {
-
             String value = String.valueOf(r.get(a));
-            returning = returning.replace(a, (CharSequence) value);
+            returning = returning.replace(a, value);
         }
 
         return TextUtils.format(returning);
@@ -138,9 +149,7 @@ public class Messages {
     public String getMessageForConsole(String path) {
 
         Language lang = Language.SPANISH;
-
-        File f = getByLang(lang);
-        FileConfiguration c = YamlConfiguration.loadConfiguration(f);
+        FileConfiguration c = getConfigByLang(lang);
 
         String returning = c.getString(path);
         if (returning == null) return "Missing Message: " + path;
@@ -150,23 +159,11 @@ public class Messages {
 
     public String getMessageByPlayer(String path, String playerName) {
 
-        HashMap<String, Object> r = new HashMap<>();
-        //r.put("%player%", playerName);
-
-        PlayerDataManager data = new PlayerDataManager(playerName, instance);
-        Language lang = data.getLanguage();
-
-        File f = getByLang(lang);
-        FileConfiguration c = YamlConfiguration.loadConfiguration(f);
+        Language lang = getPlayerLanguage(playerName);
+        FileConfiguration c = getConfigByLang(lang);
 
         String returning = c.getString(path);
         if (returning == null) return "Missing Message: " + path;
-
-        for (String a : r.keySet()) {
-
-            String value = String.valueOf(r.get(a));
-            returning = returning.replace(a, (CharSequence) value);
-        }
 
         return TextUtils.format(returning);
     }

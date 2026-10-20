@@ -79,12 +79,26 @@ public class BeginningPopulator extends BlockPopulator {
     private void scheduleSchematic(WorldInfo worldInfo, int x, int z, String type, SplittableRandom random) {
         // En Folia, no podemos usar Bukkit.getWorld durante la generación inicial del chunk de forma segura
         // Programamos una tarea global para que espere a que el mundo esté cargado
-        Bukkit.getGlobalRegionScheduler().runDelayed(Main.instance, t -> {
-            World world = Bukkit.getWorld(worldInfo.getUID());
-            if (world == null) return;
+        if (Main.isRunningFolia()) {
+            Bukkit.getGlobalRegionScheduler().runDelayed(Main.instance, t -> {
+                World world = Bukkit.getWorld(worldInfo.getUID());
+                if (world == null) return;
 
-            // Ahora que tenemos el mundo, usamos el region scheduler
-            Bukkit.getRegionScheduler().run(Main.instance, new org.bukkit.Location(world, x, HEIGHT, z), task -> {
+                // Ahora que tenemos el mundo, usamos el region scheduler
+                Bukkit.getRegionScheduler().run(Main.instance, new org.bukkit.Location(world, x, HEIGHT, z), task -> {
+                    if (type.equals("island")) {
+                        WorldEditPortal.generateIsland(world, x, z, HEIGHT, random);
+                    } else if (type.equals("ytic")) {
+                        WorldEditPortal.generateYtic(world, x, z, HEIGHT);
+                    } else if (type.equals("tree")) {
+                        generateTree(world, x, z);
+                    }
+                });
+            }, 100L); // Esperar 5 segundos para asegurar que el mundo esté listo
+        } else {
+            Bukkit.getScheduler().runTaskLater(Main.instance, () -> {
+                World world = Bukkit.getWorld(worldInfo.getUID());
+                if (world == null) return;
                 if (type.equals("island")) {
                     WorldEditPortal.generateIsland(world, x, z, HEIGHT, random);
                 } else if (type.equals("ytic")) {
@@ -92,8 +106,8 @@ public class BeginningPopulator extends BlockPopulator {
                 } else if (type.equals("tree")) {
                     generateTree(world, x, z);
                 }
-            });
-        }, 100L); // Esperar 5 segundos para asegurar que el mundo esté listo
+            }, 100L);
+        }
     }
 
     private void generateTree(World world, int x, int z) {

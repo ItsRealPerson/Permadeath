@@ -66,10 +66,9 @@ public class ShellEvent {
     }
 
     public void removePlayer(Player player) {
+        if (bossBar == null || !bossBar.getPlayers().contains(player)) return;
 
-        if (bossBar.getPlayers().contains(player)) return;
-
-        bossBar.addPlayer(player);
+        bossBar.removePlayer(player);
     }
 }
 

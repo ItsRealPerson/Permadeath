@@ -35,6 +35,26 @@ public class GatoGalacticoTask extends BukkitRunnable {
         this.main = main;
     }
 
+    public void start() {
+        if (Main.isRunningFolia()) {
+            Bukkit.getRegionScheduler().runAtFixedRate(main, cat, task -> {
+                run();
+                if (time == 0) {
+                    task.cancel();
+                }
+            }, 1L, 20L);
+        } else {
+            runTaskTimer(main, 0L, 20L);
+        }
+    }
+
+    @Override
+    public synchronized void cancel() throws IllegalStateException {
+        if (!Main.isRunningFolia()) {
+            super.cancel();
+        }
+    }
+
     @Override
     public void run() {
 

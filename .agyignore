@@ -1,0 +1,13 @@
+.gradle/
+build/
+target/
+*.jar
+run/
+server/
+logs/
+*.log
+*.zip
+*.schem
+*.bbmodel
+.idea/
+*.iml

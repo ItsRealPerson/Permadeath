@@ -27,7 +27,7 @@ public class RecipeManager {
             registerEndRel();
             registerSmithingArmor();
             registerWaterMedal();
-        } catch (IllegalStateException ex) {
+        } catch (Exception ex) {
             // Ignorar, la receta fue registrada antes probablemente
         }
     }
@@ -35,6 +35,7 @@ public class RecipeManager {
     private void registerWaterMedal() {
         ItemStack s = PermadeathItems.createWaterMedal();
         NamespacedKey key = new NamespacedKey(instance, "water_medal_craft");
+        if (Bukkit.getRecipe(key) != null) return;
         ShapedRecipe recipe = new ShapedRecipe(key, s);
         recipe.shape("TGT", "GNG", "GGG");
         recipe.setIngredient('T', Material.TRIDENT);
@@ -55,6 +56,7 @@ public class RecipeManager {
     private void registerAncestralFragment() {
         ItemStack s = NetheriteArmor.craftAncestralFragment();
         NamespacedKey key = new NamespacedKey(instance, "ancestral_fragment");
+        if (Bukkit.getRecipe(key) != null) return;
         ShapedRecipe recipe = new ShapedRecipe(key, s);
         recipe.shape("DDD", "DND", "DDD");
         recipe.setIngredient('D', Material.DIAMOND_BLOCK);
@@ -64,6 +66,7 @@ public class RecipeManager {
 
     private void registerSingleSmithing(String type, Material baseMat, ItemStack result) {
         NamespacedKey key = new NamespacedKey(instance, "netherite_" + type + "_smithing");
+        if (Bukkit.getRecipe(key) != null) return;
         
         ItemStack template = NetheriteArmor.craftTemplate(type);
         ItemStack addition = NetheriteArmor.craftAncestralFragment();
@@ -85,7 +88,7 @@ public class RecipeManager {
             registerINC();
             registerINL();
             registerINB();
-        } catch (IllegalStateException ex) {
+        } catch (Exception ex) {
             // Ignorar, la receta fue registrada antes probablemente
         }
     }

@@ -87,6 +87,9 @@ public class PlayerDataManager {
 
     public void setLanguage(Language language) {
         config.set("Players." + name + ".Idioma", language.toString());
+        if (instance.getMessages() != null) {
+            instance.getMessages().setPlayerLanguageCache(name, language);
+        }
         saveFile();
     }
 

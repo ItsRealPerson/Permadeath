@@ -1277,7 +1277,7 @@ public class SpawnListener implements Listener {
                         int z = (int) l.getZ();
 
                         Bukkit.broadcastMessage(TextUtils.format("&cLa maldición de un Gato Galáctico ha comenzado en: " + x + ", " + y + ", " + z));
-                        new GatoGalacticoTask(event.getEntity().getLocation(), plugin).runTaskTimer(plugin, 0, 20L);
+                        new GatoGalacticoTask(event.getEntity().getLocation(), plugin).start();
                     }
                 }
 

@@ -39,3 +39,6 @@ build/
 test-server/
 *.jar
 *.zip
+
+.idea/
+recursos externos/
