@@ -169,17 +169,15 @@ public class DateManager {
         try {
             this.c.save(f);
         } catch (IOException e) {
-            e.printStackTrace();
+            Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "Error al guardar fecha.yml", e);
         }
     }
 
     private void reloadFile() {
         try {
             this.c.load(f);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InvalidConfigurationException e) {
-            e.printStackTrace();
+        } catch (IOException | InvalidConfigurationException e) {
+            Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "Error al recargar fecha.yml", e);
         }
     }
 

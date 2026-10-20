@@ -84,22 +84,18 @@ public class EndDataManager {
     }
 
     public void saveFile() {
-
         try {
             config.save(endFile);
         } catch (IOException e) {
-            System.out.println("[ERROR] Ha ocurrido un error al guardar el archivo 'endConfig.yml'");
+            instance.getLogger().log(java.util.logging.Level.SEVERE, "Error al guardar el archivo 'endConfig.yml'", e);
         }
     }
 
     public void reloadFile() {
-
         try {
             config.load(endFile);
-        } catch (IOException e) {
-            System.out.println("[ERROR] Ha ocurrido un error al guardar el archivo 'endConfig.yml'");
-        } catch (InvalidConfigurationException e) {
-            System.out.println("[ERROR] Ha ocurrido un error al guardar el archivo 'endConfig.yml'");
+        } catch (IOException | InvalidConfigurationException e) {
+            instance.getLogger().log(java.util.logging.Level.SEVERE, "Error al cargar el archivo 'endConfig.yml'", e);
         }
 
         loadSettings();

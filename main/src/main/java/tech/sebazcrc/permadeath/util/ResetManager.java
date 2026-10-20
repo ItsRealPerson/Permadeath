@@ -76,9 +76,8 @@ public class ResetManager {
     }
 
     private boolean deleteDirectory(File directory) {
-        try {
-            Files.walk(directory.toPath())
-                .sorted(Comparator.reverseOrder())
+        try (java.util.stream.Stream<java.nio.file.Path> stream = Files.walk(directory.toPath())) {
+            stream.sorted(Comparator.reverseOrder())
                 .map(java.nio.file.Path::toFile)
                 .forEach(File::delete);
             return !directory.exists();

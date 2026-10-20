@@ -611,31 +611,17 @@ public class SpawnListener implements Listener {
             }
 
             if (entity.getType() == EntityType.ZOMBIE) {
-
-                boolean b = false;
-                try {
-                    b = (boolean) World.class.getDeclaredMethod("getBiome", int.class, int.class, int.class).invoke(event.getLocation().getWorld(), (int) event.getLocation().getX(), (int) event.getLocation().getY(), (int) event.getLocation().getZ());
-                } catch (Exception x) {
-                }
-
-                if (b) {
-
+                if (event.getLocation().getBlock().getBiome() == Biome.PLAINS) {
                     int prob = 1;
-
                     if (plugin.getDay() < 60) {
                         prob = random.nextInt(500) + 1;
                     } else {
-
                         prob = random.nextInt(125) + 1;
                     }
 
-                    if (event.getLocation().getBlock().getBiome() == Biome.PLAINS) {
-
-                        if (prob == 5) {
-
-                            plugin.getNmsHandler().spawnNMSCustomEntity("CustomGiant", EntityType.GIANT, event.getLocation(), CreatureSpawnEvent.SpawnReason.CUSTOM);
-                            event.setCancelled(true);
-                        }
+                    if (prob == 5) {
+                        plugin.getNmsHandler().spawnNMSCustomEntity("CustomGiant", EntityType.GIANT, event.getLocation(), CreatureSpawnEvent.SpawnReason.CUSTOM);
+                        event.setCancelled(true);
                     }
                 }
             }

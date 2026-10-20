@@ -100,7 +100,7 @@ public class BeginningDataManager {
         try {
             config.save(beginningFile);
         } catch (IOException e) {
-            e.printStackTrace();
+            instance.getLogger().log(java.util.logging.Level.SEVERE, "Error al guardar the_beginning.yml", e);
         }
     }
 
@@ -114,7 +114,7 @@ public class BeginningDataManager {
             try {
                 java.nio.file.Files.writeString(fileToSave.toPath(), data);
             } catch (IOException e) {
-                e.printStackTrace();
+                instance.getLogger().log(java.util.logging.Level.SEVERE, "Error asíncrono al guardar the_beginning.yml", e);
             }
         };
         if (Main.isRunningFolia()) Bukkit.getAsyncScheduler().runNow(instance, t -> task.run());
@@ -125,7 +125,7 @@ public class BeginningDataManager {
         try {
             config.load(beginningFile);
         } catch (IOException | InvalidConfigurationException e) {
-            e.printStackTrace();
+            instance.getLogger().log(java.util.logging.Level.SEVERE, "Error al recargar the_beginning.yml", e);
         }
     }
 }

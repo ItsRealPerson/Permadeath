@@ -182,10 +182,8 @@ public final class NetheriteArmor implements Listener {
     public static boolean isNetheritePiece(ItemStack s) {
         if (s == null) return false;
 
-        if (s.hasItemMeta()) {
-
+        if (s.hasItemMeta() && s.getItemMeta().hasDisplayName()) {
             if (s.getItemMeta().isUnbreakable() && ChatColor.stripColor(s.getItemMeta().getDisplayName()).startsWith("Netherite")) {
-
                 return true;
             }
         }
@@ -203,7 +201,7 @@ public final class NetheriteArmor implements Listener {
                 return true;
             }
 
-            if (s.getItemMeta().isUnbreakable() && ChatColor.stripColor(s.getItemMeta().getDisplayName()).startsWith("Infernal")) {
+            if (m.hasDisplayName() && m.isUnbreakable() && ChatColor.stripColor(m.getDisplayName()).startsWith("Infernal")) {
                 return true;
             }
         }

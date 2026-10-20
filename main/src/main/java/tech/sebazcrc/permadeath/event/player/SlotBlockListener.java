@@ -169,7 +169,7 @@ public class SlotBlockListener implements Listener {
 
     public boolean esReliquia(Player p, ItemStack stack) {
         if (stack == null) return false;
-        if (!stack.hasItemMeta()) return false;
+        if (!stack.hasItemMeta() || !stack.getItemMeta().hasDisplayName()) return false;
         if (stack.getType() == Material.LIGHT_BLUE_DYE && stack.getItemMeta().getDisplayName().endsWith(TextUtils.format("&6Reliquia Del Fin"))) {
             return true;
         }

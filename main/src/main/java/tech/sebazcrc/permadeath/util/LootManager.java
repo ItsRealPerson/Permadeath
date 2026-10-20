@@ -88,6 +88,6 @@ public class LootManager {
     }
 
     public void save() {
-        try { config.save(file); } catch (IOException e) { e.printStackTrace(); }
+        try { config.save(file); } catch (IOException e) { Main.instance.getLogger().log(java.util.logging.Level.SEVERE, "Error al guardar loot.yml", e); }
     }
 }

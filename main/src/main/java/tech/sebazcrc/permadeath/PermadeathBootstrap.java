@@ -60,16 +60,16 @@ public class PermadeathBootstrap implements PluginBootstrap {
         };
 
         for (String filePath : files) {
-            // Cargar desde el JAR usando el ClassLoader del Bootstrap
-            InputStream in = getClass().getClassLoader().getResourceAsStream("internal_datapack/" + filePath);
-            if (in == null) {
-                throw new IOException("Recurso no encontrado en JAR: " + filePath);
-            }
+            // Cargar desde el JAR usando el ClassLoader del Bootstrap con try-with-resources
+            try (InputStream in = getClass().getClassLoader().getResourceAsStream("internal_datapack/" + filePath)) {
+                if (in == null) {
+                    throw new IOException("Recurso no encontrado en JAR: " + filePath);
+                }
 
-            Path outFile = targetDir.resolve(filePath);
-            Files.createDirectories(outFile.getParent());
-            Files.copy(in, outFile, StandardCopyOption.REPLACE_EXISTING);
-            in.close();
+                Path outFile = targetDir.resolve(filePath);
+                Files.createDirectories(outFile.getParent());
+                Files.copy(in, outFile, StandardCopyOption.REPLACE_EXISTING);
+            }
         }
     }
 }

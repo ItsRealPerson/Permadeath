@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.logging.Level;
 import java.util.Random;
 import java.util.SplittableRandom;
 
@@ -51,13 +52,16 @@ public class WorldEditPortal {
         }
 
         ClipboardFormat format = ClipboardFormats.findByFile(file);
+        if (format == null) {
+            Main.getInstance().getLogger().warning("Formato de esquemática no soportado: " + file.getName());
+            return;
+        }
 
-        assert format != null;
-
-        try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
+        try (FileInputStream fis = new FileInputStream(file);
+             ClipboardReader reader = format.getReader(fis)) {
             clipboard = reader.read();
         } catch (IOException e) {
-            e.printStackTrace();
+            Main.getInstance().getLogger().log(Level.SEVERE, "Error al leer esquemática " + file.getName(), e);
             return;
         }
 
@@ -78,12 +82,16 @@ public class WorldEditPortal {
         File file = new File(Main.getInstance().getDataFolder(), "schematics/ytic.schem");
 
         ClipboardFormat format = ClipboardFormats.findByFile(file);
+        if (format == null) {
+            Main.getInstance().getLogger().warning("Formato de esquemática no soportado: " + file.getName());
+            return;
+        }
 
-        assert format != null;
-        try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
+        try (FileInputStream fis = new FileInputStream(file);
+             ClipboardReader reader = format.getReader(fis)) {
             clipboard = reader.read();
         } catch (IOException e) {
-            e.printStackTrace();
+            Main.getInstance().getLogger().log(Level.SEVERE, "Error al leer esquemática " + file.getName(), e);
             return;
         }
 
@@ -159,7 +167,13 @@ public class WorldEditPortal {
     public static void pasteSchematic(Location loc, File schematic) {
         com.sk89q.worldedit.world.World adaptedWorld = BukkitAdapter.adapt(loc.getWorld());
         ClipboardFormat format = ClipboardFormats.findByFile(schematic);
-        try (ClipboardReader reader = format.getReader(new FileInputStream(schematic))) {
+        if (format == null) {
+            Main.getInstance().getLogger().warning("Formato de esquemática no reconocido: " + schematic.getName());
+            return;
+        }
+
+        try (FileInputStream fis = new FileInputStream(schematic);
+             ClipboardReader reader = format.getReader(fis)) {
             Clipboard clipboard = reader.read();
             try (EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(adaptedWorld,
                     -1)) {
@@ -169,13 +183,13 @@ public class WorldEditPortal {
                     Operations.complete(operation);
                     editSession.flushSession();
                 } catch (WorldEditException e) {
-                    e.printStackTrace();
+                    Main.getInstance().getLogger().log(Level.SEVERE, "Error en sesión WorldEdit", e);
                 }
             }
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            Main.getInstance().getLogger().warning("Archivo de esquemática no encontrado: " + schematic.getName());
         } catch (IOException e) {
-            e.printStackTrace();
+            Main.getInstance().getLogger().log(Level.SEVERE, "Error de E/S leyendo esquemática", e);
         }
     }
 }

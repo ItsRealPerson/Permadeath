@@ -28,31 +28,27 @@ public class RecipeManager {
         }
     }
 
-    public void registerBaseRecipes() {
+    private void safeRegister(Runnable registration) {
         try {
-            registerHyperGAP();
-            registerSuperGAP();
-            registerShulkerUnCraft();
-            registerEndRel();
+            registration.run();
         } catch (Exception ex) {
-            // Ignorar si alguna receta fue registrada previamente
+            // Ignorar si la receta ya fue registrada previamente
         }
+    }
+
+    public void registerBaseRecipes() {
+        safeRegister(this::registerHyperGAP);
+        safeRegister(this::registerSuperGAP);
+        safeRegister(this::registerShulkerUnCraft);
+        safeRegister(this::registerEndRel);
     }
 
     public void registerD25Recipes() {
-        try {
-            registerSmithingArmor();
-        } catch (Exception ex) {
-            // Ignorar si alguna receta fue registrada previamente
-        }
+        safeRegister(this::registerSmithingArmor);
     }
 
     public void registerD30Recipes() {
-        try {
-            registerWaterMedal();
-        } catch (Exception ex) {
-            // Ignorar si alguna receta fue registrada previamente
-        }
+        safeRegister(this::registerWaterMedal);
     }
 
     private void registerWaterMedal() {
@@ -106,28 +102,29 @@ public class RecipeManager {
     }
 
     public void registerD50Recipes() {
-        try {
-            registerINH();
-            registerINC();
-            registerINL();
-            registerINB();
-        } catch (Exception ex) {
-            // Ignorar, la receta fue registrada antes probablemente
-        }
+        safeRegister(this::registerINH);
+        safeRegister(this::registerINC);
+        safeRegister(this::registerINL);
+        safeRegister(this::registerINB);
     }
 
     public void registerD60Recipes() {
-        registerBeginningRelic();
-        registerLifeOrb();
+        safeRegister(this::registerBeginningRelic);
+        safeRegister(this::registerLifeOrb);
 
         if (!Main.instance.getConfig().getBoolean("Toggles.ExtendToDay90")) return;
 
-        ShapedRecipe heart = new ShapedRecipe(new NamespacedKey(Main.instance, "abyssal_heart"), PermadeathItems.createAbyssalHeart());
-        heart.shape("ENE", "EHE", "EEE");
-        heart.setIngredient('E', Material.ECHO_SHARD);
-        heart.setIngredient('N', Material.NETHERITE_BLOCK);
-        heart.setIngredient('H', Material.HEART_OF_THE_SEA);
-        Bukkit.addRecipe(heart);
+        safeRegister(() -> {
+            NamespacedKey key = new NamespacedKey(Main.instance, "abyssal_heart");
+            if (Bukkit.getRecipe(key) == null) {
+                ShapedRecipe heart = new ShapedRecipe(key, PermadeathItems.createAbyssalHeart());
+                heart.shape("ENE", "EHE", "EEE");
+                heart.setIngredient('E', Material.ECHO_SHARD);
+                heart.setIngredient('N', Material.NETHERITE_BLOCK);
+                heart.setIngredient('H', Material.HEART_OF_THE_SEA);
+                Bukkit.addRecipe(heart);
+            }
+        });
 
         ShapedRecipe filter = new ShapedRecipe(new NamespacedKey(Main.instance, "abyssal_filter"), PermadeathItems.createAbyssalFilter());
         filter.shape(" S ", "SES", " S ");

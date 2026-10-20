@@ -218,7 +218,7 @@ public class PlayerDataManager {
                     try {
                         config.save(fileToSave);
                     } catch (Exception ex) {
-                        ex.printStackTrace();
+                        instance.getLogger().log(java.util.logging.Level.SEVERE, "Fallo al guardar jugadores.yml", ex);
                     }
                 }
             }

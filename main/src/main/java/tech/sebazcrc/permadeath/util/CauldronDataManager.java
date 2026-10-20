@@ -19,7 +19,7 @@ public class CauldronDataManager {
         this.file = new File(Main.instance.getDataFolder(), "data/alquimia.yml");
         if (!file.exists()) {
             file.getParentFile().mkdirs();
-            try { file.createNewFile(); } catch (IOException e) { e.printStackTrace(); }
+            try { file.createNewFile(); } catch (IOException e) { Main.instance.getLogger().log(java.util.logging.Level.SEVERE, "Error al crear alquimia.yml", e); }
         }
         this.config = YamlConfiguration.loadConfiguration(file);
     }
@@ -53,6 +53,6 @@ public class CauldronDataManager {
     }
 
     private void save() {
-        try { config.save(file); } catch (IOException e) { e.printStackTrace(); }
+        try { config.save(file); } catch (IOException e) { Main.instance.getLogger().log(java.util.logging.Level.SEVERE, "Error al guardar alquimia.yml", e); }
     }
 }

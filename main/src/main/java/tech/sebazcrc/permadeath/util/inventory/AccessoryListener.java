@@ -52,7 +52,7 @@ public class AccessoryListener implements Listener {
             if (slot >= AccessoryInventory.SIZE) return;
 
             // Bloquear interacción con el fondo (Cristal Gris) o los placeholders especiales
-            if (itemInClick != null && itemInClick.hasItemMeta() && itemInClick.getType().name().contains("STAINED_GLASS_PANE")) {
+            if (itemInClick != null && itemInClick.hasItemMeta() && itemInClick.getItemMeta().hasDisplayName() && itemInClick.getType().name().contains("STAINED_GLASS_PANE")) {
                 String name = itemInClick.getItemMeta().getDisplayName();
                 if (name.equals(" ") || name.contains("Slot de Orbe") || name.contains("Slot de Medalla") || name.contains("Slot de Reliquia") || name.contains("Slot de Máscara")) {
                     

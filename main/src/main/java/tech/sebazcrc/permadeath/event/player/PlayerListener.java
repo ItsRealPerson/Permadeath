@@ -78,7 +78,7 @@ public class PlayerListener implements Listener {
 
             // Placement of Infernal Netherite Block
             if (e.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK && e.getClickedBlock() != null) {
-                if (item.isSimilar(PermadeathItems.createInfernalNetheriteBlock()) || (item.hasItemMeta() && (item.getItemMeta().getDisplayName().contains("Infernal Netherite Block") || item.getItemMeta().getDisplayName().contains("Bloque de Netherite Infernal")))) {
+                if (item.isSimilar(PermadeathItems.createInfernalNetheriteBlock()) || (item.hasItemMeta() && item.getItemMeta().hasDisplayName() && (item.getItemMeta().getDisplayName().contains("Infernal Netherite Block") || item.getItemMeta().getDisplayName().contains("Bloque de Netherite Infernal")))) {
                     
                     Player p = e.getPlayer();
                     // Debounce check: No colocar más de una vez cada 100ms
@@ -287,7 +287,7 @@ public class PlayerListener implements Listener {
         }
 
         // REMOVE MENU ITEM FROM DROPS
-        e.getDrops().removeIf(item -> item.getType() == Material.NETHER_STAR && item.hasItemMeta() && item.getItemMeta().getDisplayName().contains("Menú de Accesorios"));
+        e.getDrops().removeIf(item -> item.getType() == Material.NETHER_STAR && item.hasItemMeta() && item.getItemMeta().hasDisplayName() && item.getItemMeta().getDisplayName().contains("Menú de Accesorios"));
 
         loadTicks();
         long currentTicks = Main.instance.world.getThunderDuration();
@@ -371,7 +371,9 @@ public class PlayerListener implements Listener {
         }
 
         PlayerDataManager man = new PlayerDataManager(e.getEntity().getPlayer().getName(), Main.instance);
-        man.setAutoDeathCause(e.getEntity().getPlayer().getLastDamageCause().getCause());
+        if (e.getEntity().getPlayer().getLastDamageCause() != null) {
+            man.setAutoDeathCause(e.getEntity().getPlayer().getLastDamageCause().getCause());
+        }
         man.setDeathTime();
         man.setDeathDay();
         man.setDeathCoords(e.getEntity().getPlayer().getLocation());
@@ -675,7 +677,7 @@ public class PlayerListener implements Listener {
         
         for (int i = 0; i < player.getInventory().getSize(); i++) {
             ItemStack item = player.getInventory().getItem(i);
-            if (item != null && item.getType() == menu.getType() && item.hasItemMeta() && item.getItemMeta().getDisplayName().contains("Menú de Accesorios")) {
+            if (item != null && item.getType() == menu.getType() && item.hasItemMeta() && item.getItemMeta().hasDisplayName() && item.getItemMeta().getDisplayName().contains("Menú de Accesorios")) {
                 player.getInventory().setItem(i, null);
             }
         }
@@ -1133,7 +1135,7 @@ public class PlayerListener implements Listener {
                     }
                 }
 
-                if (res.getItemMeta().hasDisplayName() && res.getItemMeta().getDisplayName().contains(TextUtils.format("&6Hyper Golden Apple +")) || res.getItemMeta().getDisplayName().contains(TextUtils.format("&6Super Golden Apple +"))) {
+                if (res.hasItemMeta() && res.getItemMeta().hasDisplayName() && (res.getItemMeta().getDisplayName().contains(TextUtils.format("&6Hyper Golden Apple +")) || res.getItemMeta().getDisplayName().contains(TextUtils.format("&6Super Golden Apple +")))) {
                     if (e.getWhoClicked() instanceof Player) {
                         e.getInventory().setMatrix(clearMatrix());
                         Player p = (Player) e.getWhoClicked();
@@ -1253,7 +1255,7 @@ public class PlayerListener implements Listener {
         }
 
         public void runCheckForGaps() {
-            if (result == null) return;
+            if (result == null || !result.hasItemMeta() || !result.getItemMeta().hasDisplayName()) return;
             if (result.getItemMeta().getDisplayName().startsWith(TextUtils.format("&6Hyper"))) {
                 if (Main.instance.getDay() < 60) {
                     int found = 0;

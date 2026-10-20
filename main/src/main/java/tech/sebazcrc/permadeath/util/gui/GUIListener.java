@@ -25,7 +25,7 @@ public class GUIListener implements Listener {
                 return;
             }
 
-            if (item.getType() == Material.BOOK && item.getItemMeta().getDisplayName().contains("Menú")) {
+            if (item.getType() == Material.BOOK && item.hasItemMeta() && item.getItemMeta().hasDisplayName() && item.getItemMeta().getDisplayName().contains("Menú")) {
                 RecipeGUI.openMain(p);
                 p.playSound(p.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
                 return;

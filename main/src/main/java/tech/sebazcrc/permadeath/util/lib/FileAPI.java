@@ -32,38 +32,33 @@ public class FileAPI {
 
             if (!resourcePath.isEmpty()) {
                 resourcePath = resourcePath.replace('\\', '/');
-                InputStream in = plugin.getResource(resourcePath);
-                if (in == null) {
+                int lastIndex = resourcePath.lastIndexOf(47); // "/"
+                String finalPath = outPath + resourcePath.substring(Math.max(0, lastIndex));
+
+                File outFile = new File(plugin.getDataFolder(), finalPath);
+
+                if (outFile.isDirectory()) {
+                    outFile.mkdirs();
+                    return;
                 } else {
-                    int lastIndex = resourcePath.lastIndexOf(47); // "/"
-                    String finalPath = outPath + resourcePath.substring(Math.max(0, lastIndex));
+                    if (outFile.getParentFile() != null) outFile.getParentFile().mkdirs();
+                }
 
-                    File outFile = new File(plugin.getDataFolder(), finalPath);
+                if (outFile.exists() && !replace) {
+                    return;
+                }
 
-                    if (outFile.isDirectory()) {
-                        outFile.mkdirs();
-                    } else {
-                        if (outFile.getParentFile() != null) outFile.getParentFile().mkdirs();
-                    }
-
-                    try {
-                        if (outFile.exists() && !replace) {
-                        } else {
-                            OutputStream out = new FileOutputStream(outFile);
-                            byte[] buf = new byte[1024];
-
-                            int len;
-                            while ((len = in.read(buf)) > 0) {
-                                out.write(buf, 0, len);
-                            }
-
-                            out.close();
-                            in.close();
+                try (InputStream in = plugin.getResource(resourcePath)) {
+                    if (in == null) return;
+                    try (OutputStream out = new FileOutputStream(outFile)) {
+                        byte[] buf = new byte[1024];
+                        int len;
+                        while ((len = in.read(buf)) > 0) {
+                            out.write(buf, 0, len);
                         }
-                    } catch (IOException var10) {
-                        plugin.getLogger().log(Level.SEVERE, "Could not save " + outFile.getName() + " to " + outFile, var10);
                     }
-
+                } catch (IOException var10) {
+                    plugin.getLogger().log(Level.SEVERE, "Could not save " + outFile.getName() + " to " + outFile, var10);
                 }
             } else {
                 throw new IllegalArgumentException("ResourcePath cannot be null or empty");

@@ -49,13 +49,11 @@ public class PDCLog {
         }
     }
 
-    private void add(String msg) {
-        try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(file, true));
+    private synchronized void add(String msg) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
             bw.append(msg);
-            bw.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            Main.getInstance().getLogger().log(java.util.logging.Level.WARNING, "Error al escribir en logs.txt", e);
         }
     }
 

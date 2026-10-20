@@ -35,3 +35,20 @@ Todos los cambios notables en este proyecto serán documentados en este archivo 
     - `HealthCalculatorTest`: validación de salud base, bonus de hiper manzanas, bono de netherite/infernal, penalización de días 40 y 60 con/sin orbe y clamp a `MIN_HEALTH`.
     - `TotemFailCalculatorTest`: verificación de requerimientos por época (1, 2 y 3 tótems), acotamiento de probabilidad, tiradas de fallo y ajustes visuales para broadcasts.
     - `StormDurationCalculatorTest`: verificación de duraciones de tormenta (días 1-24, 25-49, 50 y 51-74) y conversión a ticks de Minecraft.
+
+### Corregido (Fase 3 - Seguridad de Recursos, Manejo de Excepciones y Robustez)
+- **Corrección Crítica en Spawn de CustomGiant (SpawnListener):** Eliminada la invocación por reflexión de `World.getBiome` que intentaba castearse a `boolean` (arrojando `ClassCastException` silenciosa e impidiendo para siempre el spawn de Gigantes en llanuras). Sustituido por verificación directa de Paper/Bukkit API `event.getLocation().getBlock().getBiome() == Biome.PLAINS`.
+- **Prevención de Fallo Fatal en Permaban (PlayerListener):** Protegida la llamada a `p.getLastDamageCause()` en `PlayerDeathEvent` contra valores nulos (muertes por `/kill`, daño custom o vaciado), evitando que una excepción NPE impidiese la ejecución del ban del jugador y el registro de la tormenta.
+- **Prevención de NullPointerException en Eventos Masivos:**
+  - `PlayerListener`: agregada verificación de `hasDisplayName()` en limpieza de accesorios al morir (`e.getDrops().removeIf`), clicks de bloques con bloques infernales (`PlayerInteractEvent`), detección de ítem de menú en inventario, precedencia de operadores booleanos en crafteo de hiper/súper manzanas doradas (`CraftItemEvent`), y validación preventiva en la cuadrícula de crafteo (`PrepareItemCraftEvent:runCheckForGaps`).
+  - `AbyssManager`: protegida la detección de pociones de respiración abisal y cálculo de presión en máscaras ante encantamientos no inicializados.
+  - `NetheriteArmor`, `SlotBlockListener`, `GUIListener` y `AccessoryListener`: añadidas guardas de `hasDisplayName()` previas a `getDisplayName().contains(...)` o `startsWith(...)`.
+- **Fuga de Recursos y Cierre Seguro (Try-With-Resources):**
+  - `PDCLog.java`: encapsulada la escritura en `logs.txt` con `try-with-resources` y método `synchronized` para evitar fugas de file descriptors y colisiones entre hilos en Folia.
+  - `ResetManager.java`: stream de `Files.walk` protegido con `try-with-resources`, impidiendo bloqueos de directorios del sistema operativo en Windows al resetear dimensiones.
+  - `FileAPI.java`: flujos `InputStream` y `OutputStream` migrados a `try-with-resources` con transferencia directa de streams.
+  - `PermadeathBootstrap.java`: extracción de datapacks internos asegurada con `try-with-resources`.
+  - `WorldEditPortal.java`: lectura de esquemáticas con validación de formato no nulo y `FileInputStream` cerrado de forma determinista.
+  - `BeginningLootTable.java`: verificación de límites de índice previo a insertar loot aleatorio secundario.
+- **Aislamiento en Registro de Recetas (RecipeManager):** Modularizado el registro de recetas con método protector `safeRegister(...)` para que fallos o duplicidades en una receta no interrumpan el registro del resto.
+- **Transición a Logging Estructurado:** Sustituido `e.printStackTrace()` y `System.out.println` por `Logger.log(Level.SEVERE, ...)` en gestores de persistencia (`BeginningDataManager`, `DateManager`, `EndDataManager`, `PlayerDataManager`, `CauldronDataManager`, `LootManager`).

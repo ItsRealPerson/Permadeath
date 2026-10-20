@@ -75,15 +75,15 @@ public class BeginningLootTable {
                 ItemStack s = new ItemStack(getMaterial(split), ammount);
                 inventory.setItem(this.randomLoc.get(added), s);
 
-                try {
-                    int x = ammount + getMin(split) / 2;
-                    ItemStack s2 = new ItemStack(s.getType(), x);
+                int x = ammount + getMin(split) / 2;
+                ItemStack s2 = new ItemStack(s.getType(), x);
 
-                    int r = random.nextInt(5) + 1;
-                    int slot = (random.nextBoolean() ? -1 : 1) * r;
+                int r = random.nextInt(5) + 1;
+                int slot = (random.nextBoolean() ? -1 : 1) * r;
+                int targetIndex = added + slot;
 
-                    inventory.setItem(this.randomLoc.get(added + slot), s2);
-                } catch (Exception x) {
+                if (targetIndex >= 0 && targetIndex < this.randomLoc.size()) {
+                    inventory.setItem(this.randomLoc.get(targetIndex), s2);
                 }
 
                 if (added++ >= inventory.getSize() - 1) {

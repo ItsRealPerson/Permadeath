@@ -16,16 +16,14 @@ public class CustomEnchantmentListener implements Listener {
 
         // Comprobar si el resultado tiene el encantamiento Respiración Abisal
         NamespacedKey abyssalKey = new NamespacedKey("permadeath", "abyssal_breathing");
+        org.bukkit.enchantments.Enchantment ench = org.bukkit.Registry.ENCHANTMENT.get(abyssalKey);
         
-        try {
-            // org.bukkit.Registry.ENCHANTMENT.get(key) es la forma correcta en 1.21
-            if (result.containsEnchantment(org.bukkit.Registry.ENCHANTMENT.get(abyssalKey))) {
-                // Si lo tiene, verificar si el ítem es la Máscara del Abismo
-                if (!PermadeathItems.isAbyssalMask(result)) {
-                    // Si no es la máscara, borrar el resultado
-                    event.setResult(null);
-                }
+        if (ench != null && result.containsEnchantment(ench)) {
+            // Si lo tiene, verificar si el ítem es la Máscara del Abismo
+            if (!PermadeathItems.isAbyssalMask(result)) {
+                // Si no es la máscara, borrar el resultado
+                event.setResult(null);
             }
-        } catch (Exception ignored) {}
+        }
     }
 }

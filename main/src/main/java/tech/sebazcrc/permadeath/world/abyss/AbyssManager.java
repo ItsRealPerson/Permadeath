@@ -196,7 +196,7 @@ public class AbyssManager implements Listener {
     @EventHandler
     public void onConsumePotion(org.bukkit.event.player.PlayerItemConsumeEvent e) {
         ItemStack item = e.getItem();
-        if (item.getType() == Material.POTION && item.hasItemMeta() && item.getItemMeta().getDisplayName().contains("Respiración Abisal")) {
+        if (item.getType() == Material.POTION && item.hasItemMeta() && item.getItemMeta().hasDisplayName() && item.getItemMeta().getDisplayName().contains("Respiración Abisal")) {
             Player p = e.getPlayer();
             long expiry = System.currentTimeMillis() + (120 * 1000);
             p.getPersistentDataContainer().set(new NamespacedKey(plugin, "abyss_potion_expiry"), PersistentDataType.LONG, expiry);
@@ -276,10 +276,10 @@ public class AbyssManager implements Listener {
             currentPressure = 1.0 - ((double) currentDamage / maxDurability);
 
             int enchantLevel = 0;
-            try {
-                NamespacedKey key = new NamespacedKey("permadeath", "abyssal_breathing");
-                enchantLevel = mask.getEnchantmentLevel(org.bukkit.Registry.ENCHANTMENT.get(key));
-            } catch (Exception ignored) {}
+            org.bukkit.enchantments.Enchantment ench = org.bukkit.Registry.ENCHANTMENT.get(new NamespacedKey("permadeath", "abyssal_breathing"));
+            if (ench != null && mask.hasItemMeta()) {
+                enchantLevel = mask.getEnchantmentLevel(ench);
+            }
 
             int chance = 5 + (enchantLevel * 5);
             if (new java.util.Random().nextInt(chance) == 0) { 
