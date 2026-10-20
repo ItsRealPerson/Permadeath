@@ -58,33 +58,8 @@ public class PlayerListener implements Listener {
     }
 
     public void loadTicks() {
-        if (Main.getInstance().getDay() <= 24) {
-
-            this.stormTicks = Main.getInstance().getDay() * 3600;
-            this.stormHours = stormTicks / 60 / 60;
-        }
-
-        if (Main.getInstance().getDay() >= 25 && Main.getInstance().getDay() < 50) {
-
-            long define = Main.getInstance().getDay() - 24;
-
-            this.stormTicks = define * 3600;
-            this.stormHours = stormTicks / 60 / 60;
-        }
-
-        if (Main.getInstance().getDay() == 50) {
-
-            this.stormTicks = 3600 / 2;
-            this.stormHours = stormTicks / 60 / 60;
-        }
-
-        if (Main.getInstance().getDay() > 50 && Main.getInstance().getDay() < 75) {
-
-            long define = Main.getInstance().getDay() - 49;
-
-            this.stormTicks = define * 3600 / 2;
-            this.stormHours = stormTicks / 60 / 60;
-        }
+        this.stormTicks = tech.sebazcrc.permadeath.util.calc.StormDurationCalculator.calculateStormSeconds(Main.getInstance().getDay());
+        this.stormHours = tech.sebazcrc.permadeath.util.calc.StormDurationCalculator.calculateStormHours(Main.getInstance().getDay());
     }
 
     @EventHandler

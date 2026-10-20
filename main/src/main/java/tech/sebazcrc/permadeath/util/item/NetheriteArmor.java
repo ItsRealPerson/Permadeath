@@ -257,36 +257,18 @@ public final class NetheriteArmor implements Listener {
             }
         }
 
-        Double maxHealth = 20.0D;
-
-        if (doPlayerAteOne) {
-            maxHealth += 4.0;
-        }
-        if (doPlayerAteTwo) {
-            maxHealth += 4.0;
-        }
-
-        if (currentNetheritePieces >= 4) {
-            maxHealth += 8.0D;
-        }
-
         if (currentInfernalPieces >= 4) {
-            maxHealth += 10.0D;
             p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 20 * 3, 0));
         }
 
-        if (Main.getInstance().getDay() >= 40) {
-            maxHealth -= 8.0D; // 12HP - 6 corazones día 40
-            if (Main.getInstance().getDay() >= 60) {
-                maxHealth -= 8.0D; // 4HP - 2 corazones Día 60
-
-                if (!hasOrb) {
-                    maxHealth -= 16.0D;
-                }
-            }
-        }
-
-        return Math.max(maxHealth, 0.000001D);
+        return tech.sebazcrc.permadeath.util.calc.HealthCalculator.calculateMaxHealth(
+                Main.getInstance().getDay(),
+                hasOrb,
+                doPlayerAteOne,
+                doPlayerAteTwo,
+                currentNetheritePieces,
+                currentInfernalPieces
+        );
     }
 
     public static boolean checkForOrb(Player p) {

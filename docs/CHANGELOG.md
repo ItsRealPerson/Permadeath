@@ -24,3 +24,14 @@ Todos los cambios notables en este proyecto serán documentados en este archivo 
 - **Corrección de Prioridades Bukkit:** Cambiada la prioridad de `EventPriority.MONITOR` a `EventPriority.HIGHEST` en `TotemListener.java` y `SlotBlockListener.java` para eventos cancelables.
 - **Purga de Código Muerto:** Eliminados los archivos huérfanos `PlayerListener.java-header` y la clase duplicada `event.ShulkerEvent`.
 
+### Añadido (Fase 2 - Calculadores Puros y Suite JUnit 5)
+- **Desacoplamiento de Lógica de Dominio Puro (Domain Calculators):**
+  - Creada clase pura `HealthCalculator` en `tech.sebazcrc.permadeath.util.calc` para cómputo de vida máxima considerando hiper manzanas, sets de armadura de netherite e infernal, orbe de vida y penalizaciones de salud de épocas avanzadas (Día 40: 6 corazones base, Día 60: 2 corazones base). Desacoplada de Bukkit e integrada en `NetheriteArmor.java`.
+  - Creada clase pura `TotemFailCalculator` en `tech.sebazcrc.permadeath.util.calc` para cálculo de tótems requeridos (Días 1-39: 1, Días 40-59: 2, Días 60+: 3), normalización y acotamiento de probabilidades [1, 100] y evaluación probabilística. Integrada en `TotemListener.java`.
+  - Creada clase pura `StormDurationCalculator` en `tech.sebazcrc.permadeath.util.calc` para cómputo de segundos, horas y game ticks de tormenta generados por muerte de jugadores. Integrada en `PlayerListener.java`.
+- **Suite de Testing Automatizado (JUnit 5):**
+  - Añadida dependencia `org.junit.jupiter:junit-jupiter:5.10.2` en ámbito `test` al `pom.xml` del módulo `main`.
+  - Creadas suites de pruebas exhaustivas:
+    - `HealthCalculatorTest`: validación de salud base, bonus de hiper manzanas, bono de netherite/infernal, penalización de días 40 y 60 con/sin orbe y clamp a `MIN_HEALTH`.
+    - `TotemFailCalculatorTest`: verificación de requerimientos por época (1, 2 y 3 tótems), acotamiento de probabilidad, tiradas de fallo y ajustes visuales para broadcasts.
+    - `StormDurationCalculatorTest`: verificación de duraciones de tormenta (días 1-24, 25-49, 50 y 51-74) y conversión a ticks de Minecraft.

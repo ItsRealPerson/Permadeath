@@ -41,12 +41,10 @@ public class TotemListener implements Listener {
             String totemFail = Objects.requireNonNull(Main.instance.getConfig().getString("TotemFail.ChatMessage"));
             String totemMessage = Objects.requireNonNull(Main.instance.getConfig().getString("TotemFail.PlayerUsedTotemMessage"));
 
-            if (Main.getInstance().getDay() >= 40) {
-                if (Main.getInstance().getDay() < 60) {
-                    totemMessage = Objects.requireNonNull(Main.instance.getConfig().getString("TotemFail.PlayerUsedTotemsMessage").replace("{ammount}", "dos").replace("%player%", player));
-                } else {
-                    totemMessage = Objects.requireNonNull(Main.instance.getConfig().getString("TotemFail.PlayerUsedTotemsMessage").replace("{ammount}", "tres").replace("%player%", player));
-                }
+            int requiredTotems = tech.sebazcrc.permadeath.util.calc.TotemFailCalculator.getRequiredTotems(Main.getInstance().getDay());
+            if (requiredTotems > 1) {
+                String amountWord = requiredTotems == 2 ? "dos" : "tres";
+                totemMessage = Objects.requireNonNull(Main.instance.getConfig().getString("TotemFail.PlayerUsedTotemsMessage").replace("{ammount}", amountWord).replace("%player%", player));
             }
 
 
@@ -64,8 +62,7 @@ public class TotemListener implements Listener {
 
             if (!containsDay) return;
 
-            if (failProb >= 101) failProb = 100;
-            if (failProb < 0) failProb = 1;
+            failProb = tech.sebazcrc.permadeath.util.calc.TotemFailCalculator.clampProbability(failProb);
 
             if (failProb == 100) {
                 Bukkit.broadcastMessage(TextUtils.format(totemMessage.replace("%player%", player).replace("%porcent%", "=").replace("%totem_fail%", String.valueOf(100)).replace("%number%", String.valueOf(failProb))));
@@ -101,7 +98,7 @@ public class TotemListener implements Listener {
                         Bukkit.broadcastMessage(TextUtils.format(totemMessage.replace("%player%", player).replace("%porcent%", "!=").replace("%totem_fail%", String.valueOf(raShow)).replace("%number%", String.valueOf(resta))));
                     }
                 } else {
-                    int neededTotems = (Main.instance.getDay() < 60 ? 2 : 3);
+                    int neededTotems = tech.sebazcrc.permadeath.util.calc.TotemFailCalculator.getRequiredTotems(Main.instance.getDay());
                     int totems = p.getInventory().all(Material.TOTEM_OF_UNDYING).size();
 
                     if (p.getInventory().getItemInOffHand() != null && p.getInventory().getItemInOffHand().getType() == Material.TOTEM_OF_UNDYING)
