@@ -44,6 +44,7 @@ public class PDCCommandCompleter implements TabCompleter {
             List<String> subcommands = new ArrayList<>(SUBCOMMANDS);
             subcommands.add("recipes");
             subcommands.add("accesorios");
+            subcommands.add("inv");
             if (Main.getInstance().isAbyssEnabled()) {
                 subcommands.add("abyss");
             }

@@ -69,7 +69,7 @@ public class PDCCommand implements CommandExecutor {
             case "give" -> handleGive(sender, args);
             case "afk" -> handleAFK(sender, args);
             case "storm" -> handleStorm(sender, args);
-            case "accesorios" -> handleAccesorios(sender);
+            case "accesorios", "inv" -> handleAccesorios(sender);
             case "abyss" -> handleAbyss(sender, args);
             case "recipes" -> handleRecipes(sender);
             case "backup" -> handleBackup(sender);
