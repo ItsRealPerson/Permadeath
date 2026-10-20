@@ -16,11 +16,31 @@ import tech.sebazcrc.permadeath.util.lib.ItemBuilder;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Base64;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AccessoryInventory {
 
     private static final String KEY = "accessory_inventory_v2"; // V2 para el nuevo diseño
     public static final int SIZE = 54;
+    private static final Map<UUID, ItemStack[]> CACHE = new ConcurrentHashMap<>();
+
+    public static void clearCache(Player player) {
+        if (player != null) {
+            CACHE.remove(player.getUniqueId());
+        }
+    }
+
+    public static void clearCache(UUID uuid) {
+        if (uuid != null) {
+            CACHE.remove(uuid);
+        }
+    }
+
+    public static void invalidateAllCache() {
+        CACHE.clear();
+    }
     
     // Slots de Accesorios (5 Izquierda, 5 Derecha)
     public static final int[] ACCESSORY_SLOTS = {10, 11, 19, 20, 28, 15, 16, 24, 25, 33};
@@ -87,20 +107,20 @@ public class AccessoryInventory {
     }
 
     public static void save(Player player, Inventory inventory) {
-                    // Guardar solo accesorios (10 slots)
-                    ItemStack[] accessoryItems = new ItemStack[ACCESSORY_SLOTS.length];
-                    for (int i = 0; i < ACCESSORY_SLOTS.length; i++) {
-                        ItemStack item = inventory.getItem(ACCESSORY_SLOTS[i]);
-                        if (item != null && item.getType().name().contains("STAINED_GLASS_PANE") && item.hasItemMeta()) {
-                            String name = item.getItemMeta().getDisplayName();
-                            if (name.contains("Slot de Orbe") || name.contains("Slot de Medalla") || name.contains("Slot de Reliquia") || name.contains("Slot de Máscara")) {
-                                item = null;
-                            }
-                        }
-                        accessoryItems[i] = item;
-                    }
-                    saveFromItems(player, accessoryItems);
-                // Sincronizar armadura de vuelta al jugador
+        // Guardar solo accesorios (10 slots)
+        ItemStack[] accessoryItems = new ItemStack[ACCESSORY_SLOTS.length];
+        for (int i = 0; i < ACCESSORY_SLOTS.length; i++) {
+            ItemStack item = inventory.getItem(ACCESSORY_SLOTS[i]);
+            if (item != null && item.getType().name().contains("STAINED_GLASS_PANE") && item.hasItemMeta()) {
+                String name = item.getItemMeta().getDisplayName();
+                if (name.contains("Slot de Orbe") || name.contains("Slot de Medalla") || name.contains("Slot de Reliquia") || name.contains("Slot de Máscara")) {
+                    item = null;
+                }
+            }
+            accessoryItems[i] = item;
+        }
+        saveFromItems(player, accessoryItems);
+        // Sincronizar armadura de vuelta al jugador
         player.getInventory().setHelmet(inventory.getItem(HELMET_SLOT));
         player.getInventory().setChestplate(inventory.getItem(CHEST_SLOT));
         player.getInventory().setLeggings(inventory.getItem(LEGS_SLOT));
@@ -108,12 +128,16 @@ public class AccessoryInventory {
     }
 
     public static void saveFromItems(Player player, ItemStack[] items) {
+        if (player == null) return;
+        CACHE.put(player.getUniqueId(), items != null ? items.clone() : new ItemStack[0]);
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             BukkitObjectOutputStream dataOutput = new BukkitObjectOutputStream(outputStream);
-            dataOutput.writeInt(items.length);
-            for (ItemStack item : items) {
-                dataOutput.writeObject(item);
+            dataOutput.writeInt(items != null ? items.length : 0);
+            if (items != null) {
+                for (ItemStack item : items) {
+                    dataOutput.writeObject(item);
+                }
             }
             dataOutput.close();
             
@@ -125,6 +149,12 @@ public class AccessoryInventory {
     }
 
     public static ItemStack[] load(Player player) {
+        if (player == null) return null;
+        ItemStack[] cached = CACHE.get(player.getUniqueId());
+        if (cached != null) {
+            return cached;
+        }
+
         PersistentDataContainer pdc = player.getPersistentDataContainer();
         NamespacedKey key = new NamespacedKey(Bukkit.getPluginManager().getPlugin("Permadeath"), KEY);
         if (!pdc.has(key, PersistentDataType.STRING)) return null;
@@ -139,11 +169,10 @@ public class AccessoryInventory {
                 items[i] = (ItemStack) dataInput.readObject();
             }
             dataInput.close();
+            CACHE.put(player.getUniqueId(), items);
             return items;
         } catch (Exception e) {
             return null;
         }
     }
 }
-
-

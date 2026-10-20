@@ -733,6 +733,7 @@ public class PlayerListener implements Listener {
 
         globalSleeping.remove(p.getUniqueId());
         Main.getInstance().getDoneEffectPlayers().remove(p.getUniqueId());
+        tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.clearCache(p);
     }
 
     @EventHandler

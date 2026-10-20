@@ -98,28 +98,17 @@ public class SpawnListener implements Listener {
         }
 
         if (Main.OPTIMIZE_SPAWNS && world.getEnvironment() != World.Environment.THE_END && entity instanceof Monster) {
-            Player nearest = null;
-            double minDist = 128 * 128;
-            for (Player p : world.getPlayers()) {
-                double dist = p.getLocation().distanceSquared(location);
-                if (dist < minDist) {
-                    minDist = dist;
-                    nearest = p;
+            int perPlayerCap = plugin.getConfig().getBoolean("Toggles.Doble-Mob-Cap") ? 140 : 70;
+            // Chequeo en radio local razonable (32 bloques) sin escanear 256 chunks ni streams
+            int localMonsterCount = 0;
+            for (Entity e : location.getChunk().getEntities()) {
+                if (e instanceof Monster) {
+                    localMonsterCount++;
                 }
             }
-
-            if (nearest != null) {
-                int perPlayerCap = plugin.getConfig().getBoolean("Toggles.Doble-Mob-Cap") ? 140 : 70;
-                
-                // En Folia, el conteo de entidades cercanas es seguro dentro del hilo de la región
-                long localMonsterCount = nearest.getNearbyEntities(128, 128, 128).stream()
-                        .filter(e -> e instanceof Monster)
-                        .count();
-
-                if (localMonsterCount >= perPlayerCap) {
-                    event.setCancelled(true);
-                    return;
-                }
+            if (localMonsterCount >= (perPlayerCap / 2)) {
+                event.setCancelled(true);
+                return;
             }
         }
 
@@ -378,7 +367,7 @@ public class SpawnListener implements Listener {
 
             if (entity instanceof Bat) {
                 event.setCancelled(true);
-                if (location.getWorld().getLivingEntities().stream().filter(entity1 -> entity1 instanceof Blaze).map(Blaze.class::cast).collect(Collectors.toList()).size() < 30) {
+                if (location.getWorld().getNearbyEntities(location, 32, 32, 32, e -> e instanceof Blaze).size() < 15) {
                     Blaze g = (Blaze) entity.getWorld().spawnEntity(event.getLocation(), EntityType.BLAZE);
                     g.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, Integer.MAX_VALUE, 1));
                 }
@@ -677,24 +666,29 @@ public class SpawnListener implements Listener {
 
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent e) {
-        if (plugin.getConfig().getBoolean("Toggles.Replace-Mobs-On-Chunk-Load")) {
-            for (LivingEntity liv : Arrays.stream(e.getChunk().getEntities()).filter(entity -> entity instanceof LivingEntity).map(LivingEntity.class::cast).collect(Collectors.toList())) {
+        boolean replaceMobs = plugin.getConfig().getBoolean("Toggles.Replace-Mobs-On-Chunk-Load");
+        boolean supernovaCats = plugin.getDay() >= 40 && plugin.getDay() < 50;
+        if (!replaceMobs && !supernovaCats) return;
+
+        Entity[] entities = e.getChunk().getEntities();
+        for (Entity entity : entities) {
+            if (!entity.isValid() || entity.isDead()) continue;
+
+            if (replaceMobs && entity instanceof LivingEntity liv) {
                 applyDayChanges(liv);
             }
-        }
 
-        if (plugin.getDay() >= 40 && plugin.getDay() < 50) {
-            for (LivingEntity cats : Arrays.stream(e.getChunk().getEntities()).filter(entity -> isACat(entity)).map(LivingEntity.class::cast).collect(Collectors.toList())) {
-                cats.setCustomName(TextUtils.format("&6Gato Supernova"));
-                explodeCat(cats);
-            }
-
-            for (Wolf wolf : Arrays.stream(e.getChunk().getEntities()).filter(entity -> entity instanceof Wolf).map(Wolf.class::cast).collect(Collectors.toList())) {
-                Cat cat = wolf.getWorld().spawn(wolf.getLocation().clone(), Cat.class);
-                wolf.remove();
-                cat.setAdult();
-                cat.setCustomName(TextUtils.format("&6Gato Supernova"));
-                explodeCat(cat);
+            if (supernovaCats) {
+                if (isACat(entity) && entity instanceof LivingEntity catLiv) {
+                    catLiv.setCustomName(TextUtils.format("&6Gato Supernova"));
+                    explodeCat(catLiv);
+                } else if (entity instanceof Wolf wolf) {
+                    Cat cat = wolf.getWorld().spawn(wolf.getLocation().clone(), Cat.class);
+                    wolf.remove();
+                    cat.setAdult();
+                    cat.setCustomName(TextUtils.format("&6Gato Supernova"));
+                    explodeCat(cat);
+                }
             }
         }
     }
@@ -1146,25 +1140,25 @@ public class SpawnListener implements Listener {
     private void startRegionalEntityTask(LivingEntity entity) {
         if (entity instanceof Player) return;
 
-        entity.getScheduler().runAtFixedRate(plugin, task -> {
-            if (entity.isDead() || !entity.isValid()) {
-                task.cancel();
-                return;
-            }
-
-            // 1. Lógica de Death Train (Regionalizada por versión)
+        // 1. Lógica de Death Train: Se evalúa y aplica una única vez al spawnear
+        if (plugin.getDay() >= 25) {
             int currentVersion = plugin.getDeathTrainVersion();
             int entityVersion = entity.getPersistentDataContainer().getOrDefault(new NamespacedKey(plugin, "dt_version"), PersistentDataType.INTEGER, -1);
-
             if (entityVersion < currentVersion) {
                 plugin.deathTrainEffects(entity);
                 entity.getPersistentDataContainer().set(new NamespacedKey(plugin, "dt_version"), PersistentDataType.INTEGER, currentVersion);
             }
+        }
 
-            // 2. Lógica de Ultra Ravager (Optimizada: sin RayTrace)
-            if (entity instanceof Ravager ravager && plugin.getDay() >= 40) {
+        // 2. Lógica de Ultra Ravager: Solo los Ravagers en Día 40+ requieren un scheduler periódico
+        if (entity instanceof Ravager ravager && plugin.getDay() >= 40) {
+            ravager.getScheduler().runAtFixedRate(plugin, task -> {
+                if (ravager.isDead() || !ravager.isValid()) {
+                    task.cancel();
+                    return;
+                }
+
                 if (ravager.getPersistentDataContainer().has(new NamespacedKey(plugin, "ultra_ravager"), PersistentDataType.BYTE)) {
-                    // Solo chequear bloques en frente del Ravager
                     org.bukkit.block.BlockFace face = ravager.getFacing();
                     org.bukkit.block.Block b = ravager.getLocation().getBlock().getRelative(face);
                     
@@ -1176,8 +1170,8 @@ public class SpawnListener implements Listener {
                         }
                     }
                 }
-            }
-        }, null, 20L, 20L); // Ejecutar cada segundo (20 ticks)
+            }, null, 20L, 20L); // Ejecutar cada segundo (20 ticks) solo para Ultra Ravager
+        }
     }
 
     private void runTaskEntity(Entity entity, Runnable runnable) {

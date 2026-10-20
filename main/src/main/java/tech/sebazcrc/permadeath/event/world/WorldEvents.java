@@ -30,17 +30,8 @@ public class WorldEvents implements Listener {
                 }
             }
         } else {
-            if (event.getWorld().getEnvironment() == World.Environment.NORMAL && Main.getInstance().getDay() >= 25) {
-                for (World w : Bukkit.getWorlds()) {
-                    for (LivingEntity l : w.getLivingEntities()) {
-                        if (Main.isRunningFolia()) {
-                            l.getScheduler().run(Main.instance, t -> Main.getInstance().deathTrainEffects(l), null);
-                        } else {
-                            Main.getInstance().deathTrainEffects(l);
-                        }
-                    }
-                }
-            }
+            // En tormenta, los efectos de Death Train ya se aplican automáticamente en SpawnListener
+            // sin necesidad de barrer síncronamente todos los chunks y mundos del servidor.
         }
     }
 }

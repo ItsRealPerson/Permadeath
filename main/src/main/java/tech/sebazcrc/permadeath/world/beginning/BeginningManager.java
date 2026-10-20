@@ -141,6 +141,11 @@ public class BeginningManager implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onMove(org.bukkit.event.player.PlayerMoveEvent e) {
         if (beginningWorld == null) return;
+        if (e.getFrom().getBlockX() == e.getTo().getBlockX() 
+                && e.getFrom().getBlockY() == e.getTo().getBlockY() 
+                && e.getFrom().getBlockZ() == e.getTo().getBlockZ()) {
+            return;
+        }
         
         Block b = e.getTo().getBlock();
         if (b.getType() == Material.END_GATEWAY) {

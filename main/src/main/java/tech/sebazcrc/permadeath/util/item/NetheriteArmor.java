@@ -218,8 +218,10 @@ public final class NetheriteArmor implements Listener {
         // }
 
         org.bukkit.attribute.AttributeInstance attribute = p.getAttribute(Attribute.MAX_HEALTH);
-        if (attribute != null) {
-            attribute.setBaseValue(maxHealth);
+        if (attribute != null && maxHealth != null) {
+            if (Math.abs(attribute.getBaseValue() - maxHealth) > 0.001) {
+                attribute.setBaseValue(maxHealth);
+            }
         }
     }
 

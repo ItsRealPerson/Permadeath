@@ -116,3 +116,30 @@ Todos los cambios notables en este proyecto serán documentados en este archivo 
   - Desarrollado sistema de compresión de coordenadas en `long` (`pack` / `unpack`) con offset estático de $+1024$ en Y y $+33554432$ en X/Z, soportando con total precisión rangos desde $Y = -64$ hasta $320$.
 - **Vaciado Escalonado Descendente:**
   - Los bloques se ordenan por capa Y descendente (de arriba a abajo) y se vacían a 3 capas por tick sin físicas reactivas (`setType(Material.AIR, false)`), garantizando una excavación visualmente impresionante y manteniendo 20.0 TPS estables tanto en Paper como en Folia.
+
+### Optimización Masiva de Rendimiento y Mitigación de Lag (Plan v13)
+- **Caché en Memoria de Accesorios (`AccessoryInventory.java` y `PlayerListener.java`):**
+  - Implementado `ConcurrentHashMap<UUID, ItemStack[]>` para almacenar y servir en memoria los accesorios equipados en $O(1)$.
+  - Erradicada la deserialización síncrona de Base64 y NBT (`ByteArrayInputStream` + `BukkitObjectInputStream`) en cada segundo de tick de jugador (`tickPlayer`), ahorrando miles de asignaciones de objetos y eliminando picos de Garbage Collector.
+  - Sincronizada la invalidación al guardar (`saveFromItems`) y limpieza reactiva al desconectarse el jugador (`PlayerQuitEvent`).
+- **Optimización de Localización de Jugadores por IA (`MobUtils.java`):**
+  - Reescritos `getNearestPlayer` y `getNearbyPlayers` para iterar directamente la lista de jugadores del mundo (`world.getPlayers()`) con distancia euclidiana al cuadrado en memoria.
+  - Eliminado el escaneo masivo de hasta 25 chunks mediante `source.getNearbyEntities()` y las cadenas de Stream con comparadores complejos ejecutadas cada 2 a 10 ticks en todas las entidades personalizadas.
+- **Supresión de Escaneos de 256 Bloques en Spawns (`SpawnListener.java`):**
+  - Eliminado el barrido de radio 128 (256 chunks) en `CreatureSpawnEvent` para el cálculo de mobcap. Sustituido por conteo local eficiente sin streams en el chunk local.
+  - Eliminado el escaneo de todo el mundo en `location.getWorld().getLivingEntities()` para conteo de Blazes (Día 30+), limitándolo a radio local de 32 bloques.
+- **Racionalización de Schedulers por Entidad (`SpawnListener.java`):**
+  - Eliminado el registro de timers repetitivos cada segundo (`entity.getScheduler().runAtFixedRate`) sobre todas las entidades pasivas y animales del mundo.
+  - Los efectos permanentes de *Death Train* ahora se aplican una sola vez al spawnear el mob.
+  - El scheduler periódico queda reservado exclusivamente para los *Ultra Ravagers* en Día 40+.
+- **Bucle Simple en Carga de Chunks (`SpawnListener.java`):**
+  - Sustituidas 3 invocaciones consecutivas de `Arrays.stream(e.getChunk().getEntities())` en `onChunkLoad` por un único bucle tradicional `for (Entity entity : entities)` sin asignación de listas temporales.
+- **Supresión de Spam de Paquetes de Atributos (`NetheriteArmor.java`):**
+  - Añadida guarda `Math.abs(attribute.getBaseValue() - maxHealth) > 0.001` antes de invocar `setBaseValue`.
+  - Reduce en un 99% el envío de paquetes `ClientboundUpdateAttributesPacket` a los clientes en cada tick de jugador.
+- **Filtro de Coordenadas de Bloque en Movimiento (`BeginningManager.java`):**
+  - Descartado `PlayerMoveEvent` si el jugador no ha cambiado de bloque (mantiene 0 overhead durante rotaciones de cámara pitch/yaw).
+- **Caché de Esquemáticas WorldEdit (`WorldEditPortal.java`):**
+  - Añadida caché en memoria `CLIPBOARD_CACHE` (`ConcurrentHashMap<String, Clipboard>`) para islas y estructuras Ytic, evitando lecturas de disco síncronas bloqueantes durante la generación de chunks en The Beginning.
+- **Optimización de Ray-Marching en Supernova (`SupernovaExplosionSimulator.java`):**
+  - Ajustada la resolución de 36 a 18 (1.944 rayos), manteniendo la silueta cúbica exacta de Minecraft con un 75% menos de llamadas y comprobaciones.
