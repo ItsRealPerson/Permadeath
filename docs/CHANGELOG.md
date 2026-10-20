@@ -143,3 +143,11 @@ Todos los cambios notables en este proyecto serán documentados en este archivo 
   - Añadida caché en memoria `CLIPBOARD_CACHE` (`ConcurrentHashMap<String, Clipboard>`) para islas y estructuras Ytic, evitando lecturas de disco síncronas bloqueantes durante la generación de chunks en The Beginning.
 - **Optimización de Ray-Marching en Supernova (`SupernovaExplosionSimulator.java`):**
   - Ajustada la resolución de 36 a 18 (1.944 rayos), manteniendo la silueta cúbica exacta de Minecraft con un 75% menos de llamadas y comprobaciones.
+
+### Corrección de The Beginning y Teletransporte de Portal (Plan v14)
+- **Eliminación del Corte Cuadrado de 95 Bloques (`EmptyGenerator.java` y `BeginningManager.java`):**
+  - Modernizado `EmptyGenerator` para Paper 1.21.8 anulando la generación nativa de superficie, ruido, cuevas, estructuras y decoraciones de Minecraft (`shouldGenerateSurface() = false`, etc.).
+  - Vinculado explícitamente `creator.generator(new EmptyGenerator())` en `BeginningManager.loadWorld()`, erradicando la generación residual de la isla central de End Stone y el anillo de vacío vanilla que provocaban un corte cuadrado de 95 bloques alrededor del centro.
+- **Redirección Nativa de Spawn al Entrar a The Beginning (`BeginningManager.java`):**
+  - Corregido el conflicto de colisión y carrera entre `PlayerMoveEvent` y `PlayerTeleportEndGatewayEvent`.
+  - Implementada la redirección nativa de destino con `((PlayerTeleportEvent) event).setTo(to)` en `handlePortalTeleport`, aterrizando al jugador con precisión en `Location(beginningWorld, 0.5, 100.0, 0.5, 90f, 0f)` directamente en la plataforma frente al portal de regreso, en lugar del desvío vanilla a `(-96, 100, -16)`.

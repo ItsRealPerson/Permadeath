@@ -94,6 +94,7 @@ public class BeginningManager implements Listener {
             try {
                 WorldCreator creator = new WorldCreator(WORLD_NAME);
                 creator.environment(World.Environment.THE_END);
+                creator.generator(new tech.sebazcrc.permadeath.world.beginning.generator.EmptyGenerator());
                 creator.generateStructures(false);
                 this.beginningWorld = Bukkit.createWorld(creator);
             } catch (Exception e) {
@@ -225,42 +226,48 @@ public class BeginningManager implements Listener {
 
         // 3. Teletransporte al Beginning
         if (isOverworld) {
-            if (event != null) event.setCancelled(true);
-            
-            // Fixed Spawn Location
-            Location to = new Location(beginningWorld, 0.5, 101, 3.5); 
-            to.setYaw(180f); 
+            Location to = new Location(beginningWorld, 0.5, 100.0, 0.5, 90f, 0f);
 
-            if (Main.isRunningFolia()) {
-                p.getScheduler().run(main, task -> {
-                    p.teleportAsync(to).thenAccept(success -> {
-                        if (success) {
-                            p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e."));
-                        }
-                    });
-                }, null);
-            } else {
-                p.teleport(to);
+            if (event instanceof PlayerTeleportEvent tpEvent) {
+                tpEvent.setTo(to);
                 p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e."));
+            } else {
+                if (event != null) event.setCancelled(true);
+                if (Main.isRunningFolia()) {
+                    p.getScheduler().run(main, task -> {
+                        p.teleportAsync(to).thenAccept(success -> {
+                            if (success) {
+                                p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e."));
+                            }
+                        });
+                    }, null);
+                } else {
+                    p.teleport(to);
+                    p.sendMessage(TextUtils.format("&eBienvenido a &b&lThe Beginning&e."));
+                }
             }
         }
 
         // 4. Teletransporte de vuelta al Overworld
         if (isBeginning) {
-            if (event != null) event.setCancelled(true);
-            
             Location target = data.getOverWorldPortal();
             if (target == null) target = main.world.getSpawnLocation();
             
             // Offset to avoid infinite loop
             Location to = target.clone().add(3.5, 0, 0.5);
-            
-            if (Main.isRunningFolia()) {
-                p.getScheduler().run(main, task -> {
-                    p.teleportAsync(to);
-                }, null);
+            to.setYaw(0f);
+
+            if (event instanceof PlayerTeleportEvent tpEvent) {
+                tpEvent.setTo(to);
             } else {
-                p.teleport(to);
+                if (event != null) event.setCancelled(true);
+                if (Main.isRunningFolia()) {
+                    p.getScheduler().run(main, task -> {
+                        p.teleportAsync(to);
+                    }, null);
+                } else {
+                    p.teleport(to);
+                }
             }
         }
     }
