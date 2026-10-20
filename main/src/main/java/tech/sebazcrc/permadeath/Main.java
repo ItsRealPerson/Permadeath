@@ -146,10 +146,15 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         return DateManager.getInstance().getDay();
     }
 
+    public boolean isAbyssEnabled() {
+        return getConfig().getBoolean("Toggles.Enable-Abyss", false);
+    }
+
     @Override
     public boolean isExtendedDifficulty() {
-        // Solo puede estar activa si el toggle global está en true Y el corazón ha sido usado
-        if (!getConfig().getBoolean("Toggles.ExtendToDay90")) return false;
+        // Solo puede estar activa si el Abismo está habilitado, el toggle está en true Y el corazón ha sido usado
+        if (!isAbyssEnabled()) return false;
+        if (!getConfig().getBoolean("Toggles.ExtendToDay90", false)) return false;
         return getConfig().getBoolean("DontTouch.ExtendedDifficultyActive", false);
     }
 
@@ -203,7 +208,9 @@ public final class Main extends JavaPlugin implements Listener, PermadeathAPIPro
         }
 
         this.playTime = getConfig().getInt("DontTouch.PlayTime");
-        this.abyssManager.startSpawnerTask();
+        if (isAbyssEnabled()) {
+            this.abyssManager.startSpawnerTask();
+        }
 
         tickAll();
     }

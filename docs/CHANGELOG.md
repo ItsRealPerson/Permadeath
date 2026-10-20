@@ -56,3 +56,16 @@ Todos los cambios notables en este proyecto serán documentados en este archivo 
 ### Simplificación y Limpieza (/ponytail)
 - **Eliminación de Reflexión Obsoleta (`Main.java`):** Purgado bloque de reflexión heredado de Paper 1.15 (`paperConfig.disableCreeperLingeringEffect`) que fallaba silenciosamente en cada carga de mundo en 1.21.8.
 - **Modernización con Stdlib (`UpdateChecker.java`):** Reemplazado `org.bukkit.util.Consumer` obsoleto por el estándar `java.util.function.Consumer` de Java, erradicando advertencias de compilación y llamadas deprecadas.
+
+### Modificado (Bloqueo Temporal de la Dimensión del Abismo)
+- **Configuración y Control Global:**
+  - Añadidos toggles `Toggles.Enable-Abyss: false` y `Toggles.ExtendToDay90: false` en `config.yml` para desactivar el Abismo por defecto en Permadeath 1.4.
+  - Implementado `Main.isAbyssEnabled()`, condicionando `isExtendedDifficulty()` para evitar la activación involuntaria de mecánicas abisales.
+  - Desactivada la tarea en segundo plano `abyssManager.startSpawnerTask()` durante el arranque del plugin si el Abismo no está habilitado, ahorrando ciclos de CPU y comprobaciones innecesarias de jugadores.
+- **Bloqueo de Acceso y Comandos:**
+  - `/pdc abyss`: Bloqueado con mensaje informativo indicando que la dimensión se encuentra deshabilitada temporalmente.
+  - Autocompletado: Ocultado `"abyss"` en `PDCCommandCompleter` cuando el Abismo está desactivado.
+  - `AbyssManager.teleportToAbyss` y `AbyssManager.loadWorld`: Bloqueada la generación y carga de chunks de la dimensión.
+- **Interacción y Recetas:**
+  - Bloqueado el consumo y activación del Corazón del Abismo en `PlayerListener`.
+  - Omitido el registro de recetas abisales (`abyssal_heart`, `abyssal_filter`, `abyssal_mask`) en `RecipeManager` si `isAbyssEnabled()` es falso.

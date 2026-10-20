@@ -26,6 +26,9 @@ AntiAFK:
     - vo1d_dev
 # Personalización:
 Toggles:
+  # Deshabilitado temporalmente para Permadeath 1.4
+  Enable-Abyss: false
+  ExtendToDay90: false
   DefaultDeathSoundsEnabled: true
   OptifineItems: false
   Netherite:

@@ -112,7 +112,7 @@ public class RecipeManager {
         safeRegister(this::registerBeginningRelic);
         safeRegister(this::registerLifeOrb);
 
-        if (!Main.instance.getConfig().getBoolean("Toggles.ExtendToDay90")) return;
+        if (!Main.instance.isAbyssEnabled() || !Main.instance.getConfig().getBoolean("Toggles.ExtendToDay90", false)) return;
 
         safeRegister(() -> {
             NamespacedKey key = new NamespacedKey(Main.instance, "abyssal_heart");

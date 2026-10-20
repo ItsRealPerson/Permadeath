@@ -44,7 +44,9 @@ public class PDCCommandCompleter implements TabCompleter {
             List<String> subcommands = new ArrayList<>(SUBCOMMANDS);
             subcommands.add("recipes");
             subcommands.add("accesorios");
-            subcommands.add("abyss");
+            if (Main.getInstance().isAbyssEnabled()) {
+                subcommands.add("abyss");
+            }
             
             StringUtil.copyPartialMatches(args[0], subcommands, completions);
         } else if (args.length == 2) {

@@ -197,6 +197,11 @@ public class PlayerListener implements Listener {
                 e.setCancelled(true);
                 Player p = e.getPlayer();
                 
+                if (!Main.instance.isAbyssEnabled()) {
+                    p.sendMessage(TextUtils.format(Main.prefix + "&cLa dimensión del Abismo se encuentra deshabilitada temporalmente."));
+                    return;
+                }
+
                 if (Main.instance.getDay() < 60) {
                     p.sendMessage(TextUtils.format(Main.prefix + "&cEl mundo aún no es lo suficientemente viejo para este poder... (Requiere Día 60)"));
                     return;

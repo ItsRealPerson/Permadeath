@@ -140,6 +140,9 @@ public class AbyssManager implements Listener {
     }
 
     public void loadWorld() {
+        if (!Main.instance.isAbyssEnabled()) {
+            return;
+        }
         this.abyssWorld = Bukkit.getWorld(WORLD_NAME);
         if (this.abyssWorld == null) {
             for (World w : Bukkit.getWorlds()) {
@@ -173,6 +176,10 @@ public class AbyssManager implements Listener {
     }
 
     public void teleportToAbyss(Player player) {
+        if (!Main.instance.isAbyssEnabled()) {
+            player.sendMessage(Main.prefix + ChatColor.RED + "La dimensión del Abismo se encuentra deshabilitada temporalmente.");
+            return;
+        }
         if (!Main.instance.isExtendedDifficulty()) {
             player.sendMessage(ChatColor.RED + "El Abismo está sellado. Necesitas despertar el Corazón del Abismo para entrar.");
             return;

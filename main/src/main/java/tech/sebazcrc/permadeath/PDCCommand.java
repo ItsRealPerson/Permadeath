@@ -108,6 +108,11 @@ public class PDCCommand implements CommandExecutor {
 
     private void handleAbyss(CommandSender sender, String[] args) {
         if (!(sender instanceof Player p)) return;
+
+        if (!instance.isAbyssEnabled()) {
+            p.sendMessage(ChatColor.RED + "La dimensión del Abismo se encuentra deshabilitada temporalmente.");
+            return;
+        }
         
         if (args.length > 1 && args[1].equalsIgnoreCase("force") && p.isOp()) {
             p.sendMessage(ChatColor.YELLOW + "Forzando carga del Abismo...");
