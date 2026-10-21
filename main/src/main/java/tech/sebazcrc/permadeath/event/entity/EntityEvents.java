@@ -199,8 +199,9 @@ public class EntityEvents implements Listener {
             }
         }
 
-        if (e.getEntity() instanceof Player && e.getDamager() instanceof Player) {
-            if (Main.getInstance().getDay() < 40) {
+        if (e.getEntity() instanceof Player) {
+            boolean isPvp = e.getDamager() instanceof Player || (e.getDamager() instanceof Projectile proj && proj.getShooter() instanceof Player);
+            if (isPvp && Main.getInstance().getDay() < 40) {
                 e.setCancelled(true);
             }
         }

@@ -223,9 +223,8 @@ public class BeginningManager implements Listener {
 
         // 1. Verificación de Día
         if (main.getDay() < 50) {
-            p.setNoDamageTicks(p.getMaximumNoDamageTicks());
-            p.damage(p.getHealth() + 1.0D);
-            Bukkit.broadcastMessage(TextUtils.format("&c&lEl jugador &4&l" + p.getName() + " &c&lentró a The Beginning antes de tiempo."));
+            p.setVelocity(p.getLocation().getDirection().multiply(-0.5));
+            p.sendMessage(TextUtils.format("&c&lThe Beginning permanece cerrado hasta el Día 50. ¡El portal aún es inestable!"));
             return;
         }
 

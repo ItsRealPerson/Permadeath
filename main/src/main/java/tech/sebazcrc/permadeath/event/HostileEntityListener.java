@@ -108,7 +108,13 @@ public class HostileEntityListener implements Listener {
         };
 
         if (Main.isRunningFolia()) {
-            entity.getScheduler().runAtFixedRate(instance, t -> aiTask.run(), null, 20L, 10L);
+            entity.getScheduler().runAtFixedRate(instance, t -> {
+                if (entity.isDead() || !entity.isValid()) {
+                    t.cancel();
+                    return;
+                }
+                aiTask.run();
+            }, null, 20L, 10L);
         } else {
             new org.bukkit.scheduler.BukkitRunnable() {
                 @Override

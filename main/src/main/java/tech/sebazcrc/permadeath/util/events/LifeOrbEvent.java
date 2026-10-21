@@ -71,10 +71,9 @@ public class LifeOrbEvent {
     }
 
     public void removePlayer(Player player) {
-
-        if (bossBar.getPlayers().contains(player)) return;
-
-        bossBar.addPlayer(player);
+        if (bossBar != null && bossBar.getPlayers().contains(player)) {
+            bossBar.removePlayer(player);
+        }
     }
 }
 

@@ -79,7 +79,8 @@ public class DateManager {
         try {
             int d = Integer.parseInt(args1);
             if (d > 120 || d < 0) {
-                nD = 0;
+                sender.sendMessage(TextUtils.format("&cEl día debe estar entre 0 y 120."));
+                return;
             } else {
                 nD = d;
             }
@@ -87,12 +88,9 @@ public class DateManager {
             sender.sendMessage(TextUtils.format("&cNecesitas ingresar un número válido."));
             return;
         }
-        if (nD == 0) {
-            sender.sendMessage(TextUtils.format("&cHas ingresado un número no válido, o ni siquiera un número."));
-            return;
-        }
 
         LocalDate add = currentDate.minusDays(nD);
+        this.startDate = add;
         DateManager.getInstance().setNewDate(String.format(add.getYear() + "-%02d-%02d", add.getMonthValue(), add.getDayOfMonth()));
 
         sender.sendMessage(TextUtils.format("&eSe han actualizado los días a: &7" + nD));
@@ -176,7 +174,11 @@ public class DateManager {
     private void reloadFile() {
         try {
             this.c.load(f);
-        } catch (IOException | InvalidConfigurationException e) {
+            this.date = this.c.getString("Fecha");
+            if (this.date != null && !this.date.isEmpty()) {
+                this.startDate = LocalDate.parse(this.date);
+            }
+        } catch (IOException | InvalidConfigurationException | DateTimeParseException e) {
             Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "Error al recargar fecha.yml", e);
         }
     }

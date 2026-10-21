@@ -22,7 +22,9 @@ import tech.sebazcrc.permadeath.task.EndTask;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.SplittableRandom;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static tech.sebazcrc.permadeath.Main.instance;
 
@@ -30,17 +32,17 @@ public class EndManager implements Listener {
 
     private Main main;
 
-    private List<Entity> enderCreepers;
-    private List<Entity> enderGhasts;
+    private final Set<Entity> enderCreepers = ConcurrentHashMap.newKeySet();
+    private final Set<Entity> enderGhasts = ConcurrentHashMap.newKeySet();
 
-    private ArrayList<Location> alreadyExploded = new ArrayList<>();
+    private final Set<Location> alreadyExploded = ConcurrentHashMap.newKeySet();
 
-    private ArrayList<Enderman> invulnerable = new ArrayList<>();
+    private final Set<Enderman> invulnerable = ConcurrentHashMap.newKeySet();
 
     private SplittableRandom random;
     
     // MEJORAS NUEVAS
-    private final List<EnderCrystal> shieldCrystals = new ArrayList<>();
+    private final Set<EnderCrystal> shieldCrystals = ConcurrentHashMap.newKeySet();
     private boolean shieldSpawned = false;
 
     public EndManager(Main main) {
@@ -48,8 +50,6 @@ public class EndManager implements Listener {
 
         main.getServer().getPluginManager().registerEvents(this, main);
 
-        this.enderCreepers = new ArrayList<>();
-        this.enderGhasts = new ArrayList<>();
         this.random = new SplittableRandom();
     }
 

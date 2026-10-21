@@ -449,8 +449,10 @@ public class SpawnListener implements Listener {
 
             if (entity.getType() == EntityType.SPIDER) {
                 event.setCancelled(true);
-                plugin.getNmsHandler().spawnNMSEntity("CaveSpider", EntityType.CAVE_SPIDER, event.getLocation(), CreatureSpawnEvent.SpawnReason.NATURAL);
-                entity.setCustomName(TextUtils.format("&6Araña inmortal"));
+                Entity caveSpider = plugin.getNmsHandler().spawnNMSEntity("CaveSpider", EntityType.CAVE_SPIDER, event.getLocation(), CreatureSpawnEvent.SpawnReason.NATURAL);
+                if (caveSpider != null) {
+                    caveSpider.setCustomName(TextUtils.format("&6Araña inmortal"));
+                }
             }
 
             if (entity.getType() == EntityType.ZOMBIE) {
@@ -1141,7 +1143,7 @@ public class SpawnListener implements Listener {
         if (entity instanceof Player) return;
 
         // 1. Lógica de Death Train: Se evalúa y aplica una única vez al spawnear
-        if (plugin.getDay() >= 25) {
+        if (plugin.getDay() >= 25 && (entity.getWorld().hasStorm() || plugin.isStorming())) {
             int currentVersion = plugin.getDeathTrainVersion();
             int entityVersion = entity.getPersistentDataContainer().getOrDefault(new NamespacedKey(plugin, "dt_version"), PersistentDataType.INTEGER, -1);
             if (entityVersion < currentVersion) {
@@ -1310,7 +1312,7 @@ public class SpawnListener implements Listener {
                 }
             }
 
-            if (plugin.getDay() < 60 && plugin.getDay() >= 50) {
+            if (plugin.getDay() >= 50) {
                 if (event.getEntity().getType() == EntityType.GIANT) {
                     event.getDrops().add(new ItemBuilder(Material.BOW).setDisplayName(TextUtils.format("&bArco de Gigante")).addEnchant(Enchantment.POWER, 10).build());
                 }
@@ -1319,11 +1321,9 @@ public class SpawnListener implements Listener {
                     if (event.getEntity().getCustomName() == null) return;
                     if (event.getEntity().getCustomName().contains(TextUtils.format("&6Wither Skeleton Emperador"))) {
 
-                        if (plugin.getDay() < 60) {
-                            int prob = (int) (Math.random() * 100) + 1;
-                            if (prob <= 50) {
-                                event.getDrops().add(PermadeathItems.craftNetheriteSword());
-                            }
+                        int prob = (int) (Math.random() * 100) + 1;
+                        if (prob <= 50) {
+                            event.getDrops().add(PermadeathItems.craftNetheriteSword());
                         }
                     }
                 }
