@@ -24,6 +24,9 @@ public class AbyssPopulator extends BlockPopulator {
                 int realX = startX + x;
                 int realZ = startZ + z;
 
+                // Suelo de Bedrock en Y=-64
+                limitedRegion.setType(realX, -64, realZ, Material.BEDROCK);
+
                 // 1. Techo Orgánico (Capas 127 a 115)
                 for (int y = 115; y <= 127; y++) {
                     double noise = noiseGen.noise(realX, y, realZ, 0.5D, 0.5D, true);
@@ -106,19 +109,26 @@ public class AbyssPopulator extends BlockPopulator {
                 for (int z = -radius; z <= radius; z++) {
                     double dist = x * x + y * y + z * z;
                     if (dist < radius * radius) {
-                        if (dist > (radius - 1) * (radius - 1)) {
-                            region.setType(cx + x, cy + y, cz + z, Material.REINFORCED_DEEPSLATE);
-                        } else {
-                            region.setType(cx + x, cy + y, cz + z, Material.AIR);
+                        int bx = cx + x;
+                        int by = cy + y;
+                        int bz = cz + z;
+                        if (region.isInRegion(bx, by, bz)) {
+                            if (dist > (radius - 1) * (radius - 1)) {
+                                region.setType(bx, by, bz, Material.REINFORCED_DEEPSLATE);
+                            } else {
+                                region.setType(bx, by, bz, Material.AIR);
+                            }
                         }
                     }
                 }
             }
         }
-        region.setType(cx, cy, cz, Material.CHEST);
-        if (region.getBlockState(cx, cy, cz) instanceof org.bukkit.block.Chest chest) {
-            org.bukkit.inventory.Inventory inv = chest.getInventory();
-            tech.sebazcrc.permadeath.Main.getInstance().getLootManager().generateAbyssLoot().forEach(inv::addItem);
+        if (region.isInRegion(cx, cy, cz)) {
+            region.setType(cx, cy, cz, Material.CHEST);
+            if (region.getBlockState(cx, cy, cz) instanceof org.bukkit.block.Chest chest) {
+                org.bukkit.inventory.Inventory inv = chest.getInventory();
+                tech.sebazcrc.permadeath.Main.getInstance().getLootManager().generateAbyssLoot().forEach(inv::addItem);
+            }
         }
     }
 }

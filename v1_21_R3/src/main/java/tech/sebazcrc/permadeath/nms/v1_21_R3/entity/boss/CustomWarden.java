@@ -111,14 +111,36 @@ public class CustomWarden implements Listener {
             }
 
             private void performSonicBoom(Warden source, Player target) {
-                // SimulaciÃ³n visual y daÃ±o del Sonic Boom (ya que la API para forzarlo es limitada)
+                // Simulacion visual y dano del Sonic Boom (ya que la API para forzarlo es limitada)
                 source.getWorld().playSound(source.getLocation(), Sound.ENTITY_WARDEN_SONIC_BOOM, 3.0f, 1.0f);
                 source.getWorld().spawnParticle(Particle.SONIC_BOOM, source.getEyeLocation(), 1, 0, 0, 0, 0);
 
-                // DaÃ±o mÃ¡gico que atraviesa armadura
-                target.damage(25.0, source); // 12.5 corazones
-                target.setVelocity(target.getLocation().toVector().subtract(source.getLocation().toVector()).normalize().multiply(2.5));
-                target.sendMessage("§3" + source.getCustomName() + " §bte ha golpeado con su rugido sÃ³nico!");
+                Runnable applyDamageAndVelocity = () -> {
+                    // Dano magico que atraviesa armadura
+                    target.damage(25.0, source); // 12.5 corazones
+                    target.setVelocity(target.getLocation().toVector().subtract(source.getLocation().toVector()).normalize().multiply(2.5));
+                    target.sendMessage("§3" + source.getCustomName() + " §bte ha golpeado con su rugido sonico!");
+                };
+
+                if (isRunningFolia()) {
+                    target.getScheduler().run(plugin, t -> applyDamageAndVelocity.run(), null);
+                } else {
+                    applyDamageAndVelocity.run();
+                }
+            }
+
+            private boolean isRunningFolia() {
+                try {
+                    Class<?> mainClass = Class.forName("tech.sebazcrc.permadeath.Main");
+                    return (boolean) mainClass.getMethod("isRunningFolia").invoke(null);
+                } catch (Throwable t) {
+                    try {
+                        Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+                        return true;
+                    } catch (ClassNotFoundException e) {
+                        return false;
+                    }
+                }
             }
 
             private void summonCustomMinions(Warden source) {

@@ -213,7 +213,7 @@ public class PlayerListener implements Listener {
                 }
                 
                 if (Main.instance.getConfig().getBoolean("DontTouch.ExtendedDifficultyActive")) {
-                    p.sendMessage(TextUtils.format(Main.prefix + "&eLa dificultad ya ha sido extendida."));
+                    Main.instance.getAbyssManager().teleportToAbyss(p);
                     return;
                 }
 
@@ -229,6 +229,8 @@ public class PlayerListener implements Listener {
                     all.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 20 * 10, 0));
                     tech.sebazcrc.permadeath.util.AdvancementManager.grantAdvancement(all, tech.sebazcrc.permadeath.util.AdvancementManager.PDA.ABYSS_HEART);
                 });
+
+                Main.instance.getAbyssManager().loadWorld();
             }
         }
     }

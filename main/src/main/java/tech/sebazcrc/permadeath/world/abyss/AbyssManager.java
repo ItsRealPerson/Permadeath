@@ -30,7 +30,7 @@ public class AbyssManager implements Listener {
     private static final String WORLD_NAME = "permadeath/abyss";
     private final Main plugin;
     private World abyssWorld;
-    private final Map<UUID, BossBar> pressureBars = new HashMap<>();
+    private final Map<UUID, BossBar> pressureBars = new java.util.concurrent.ConcurrentHashMap<>();
 
     public AbyssManager(Main plugin) {
         this.plugin = plugin;
@@ -175,6 +175,19 @@ public class AbyssManager implements Listener {
         }
     }
 
+    public void populateSpawnArea() {
+        if (abyssWorld == null) return;
+        for (int x = 6; x <= 10; x++) {
+            for (int z = 6; z <= 10; z++) {
+                abyssWorld.getBlockAt(x, 60, z).setType(Material.REINFORCED_DEEPSLATE);
+                for (int y = 61; y <= 64; y++) {
+                    abyssWorld.getBlockAt(x, y, z).setType(Material.AIR);
+                }
+            }
+        }
+        abyssWorld.getBlockAt(8, 61, 8).setType(Material.END_GATEWAY);
+    }
+
     public void teleportToAbyss(Player player) {
         if (!Main.instance.isAbyssEnabled()) {
             player.sendMessage(Main.prefix + ChatColor.RED + "La dimensión del Abismo se encuentra deshabilitada temporalmente.");
@@ -186,7 +199,8 @@ public class AbyssManager implements Listener {
         }
         if (abyssWorld == null) loadWorld();
         if (abyssWorld != null) {
-            Location spawn = new Location(abyssWorld, 8, 62, 8);
+            populateSpawnArea();
+            Location spawn = new Location(abyssWorld, 8.5, 62.0, 8.5);
             if (Main.isRunningFolia()) {
                 player.teleportAsync(spawn).thenAccept(success -> {
                     if (success) playAbyssSound(player);
@@ -197,6 +211,30 @@ public class AbyssManager implements Listener {
             }
         } else {
             player.sendMessage(ChatColor.RED + "Error: La dimensión permadeath:abyss no está cargada.");
+        }
+    }
+
+    @EventHandler
+    public void onGatewayTeleport(org.bukkit.event.player.PlayerTeleportEvent e) {
+        if (e.getCause() == org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.END_GATEWAY) {
+            if (e.getFrom() != null && e.getFrom().getWorld() != null) {
+                String worldName = e.getFrom().getWorld().getName();
+                if (worldName.endsWith("permadeath_abyss") || worldName.endsWith("permadeath/abyss")) {
+                    e.setCancelled(true);
+                    Player player = e.getPlayer();
+                    Location spawnLoc = plugin.world.getSpawnLocation();
+                    if (Main.isRunningFolia()) {
+                        player.teleportAsync(spawnLoc).thenAccept(success -> {
+                            if (success) {
+                                player.sendMessage(TextUtils.format("&eHas emergido del &8&lAbismo&e de regreso a la superficie."));
+                            }
+                        });
+                    } else {
+                        player.teleport(spawnLoc);
+                        player.sendMessage(TextUtils.format("&eHas emergido del &8&lAbismo&e de regreso a la superficie."));
+                    }
+                }
+            }
         }
     }
 
@@ -274,6 +312,15 @@ public class AbyssManager implements Listener {
             }
         }
 
+        boolean isHelmet = false;
+        if (mask == null) {
+            ItemStack helmet = player.getInventory().getHelmet();
+            if (PermadeathItems.isAbyssalMask(helmet)) {
+                mask = helmet;
+                isHelmet = true;
+            }
+        }
+
         double currentPressure = player.getPersistentDataContainer().getOrDefault(new NamespacedKey(plugin, "abyss_pressure"), PersistentDataType.DOUBLE, 1.0);
 
         if (mask != null && mask.getItemMeta() instanceof org.bukkit.inventory.meta.Damageable damageable) {
@@ -292,7 +339,9 @@ public class AbyssManager implements Listener {
             if (new java.util.Random().nextInt(chance) == 0) { 
                 damageable.setDamage(currentDamage + 1);
                 mask.setItemMeta(damageable);
-                if (acc != null && maskIndex != -1) {
+                if (isHelmet) {
+                    player.getInventory().setHelmet(mask);
+                } else if (acc != null && maskIndex != -1) {
                     acc[maskIndex] = mask;
                     tech.sebazcrc.permadeath.util.inventory.AccessoryInventory.saveFromItems(player, acc);
                     org.bukkit.inventory.InventoryView openInv = player.getOpenInventory();
