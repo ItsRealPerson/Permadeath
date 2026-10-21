@@ -11,6 +11,7 @@ import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.event.world.WorldLoadEvent;
+import org.bukkit.event.entity.SpawnerSpawnEvent;
 import tech.sebazcrc.permadeath.Main;
 import tech.sebazcrc.permadeath.data.BeginningDataManager;
 import tech.sebazcrc.permadeath.util.TextUtils;
@@ -312,11 +313,25 @@ public class BeginningManager implements Listener {
         }
     }
 
+    @EventHandler
+    public void onSpawnerSpawn(SpawnerSpawnEvent e) {
+        if (beginningWorld == null || !e.getEntity().getWorld().equals(beginningWorld)) return;
+        Entity entity = e.getEntity();
+        if (entity instanceof Creeper creeper) {
+            main.getNmsAccessor().setMaxHealth(creeper, 100.0D, true);
+            creeper.setExplosionRadius(7);
+            creeper.setCustomName(TextUtils.format("&6Quantum Creeper"));
+            creeper.setRemoveWhenFarAway(true);
+        } else if (entity instanceof Wither wither) {
+            wither.setRemoveWhenFarAway(true);
+        } else if (entity instanceof LivingEntity living) {
+            living.setRemoveWhenFarAway(true);
+        }
+    }
+
     private void populateChest(Chest chest) {
         if (!data.hasPopulatedChest(chest.getLocation())) {
-            if (main.getDay() < 60) {
-                new BeginningLootTable(this).populateChest(chest);
-            }
+            new BeginningLootTable(this).populateChest(chest);
             data.addPopulatedChest(chest.getLocation());
         }
     }

@@ -54,8 +54,7 @@ public class BeginningPopulator extends BlockPopulator {
                 if (chance >= 256) chance = chance / 256;
                 if (chance < 1) chance = 1;
 
-                if (splittableRandom.nextInt(chance) == 0 && x == 8 && z == 8) {
-                    // Bukkit.getConsoleSender().sendMessage("[Permadeath-Debug] Scheduling Ytic at " + realX + ", " + realZ);
+                if (Main.worldEditFound && (Math.abs(realX) > 80 || Math.abs(realZ) > 80) && splittableRandom.nextInt(chance) == 0 && x == 8 && z == 8) {
                     scheduleSchematic(worldInfo, realX, realZ, "ytic", null);
                 }
 
@@ -176,10 +175,8 @@ public class BeginningPopulator extends BlockPopulator {
                 if (chance >= 256) chance = chance / 256;
                 if (chance < 1) chance = 1;
 
-                if (splittableRandom.nextInt(chance) == 0 && x == 8 && z == 8) {
-                    if (Math.abs(realX) > 40 || Math.abs(realZ) > 40) {
-                        scheduleSchematicDirect(world, realX, realZ, "ytic", null);
-                    }
+                if (Main.worldEditFound && (Math.abs(realX) > 80 || Math.abs(realZ) > 80) && splittableRandom.nextInt(chance) == 0 && x == 8 && z == 8) {
+                    scheduleSchematicDirect(world, realX, realZ, "ytic", null);
                 }
 
                 for (int i = 0; i < noise / 3; i++) {

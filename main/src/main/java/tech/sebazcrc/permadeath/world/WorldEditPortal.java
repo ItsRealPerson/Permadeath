@@ -98,7 +98,7 @@ public class WorldEditPortal {
                     .build();
 
             Operations.complete(operation);
-            //editSession.replaceBlocks(
+            editSession.flushSession();
         } catch (WorldEditException e) {
             e.printStackTrace();
         }

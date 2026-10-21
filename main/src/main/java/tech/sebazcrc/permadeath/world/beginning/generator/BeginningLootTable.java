@@ -11,17 +11,11 @@ import java.util.*;
 
 public class BeginningLootTable {
 
-    private final List<Integer> randomLoc = new ArrayList<>();
     private final List<String> chances;
     private final List<Material> alreadyRolled;
     private final SplittableRandom random;
 
     public BeginningLootTable(BeginningManager man) {
-
-        for (int i = 0; i < 27; ++i) {
-            this.randomLoc.add(i);
-        }
-
         this.chances = new ArrayList<>();
         this.alreadyRolled = new ArrayList<>();
         this.random = new SplittableRandom();
@@ -32,12 +26,10 @@ public class BeginningLootTable {
         addItem(chances, Material.ARROW, 10, 10, 16);
         addItem(chances, Material.FIREWORK_ROCKET, 20, 55, 64);
         addItem(chances, Material.TOTEM_OF_UNDYING, 5, 1, 2);
-        addItem(chances, Material.STRUCTURE_VOID, 1, 1, 1);
-
+        addItem(chances, Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE, 1, 1, 1);
     }
 
     public void populateChest(Chest chest) {
-
         World w = chest.getWorld();
         if (!w.getName().toLowerCase().endsWith("beginning")) return;
         
@@ -57,52 +49,44 @@ public class BeginningLootTable {
     }
 
     private void generate(Chest chest) {
-        Iterator<String> iterator = chances.iterator();
-        int added;
-        while (iterator.hasNext()) {
-            String[] split = String.valueOf(iterator.next()).split(";");
-            Inventory inventory = chest.getBlockInventory();
-
-            Collections.shuffle(this.randomLoc);
-
-            added = 0;
-            if (random.nextInt(100) + 1 <= getChance(split) && !alreadyRolled.contains(getMaterial(split))) {
-                if (getMaterial(split) == Material.TOTEM_OF_UNDYING || getMaterial(split) == Material.STRUCTURE_VOID) {
-                    inventory.setItem(this.randomLoc.get(added), new ItemStack(getMaterial(split)));
-                    return;
-                }
-                int ammount = generateValue(getMin(split), getMax(split));
-                ItemStack s = new ItemStack(getMaterial(split), ammount);
-                inventory.setItem(this.randomLoc.get(added), s);
-
-                int x = ammount + getMin(split) / 2;
-                ItemStack s2 = new ItemStack(s.getType(), x);
-
-                int r = random.nextInt(5) + 1;
-                int slot = (random.nextBoolean() ? -1 : 1) * r;
-                int targetIndex = added + slot;
-
-                if (targetIndex >= 0 && targetIndex < this.randomLoc.size()) {
-                    inventory.setItem(this.randomLoc.get(targetIndex), s2);
-                }
-
-                if (added++ >= inventory.getSize() - 1) {
-                    break;
-                }
-                alreadyRolled.add(s.getType());
-            }
-        }
-    }
-
-    private boolean hasSlot(Inventory inventory) {
-        boolean b = false;
+        Inventory inventory = chest.getInventory();
+        List<Integer> slots = new ArrayList<>();
         for (int i = 0; i < inventory.getSize(); i++) {
             if (inventory.getItem(i) == null) {
-                b = true;
+                slots.add(i);
             }
         }
+        if (slots.isEmpty()) return;
 
-        return b;
+        Collections.shuffle(slots);
+        int slotPointer = 0;
+
+        for (String chanceEntry : chances) {
+            if (slotPointer >= slots.size()) break;
+
+            String[] split = chanceEntry.split(";");
+            Material mat = getMaterial(split);
+
+            if (random.nextInt(100) + 1 <= getChance(split) && !alreadyRolled.contains(mat)) {
+                if (mat == Material.TOTEM_OF_UNDYING || mat == Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE) {
+                    inventory.setItem(slots.get(slotPointer++), new ItemStack(mat));
+                    alreadyRolled.add(mat);
+                    continue;
+                }
+
+                int ammount = Math.min(mat.getMaxStackSize(), Math.max(1, generateValue(getMin(split), getMax(split))));
+                ItemStack s = new ItemStack(mat, ammount);
+                inventory.setItem(slots.get(slotPointer++), s);
+
+                if (slotPointer < slots.size()) {
+                    int x = Math.min(mat.getMaxStackSize(), Math.max(1, ammount + getMin(split) / 2));
+                    ItemStack s2 = new ItemStack(mat, x);
+                    inventory.setItem(slots.get(slotPointer++), s2);
+                }
+
+                alreadyRolled.add(mat);
+            }
+        }
     }
 
     private int getMin(String[] s) {
@@ -122,23 +106,6 @@ public class BeginningLootTable {
     }
 
     private int generateValue(int min, int max) {
-        return random.nextInt(max - min) + random.nextInt(min) + 1;
+        return min + (max > min ? random.nextInt(max - min + 1) : 0);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
